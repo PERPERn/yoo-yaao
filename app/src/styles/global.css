@@ -154,7 +154,7 @@ table,
 }
 
 /* Running text keeps a readable measure; cards and columns are narrower anyway. */
-:where(main) :where(p, li, dd, blockquote) {
+:where(main) :where(p, blockquote) {
   max-inline-size: var(--measure);
 }
 :where(.text-center) :where(p) {
@@ -410,6 +410,18 @@ table,
   border-style: dashed;
   box-shadow: none;
   opacity: 0.7;
+}
+input[type='date'].control {
+  cursor: pointer;
+}
+input[type='date'].control::-webkit-calendar-picker-indicator {
+  cursor: pointer;
+  width: 1.25rem;
+  height: 1.25rem;
+  opacity: 0.75;
+}
+input[type='date'].control::-webkit-calendar-picker-indicator:hover {
+  opacity: 1;
 }
 textarea.control {
   min-height: 7.5rem;

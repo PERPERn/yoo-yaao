@@ -233,6 +233,18 @@ const year = new Date().getFullYear();
         }).observe(sentinel);
       }
 
+      // Date fields: a click anywhere in the box opens the calendar (typing still works).
+      document.addEventListener('click', (e) => {
+        const t = e.target;
+        if (t instanceof HTMLInputElement && t.type === 'date' && !t.disabled && !t.readOnly) {
+          try {
+            t.showPicker();
+          } catch {
+            /* older browsers: the native icon still opens it */
+          }
+        }
+      });
+
       // Back-to-top: shows after one screen of scrolling.
       const toTop = document.querySelector<HTMLAnchorElement>('[data-to-top]');
       if (toTop) {
