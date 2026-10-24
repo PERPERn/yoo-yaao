@@ -184,7 +184,8 @@ const d = FINDER_DEFAULTS;
             <p data-top-verdict></p>
             <div class="cluster f-top__actions">
               <Button href="/visas" size="lg" iconRight="arrow-right" data-top-guide>Read the guide</Button>
-              <Button variant="secondary" data-share icon="arrow-up-right">Copy share link</Button>
+              <Button variant="secondary" data-share icon="arrow-up-right">Share result</Button>
+              <Button href="/visas" variant="ghost" iconRight="arrow-right">Compare with other visas</Button>
             </div>
             <p class="small muted" aria-live="polite" data-share-status></p>
           </div>
@@ -545,7 +546,17 @@ const d = FINDER_DEFAULTS;
 
   $('[data-share]').addEventListener('click', async () => {
     const status = $('[data-share-status]');
+    // The query holds only the six answers (no name or email), so the link is safe to share.
     const url = `${location.origin}${location.pathname}${location.search}`;
+    if (navigator.share) {
+      try {
+        await navigator.share({ title: 'My Thai visa match — Yoo Yaao', url });
+        status.textContent = '';
+        return;
+      } catch (e) {
+        if ((e as DOMException).name === 'AbortError') return;
+      }
+    }
     try {
       await navigator.clipboard.writeText(url);
       status.textContent = 'Link copied. Anyone with it sees these results.';

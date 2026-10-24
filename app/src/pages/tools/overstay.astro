@@ -1,0 +1,295 @@
+---
+import Base from '../../layouts/Base.astro';
+import Section from '../../components/ui/Section.astro';
+import Button from '../../components/ui/Button.astro';
+import Input from '../../components/ui/Input.astro';
+import Icon from '../../components/ui/Icon.astro';
+import Callout from '../../components/ui/Callout.astro';
+import SourceTag from '../../components/ui/SourceTag.astro';
+import PageHeader from '../../components/core/PageHeader.astro';
+import ProBand from '../../components/core/ProBand.astro';
+import LegalNote from '../../components/core/LegalNote.astro';
+import Motion from '../../components/core/Motion.astro';
+import {
+  ARREST_BANS,
+  FINE_CAP_THB,
+  FINE_PER_DAY_THB,
+  OVERSTAY_SOURCES,
+  OVERSTAY_VERIFIED_ON,
+  SURRENDER_BANS,
+} from '../../data/overstay';
+
+const thb = (n: number) => `${n.toLocaleString('en-US')} THB`;
+---
+
+<Base
+  title="Thailand overstay fine calculator"
+  description="Work out the days you would overstay in Thailand, the fine (500 THB a day, up to 20,000 THB) and the re-entry ban that applies, from Thai immigration's own figures."
+>
+  <PageHeader
+    title="Overstay fine calculator"
+    lead={`Thai immigration charges ${thb(FINE_PER_DAY_THB)} for each day you stay past your permission, up to ${thb(FINE_CAP_THB)}. Longer overstays also bring a ban on coming back.`}
+    crumbs={[{ label: 'Stay Tools', href: '/tools' }, { label: 'Overstay fine' }]}
+  />
+
+  <Section spacing="none" aria-label="Calculator">
+    <div class="os">
+      <form class="os__form" data-form novalidate>
+        <Input
+          name="until"
+          type="date"
+          label="Permitted to stay until"
+          hint="The date on your latest arrival or extension stamp."
+          required
+          data-until
+        />
+        <Input name="leave" type="date" label="Date you plan to leave" hint="The day you fly or cross the border out." required data-leave />
+        <p class="small muted os__privacy"><Icon name="lock" size={16} /> Worked out in your browser. Nothing is sent anywhere.</p>
+      </form>
+
+      <div class="os__out" aria-live="polite">
+        <div class="empty" data-empty>
+          <Icon name="clock" size={28} />
+          <p>Enter both dates to see the fine.</p>
+        </div>
+
+        <div class="os__ok" data-ok hidden>
+          <Callout tone="success" title="No overstay">
+            <p data-ok-text></p>
+          </Callout>
+        </div>
+
+        <div class="tiles" data-tiles hidden>
+          <article class="tile">
+            <h2 class="tile__title">Days overstayed</h2>
+            <p class="tile__value tabular" data-days>0</p>
+          </article>
+          <article class="tile">
+            <h2 class="tile__title">Fine</h2>
+            <p class="tile__value tabular" data-fine>0</p>
+            <p class="tile__note" data-fine-note></p>
+          </article>
+          <article class="tile" data-ban-tile>
+            <h2 class="tile__title">Re-entry ban if you hand yourself in</h2>
+            <p class="tile__value" data-ban>None</p>
+            <p class="tile__note" data-ban-note></p>
+          </article>
+        </div>
+      </div>
+    </div>
+  </Section>
+
+  <Section title="The rules" width="narrow">
+    <div class="prose">
+      <p>
+        The fine is {thb(FINE_PER_DAY_THB)} a day, and the total is capped at {thb(FINE_CAP_THB)}. You pay it at immigration, usually on the way out.
+        A re-entry ban depends on how long you overstayed and on whether you hand yourself in or are arrested first.
+      </p>
+    </div>
+    <div class="bans">
+      <table class="ban-table">
+        <caption>If you hand yourself in</caption>
+        <thead><tr><th scope="col">Overstay</th><th scope="col">Ban from re-entering</th></tr></thead>
+        <tbody>{SURRENDER_BANS.map((t) => <tr><td>{t.over}</td><td>{t.ban} {t.ban === 1 ? 'year' : 'years'}</td></tr>)}</tbody>
+      </table>
+      <table class="ban-table">
+        <caption>If you are arrested and prosecuted</caption>
+        <thead><tr><th scope="col">Overstay</th><th scope="col">Ban from re-entering</th></tr></thead>
+        <tbody>{ARREST_BANS.map((t) => <tr><td>{t.over}</td><td>{t.ban} years</td></tr>)}</tbody>
+      </table>
+    </div>
+    <div class="sources">
+      {OVERSTAY_SOURCES.map((s) => <SourceTag source={s} verifiedAt={OVERSTAY_VERIFIED_ON} />)}
+    </div>
+
+    <Callout tone="warning" title="This is not legal advice" class="os__legal">
+      <p>
+        This tool only does the arithmetic on the published rules. Officers decide each case, and the rules can change.
+        If you have overstayed or are about to, talk to immigration or a licensed agent before you travel.
+      </p>
+      <div class="cluster os__gap">
+        <Button href="/experts" iconRight="arrow-right">Talk to a visa expert</Button>
+      </div>
+    </Callout>
+    <LegalNote />
+  </Section>
+
+  <Section spacing="tight">
+    <ProBand
+      title="Pro reminds you before your permission ends"
+      body="Get an email 30 and 7 days before your stay runs out, so you can extend or leave in time."
+      data-reveal
+    />
+  </Section>
+</Base>
+
+<Motion />
+
+<script>
+  import { fmtDate, parseISODate, plural } from '../../components/core/dates';
+  import { readJSON, writeJSON } from '../../components/core/storage';
+  import { FINE_CAP_THB, overstay } from '../../data/overstay';
+
+  const KEY = 'ls-overstay';
+  const $ = <T extends HTMLElement>(sel: string) => document.querySelector<T>(sel)!;
+  const until = $<HTMLInputElement>('[data-until]');
+  const leave = $<HTMLInputElement>('[data-leave]');
+  const thb = (n: number) => `${n.toLocaleString('en-US')} THB`;
+
+  function render() {
+    const u = parseISODate(until.value);
+    const l = parseISODate(leave.value);
+    $('[data-empty]').hidden = Boolean(u && l);
+    $('[data-ok]').hidden = true;
+    $('[data-tiles]').hidden = true;
+    if (!u || !l) return;
+    writeJSON(KEY, { until: until.value, leave: leave.value });
+
+    const r = overstay(u, l);
+    if (r.days === 0) {
+      $('[data-ok-text]').textContent = `Leaving on ${fmtDate(l)} is within your permission to stay (until ${fmtDate(u)}). No fine.`;
+      $('[data-ok]').hidden = false;
+      return;
+    }
+    $('[data-days]').textContent = r.days.toLocaleString('en-US');
+    $('[data-fine]').textContent = thb(r.fine);
+    $('[data-fine-note]').textContent = r.capped ? `Capped at ${thb(FINE_CAP_THB)}.` : `${plural(r.days, 'day')} × 500 THB.`;
+    $('[data-ban]').textContent = r.banYears ? plural(r.banYears, 'year') : 'None';
+    $('[data-ban-note]').textContent = r.banYears
+      ? 'Counted from the day you leave. If you are arrested first, the ban is longer.'
+      : 'Under 90 days, paying the fine on departure brings no ban. If you are arrested first, a ban can still apply.';
+    $('[data-ban-tile]').dataset.level = r.banYears ? 'red' : 'amber';
+    $('[data-tiles]').hidden = false;
+  }
+
+  const saved = readJSON<{ until?: string; leave?: string }>(KEY, {});
+  if (saved.until) until.value = saved.until;
+  if (saved.leave) leave.value = saved.leave;
+  render();
+  until.addEventListener('change', render);
+  leave.addEventListener('change', render);
+  $('[data-form]').addEventListener('submit', (ev) => {
+    ev.preventDefault();
+    render();
+  });
+</script>
+
+<style>
+  .os {
+    display: grid;
+    gap: var(--space-8);
+    padding-bottom: var(--space-section);
+  }
+  @media (min-width: 60rem) {
+    .os {
+      grid-template-columns: minmax(0, 1fr) minmax(0, 1.2fr);
+      gap: var(--space-12);
+      align-items: start;
+    }
+  }
+  .os__form {
+    display: grid;
+    gap: var(--space-6);
+    padding: var(--space-6);
+    border-radius: var(--radius-lg);
+    background: var(--color-surface);
+  }
+  .os__privacy {
+    display: flex;
+    gap: var(--space-2);
+    align-items: center;
+  }
+  .empty {
+    display: grid;
+    justify-items: start;
+    gap: var(--space-3);
+    padding: var(--space-10) var(--space-8);
+    border-radius: var(--radius-xl);
+    background: var(--color-surface-2);
+    color: var(--color-ink-2);
+    font-size: var(--text-lg);
+  }
+  .tiles {
+    display: grid;
+    gap: var(--space-4);
+  }
+  @media (min-width: 40rem) {
+    .tiles {
+      grid-template-columns: 1fr 1fr;
+    }
+    .tiles [data-ban-tile] {
+      grid-column: 1 / -1;
+    }
+  }
+  .tile {
+    display: grid;
+    gap: var(--space-3);
+    align-content: start;
+    padding: var(--space-6);
+    border-radius: var(--radius-xl);
+    background: var(--color-brand-tint);
+  }
+  .tile[data-level='amber'] {
+    background: var(--color-warning-tint);
+  }
+  .tile[data-level='red'] {
+    background: var(--color-danger-tint);
+  }
+  .tile__title {
+    font-size: var(--text-lg);
+    line-height: var(--leading-snug);
+  }
+  .tile__value {
+    font-family: var(--font-display);
+    font-size: var(--text-4xl);
+    font-weight: var(--weight-bold);
+    line-height: 1;
+  }
+  .tile__note {
+    font-size: var(--text-sm);
+  }
+  .tile__note:empty {
+    display: none;
+  }
+  .bans {
+    display: grid;
+    gap: var(--space-6);
+    margin-top: var(--space-6);
+  }
+  @media (min-width: 40rem) {
+    .bans {
+      grid-template-columns: 1fr 1fr;
+    }
+  }
+  .ban-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: var(--text-sm);
+  }
+  .ban-table caption {
+    text-align: left;
+    font-weight: var(--weight-semibold);
+    padding-bottom: var(--space-2);
+  }
+  .ban-table th,
+  .ban-table td {
+    text-align: left;
+    padding: var(--space-2) var(--space-3);
+    border-bottom: 1px solid var(--color-border);
+  }
+  .ban-table th {
+    color: var(--color-ink-2);
+    font-weight: var(--weight-medium);
+  }
+  .sources {
+    display: grid;
+    gap: var(--space-3);
+    margin: var(--space-6) 0;
+  }
+  .os__legal {
+    margin-bottom: var(--space-4);
+  }
+  .os__gap {
+    margin-top: var(--space-3);
+  }
+</style>

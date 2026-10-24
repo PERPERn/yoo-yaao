@@ -1,0 +1,236 @@
+---
+import Base from '../../layouts/Base.astro';
+import Section from '../../components/ui/Section.astro';
+import Button from '../../components/ui/Button.astro';
+import Icon from '../../components/ui/Icon.astro';
+import SourceTag from '../../components/ui/SourceTag.astro';
+import PageHeader from '../../components/core/PageHeader.astro';
+import LegalNote from '../../components/core/LegalNote.astro';
+import Motion from '../../components/core/Motion.astro';
+import type { Source } from '../../types/contracts';
+
+const CHECKED = '2026-10-24';
+const items: { id: string; title: string; why: string; link?: { href: string; label: string }; sources?: Source[] }[] = [
+  {
+    id: 'sim',
+    title: 'Get a Thai SIM or eSIM',
+    why: 'Banks, ride apps, food delivery and your landlord will all want a Thai number. Bring your passport to the shop; it is usually asked for when the SIM is set up.',
+  },
+  {
+    id: 'home',
+    title: 'Find a place to live',
+    why: 'Book a week or two in a hotel first, then view rooms in person. Read the lease before you pay a deposit, and keep a copy of it. You will need the address for everything below.',
+  },
+  {
+    id: 'tm30',
+    title: 'Check your TM30 address report is filed',
+    why: 'Your landlord, house owner or hotel manager must report where you stay to immigration within 24 hours of your arrival. It is their job, not yours. Ask them to confirm it is done and keep a copy of the receipt.',
+    sources: [
+      {
+        label: 'Immigration Bureau — Public handbook: notification of residence by the house-master or hotel manager',
+        url: 'https://bangkok.immigration.go.th/wp-content/uploads/2021/06/13Public-Handbook.pdf',
+        tier: 'primary',
+      },
+      { label: 'Immigration Bureau — TM30 online notification', url: 'https://tm30.immigration.go.th/Foreigner/en/HomeEN.html', tier: 'primary' },
+    ],
+  },
+  {
+    id: 'bank',
+    title: 'Open a bank account',
+    why: 'A Thai account makes rent, bills and QR payments much easier. Each bank and branch decides what documents it asks for, so call or visit the branch first and bring your passport, visa and lease.',
+  },
+  {
+    id: '90day',
+    title: 'Set a reminder for your 90-day report',
+    why: 'If you stay in Thailand more than 90 days in a row, you must report your address to immigration every 90 days. You can file online up to 15 days before it is due.',
+    link: { href: '/tools/90-day', label: 'Work out your first due date' },
+    sources: [{ label: 'Immigration Division 1, Bangkok — FAQ: 90-day notification', url: 'https://bangkok.immigration.go.th/en/faq_en/', tier: 'primary' }],
+  },
+];
+---
+
+<Base
+  title="First 7 days in Thailand checklist"
+  description="What to sort out in your first week in Thailand: a SIM, a place to live, the TM30 address report, a bank account and your 90-day report reminder."
+>
+  <PageHeader
+    title="Your first 7 days in Thailand"
+    lead="Five things to sort out in your first week. Tick them off as you go. Your progress is saved on this device."
+    crumbs={[{ label: 'Stay Tools', href: '/tools' }, { label: 'First 7 days' }]}
+  />
+
+  <Section spacing="none" aria-label="Checklist">
+    <div class="fw" data-checklist="first-week">
+      <div class="fw__head">
+        <p class="fw__count"><span class="tabular" data-check-count>0</span> of <span class="tabular" data-check-total>{items.length}</span> done</p>
+        <p class="fw__status small muted" data-sync-status aria-live="polite">Saved on this device</p>
+      </div>
+      <div class="fw__track" role="progressbar" aria-label="First week progress" aria-valuemin="0" aria-valuemax={items.length} aria-valuenow="0" data-check-progress>
+        <span class="fw__fill" data-check-bar></span>
+      </div>
+
+      <ol class="fw__list">
+        {
+          items.map((it) => (
+            <li class="fw__row" data-check-row>
+              <label class="fw__label" for={`fw-${it.id}`}>
+                <input type="checkbox" id={`fw-${it.id}`} value={it.id} data-check-item />
+                <span class="fw__box" aria-hidden="true"><Icon name="check" size={16} strokeWidth={2.5} /></span>
+                <span class="fw__title">{it.title}</span>
+              </label>
+              <div class="fw__body">
+                <p>{it.why}</p>
+                {it.link && <p><a href={it.link.href}>{it.link.label}</a></p>}
+                {it.sources?.map((s) => <SourceTag source={s} verifiedAt={CHECKED} />)}
+                <div>
+                  <Button href="/buddies" variant="secondary" size="sm" icon="users" aria-label={`Get a Local Buddy to help: ${it.title}`}>
+                    Get a Local Buddy to help
+                  </Button>
+                </div>
+              </div>
+            </li>
+          ))
+        }
+      </ol>
+
+      <p class="fw__done" data-check-done hidden role="status">
+        <Icon name="check" size={20} />
+        <span>All five done. Next, see the <a href="/tools">other Stay Tools</a>.</span>
+      </p>
+    </div>
+    <LegalNote class="fw__legal" />
+  </Section>
+</Base>
+
+<Motion />
+
+<script>
+  import { bindChecklist } from '../../components/core/checklist-client';
+  bindChecklist(document.querySelector<HTMLElement>('[data-checklist="first-week"]')!, 'first-week');
+</script>
+
+<style>
+  .fw {
+    display: grid;
+    gap: var(--space-4);
+    max-width: 48rem;
+  }
+  .fw__head {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    align-items: baseline;
+    gap: var(--space-2) var(--space-6);
+  }
+  .fw__count {
+    font-family: var(--font-display);
+    font-size: var(--text-xl);
+    font-weight: var(--weight-semibold);
+  }
+  .fw__track {
+    height: 0.5rem;
+    border-radius: var(--radius-pill);
+    background: var(--color-surface-3);
+    overflow: hidden;
+  }
+  .fw__fill {
+    display: block;
+    height: 100%;
+    background: var(--color-brand);
+    transform: scaleX(0);
+    transform-origin: left;
+    transition: transform var(--duration-slow) var(--ease-out);
+  }
+  .fw__list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    display: grid;
+    gap: var(--space-3);
+  }
+  .fw__row {
+    border-radius: var(--radius-lg);
+    background: var(--color-surface);
+    transition: background-color var(--duration-base) var(--ease-out);
+  }
+  .fw__row[data-done] {
+    background: var(--color-brand-tint);
+  }
+  .fw__label {
+    position: relative;
+    display: flex;
+    gap: var(--space-3);
+    align-items: flex-start;
+    min-height: 3rem;
+    padding: var(--space-4) var(--space-5) var(--space-2);
+    cursor: pointer;
+  }
+  .fw__label input {
+    position: absolute;
+    opacity: 0;
+    width: 1px;
+    height: 1px;
+  }
+  .fw__box {
+    display: grid;
+    place-items: center;
+    flex-shrink: 0;
+    width: 1.5rem;
+    height: 1.5rem;
+    border-radius: var(--radius-sm);
+    border: 1.5px solid var(--color-border-strong);
+    background: var(--color-surface);
+    color: transparent;
+  }
+  .fw__label input:checked + .fw__box {
+    background: var(--color-brand);
+    border-color: var(--color-brand);
+    color: var(--color-on-brand);
+  }
+  .fw__label input:focus-visible + .fw__box {
+    outline: 3px solid var(--color-focus);
+    outline-offset: 2px;
+  }
+  .fw__title {
+    font-size: var(--text-lg);
+    font-weight: var(--weight-semibold);
+    line-height: var(--leading-snug);
+  }
+  .fw__body {
+    display: grid;
+    gap: var(--space-3);
+    justify-items: start;
+    padding: 0 var(--space-5) var(--space-5) calc(var(--space-5) + 1.5rem + var(--space-3));
+    color: var(--color-ink-2);
+  }
+  .fw__body p {
+    min-width: 0;
+  }
+  @media (max-width: 30rem) {
+    .fw__body {
+      padding-left: var(--space-5);
+    }
+  }
+  .fw__done {
+    display: flex;
+    gap: var(--space-3);
+    align-items: flex-start;
+    padding: var(--space-4) var(--space-5);
+    border-radius: var(--radius-md);
+    background: var(--color-success-tint);
+  }
+  .fw__done :global(svg) {
+    color: var(--color-success);
+    flex-shrink: 0;
+  }
+  :global(.fw__legal) {
+    margin-top: var(--space-8);
+    padding-bottom: var(--space-section);
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .fw__fill,
+    .fw__row {
+      transition: none;
+    }
+  }
+</style>
