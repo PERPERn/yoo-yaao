@@ -6,7 +6,7 @@ import type { SupabaseClient } from '@supabase/supabase-js';
 import { supabase } from './supabase';
 
 export type Role = 'user' | 'partner' | 'admin';
-export type LeadStatus = 'new' | 'sent' | 'won' | 'lost' | 'spam';
+export type LeadStatus = 'new' | 'sent' | 'won' | 'lost' | 'spam' | 'delivered' | 'completed';
 export type PartnerLeadStatus = 'sent' | 'won' | 'lost';
 export type ListingApplicationStatus = 'new' | 'approved' | 'rejected' | 'paid';
 export type BuddyApplicationStatus = 'new' | 'approved' | 'rejected';
@@ -331,3 +331,77 @@ export function subscribeMessages(onInsert: (m: OpsMessage) => void): () => void
     .subscribe();
   return () => void sb.removeChannel(channel);
 }
+
+// ---------------------------------------------------------------------------
+// Delivery + reviews. RLS: supabase/migrations/*_delivery_reviews.sql.
+// Partner: upload to deliverables/<lead_id>/, insert lead_deliveries, set 'delivered'.
+// Customer: confirm ('completed'), then one review. The DB trigger checks every transition.
+// ---------------------------------------------------------------------------
+export const DELIVERY_BUCKET = 'deliverables';
+export const DELIVERY_NOTE_MAX = 2000;
+export const DELIVERY_FILE_MAX = 10 * 1024 * 1024; // matches the bucket's file_size_limit
+export const DELIVERY_FILES_MAX = 10;
+export const DELIVERY_TYPES = [
+  'application/pdf', 'image/png', 'image/jpeg', 'image/webp', 'image/heic',
+  'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+];
+export const REVIEW_MAX = 1000;
+
+export type DeliveryFile = { path: string; name: string; url: string | null }; // url: signed, 1 h
+export type OpsDelivery = { id: string; lead_id: string; note: string | null; files: DeliveryFile[]; created_at: string };
+export type OpsReview = { lead_id: string; rating: number; body: string | null; created_at: string };
+export type AgentRating = { agent_id: string; avg_rating: number; review_count: number };
+
+/** "1714000000000-a1b2-Visa letter.pdf" -> "Visa letter.pdf" */
+const fileName = (path: string) => path.split('/').pop()!.replace(/^\d+-[0-9a-f]{4}-/, '');
+
+/** Uploads files, records the delivery, then marks the lead delivered (that order: the DB needs the row first). */
+export async function deliverWork(leadId: string, note: string, files: File[]): Promise<OpsResult<{ id: string }>> {
+  if (!supabase) return { data: null, error: { message: 'Supabase is not configured.' } };
+  const paths: string[] = [];
+  for (const f of files) {
+    const safe = f.name.replace(/[^\w.\- ]+/g, '_').slice(-80) || 'file';
+    const path = `${leadId}/${Date.now()}-${crypto.randomUUID().slice(0, 4)}-${safe}`;
+    const { error } = await supabase.storage.from(DELIVERY_BUCKET).upload(path, f, { contentType: f.type, upsert: false });
+    if (error) return { data: null, error: { message: `${f.name}: ${error.message}` } };
+    paths.push(path);
+  }
+  const ins = await run<{ id: string }>((sb) =>
+    sb.from('lead_deliveries').insert({ lead_id: leadId, note: note.trim() || null, files: paths }).select('id').single(),
+  );
+  if (ins.error) return ins;
+  const st = await run<null>((sb) => sb.from('leads').update({ status: 'delivered' }).eq('id', leadId));
+  return st.error ? { data: null, error: st.error } : ins;
+}
+
+/** Deliveries for one lead, newest first, with 1-hour signed download links. */
+export async function listDeliveries(leadId: string): Promise<OpsResult<OpsDelivery[]>> {
+  const r = await run<{ id: string; lead_id: string; note: string | null; files: string[]; created_at: string }[]>((sb) =>
+    sb.from('lead_deliveries').select('id, lead_id, note, files, created_at').eq('lead_id', leadId).order('created_at', { ascending: false }),
+  );
+  if (r.error || !r.data || !supabase) return { data: null, error: r.error };
+  const all = r.data.flatMap((d) => d.files);
+  const signed = all.length ? (await supabase.storage.from(DELIVERY_BUCKET).createSignedUrls(all, 3600)).data ?? [] : [];
+  const url = new Map(signed.map((s) => [s.path, s.signedUrl ?? null]));
+  return {
+    data: r.data.map((d) => ({ ...d, files: d.files.map((p) => ({ path: p, name: fileName(p), url: url.get(p) ?? null })) })),
+    error: null,
+  };
+}
+
+/** One lead (customer sees their own; partner their assigned ones). */
+export const getLead = (leadId: string) => run<OpsLead>((sb) => sb.from('leads').select(LEAD_COLS).eq('id', leadId).maybeSingle());
+
+/** Customer: "I received the work" (delivered -> completed). */
+export const confirmCompleted = (leadId: string) =>
+  run<OpsLead>((sb) => sb.from('leads').update({ status: 'completed' }).eq('id', leadId).select(LEAD_COLS).single());
+
+/** Customer: one review per completed lead. agent_id is taken from the lead by the DB. */
+export const submitReview = (leadId: string, rating: number, body: string) =>
+  run<null>((sb) => sb.from('agency_reviews').insert({ lead_id: leadId, rating, body: body.trim() || null }));
+
+/** The signed-in customer's own reviews (lead_id is private, so this goes through an RPC). */
+export const myReviews = () => run<OpsReview[]>((sb) => sb.rpc('my_reviews'));
+
+/** Average stars + count for every reviewed agency (public). */
+export const agentRatings = () => run<AgentRating[]>((sb) => sb.from('agent_ratings').select('agent_id, avg_rating, review_count'));

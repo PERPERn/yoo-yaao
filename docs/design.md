@@ -31,13 +31,13 @@ Contrast ratios were computed with the WCAG 2.x formula.
 | `--night-ink` / `--night-ink-2` | `#E9EFEC` / `#9DB3B0` | Text on night | 14.6:1 / 7.7:1 |
 | `--night-brand` / `--night-accent` | `#5CC8BE` / `#F0B44C` | Teal and gold on night | 8.5:1 / 9.2:1 |
 | `--night-line` / `--night-line-strong` | `#2E5553` / `#5CC8BE` | Blueprint grid / drawing strokes | non-text |
-| status: info, success, warning, danger (+ `-tint`) | `#1D5FA8`, `#1E7A44`, `#845A0C`, `#B3261E` | Functional only | ≥4.6:1 on their tints |
+| status: info, success, warning, danger (+ `-tint`) | `#1D5FA8`, `#1A703E`, `#845A0C`, `#B3261E` | Functional only | ≥4.6:1 on their tints |
 | `--color-focus` | `#1D5FA8` | Focus ring (blue, distinct from teal) | ≥3:1 |
 
 - **Gold** marks money and premium only. **Never set small text in `--color-accent`.** It fails contrast; use `--color-accent-text`.
 - **Segment tints** are reserved for the three audiences (pricing panels, marquee chips, segment badges). They are not decoration.
 - **Night:** use `<Section tone="night">` (or `.section--night` / `.theme-night` on any wrapper). This remaps the semantic tokens locally, so every ui/ component inside renders correctly on dark. Add `.blueprint-grid` for the measuring-grid paper. **Use it at most once per page** (home scene 5); the footer is the other dark area.
-- **OS dark mode** (`prefers-color-scheme`) switches the whole site to the night palette. `data-theme="light"` on `<html>` forces light mode.
+- **Light only, on purpose.** Every layout sets `data-theme="light"` on `<html>` and `color-scheme: light`, so OS dark mode does not change the site. The paper palette is the brand, and the night scene and footer already give the pages their dark contrast. The `prefers-color-scheme: dark` block in `tokens.css` is kept but unused; turning it on would need a contrast check of every page first. Don't build dark mode before launch.
 
 Proportions: about 80% paper and surfaces, 15% ink, 5% teal, and a few gold moments per view. Use one teal primary button per view.
 
@@ -131,7 +131,7 @@ Global classes (`global.css`): `.container`, `.container-narrow`, `.section`, `.
 - Give every section a heading and use one `h1` per page (`Section titleLevel={1}` or your hero).
 - Keep tap targets at 44px or more. Label every field visibly, not with a placeholder. Put each error next to its field.
 - Add `data-reveal` to section children for GSAP. Content must stay visible if JS fails, so never hide it with CSS by default.
-- Check every page at 390px and in dark mode.
+- Check every page at 390px.
 
 **Don't**
 - Don't use gradients, glows, glassmorphism or backdrop blur, purple or indigo, emoji as icons, or decorative blobs.

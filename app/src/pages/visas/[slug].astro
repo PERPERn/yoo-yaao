@@ -34,7 +34,7 @@ const FAQ_MATCH: Record<VisaSlug, RegExp> = {
   dtv: /\bDTV\b/,
   ltr: /\bLTR\b|How much money/,
   privilege: /Privilege/,
-  'visa-exempt': /visa-free|exemption|60 days/i,
+  'visa-exempt': /visa-free|exemption/i,
   retirement: /retirement/i,
 };
 const RELATED: Record<VisaSlug, VisaSlug[]> = {
@@ -141,12 +141,12 @@ const nextPath = `/visas/${slug}`;
           {e.other.map((o) => <li><Icon name="check" size={18} />{o}</li>)}
         </ul>
       </div>
-      <aside class="elig__cta" data-reveal>
+      <div class="elig__cta" data-reveal>
         <Icon name="passport" size={28} />
         <h3>Not sure you qualify?</h3>
         <p>Answer 6 questions and see how {visa.shortName} ranks against the other four visas for your profile.</p>
         <Button href="/finder" variant="secondary" iconRight="arrow-right">Check with the Visa Finder</Button>
-      </aside>
+      </div>
     </div>
   </Section>
 

@@ -1,0 +1,276 @@
+---
+/**
+ * Customer side of a delivered job, inside the /messages thread: the agency's files (signed links),
+ * "Confirm received", then a 1–5 star review. Filled by delivery.ts; hidden until there is a delivery.
+ */
+import Button from '../ui/Button.astro';
+import { REVIEW_MAX } from '../../lib/ops';
+const star = 'M12 2.75l2.83 5.73 6.32.92-4.57 4.46 1.08 6.29L12 17.18l-5.66 2.97 1.08-6.29L2.85 9.4l6.32-.92L12 2.75z';
+---
+
+<details class="dlv" data-dlv hidden>
+  <summary class="dlv__sum">
+    <span class="dlv__dot" aria-hidden="true"></span>
+    <span data-dlv-summary>Work delivered</span>
+    <svg class="dlv__chev" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M6 9l6 6 6-6"></path></svg>
+  </summary>
+  <div class="dlv__body">
+    <ol class="dlv__list" data-dlv-list></ol>
+
+    <div class="dlv__step" data-dlv-confirm hidden>
+      <p class="dlv__muted">Got everything you need? Confirming closes the job and lets you review the agency.</p>
+      <Button size="sm" data-dlv-confirm-btn>Confirm received</Button>
+      <p class="dlv__err" data-dlv-confirm-err role="alert"></p>
+    </div>
+
+    <form class="dlv__step dlv__review" data-dlv-review novalidate hidden>
+      <fieldset class="dlv__stars-set" aria-describedby="dlv-rating-err">
+        <legend class="dlv__legend" data-dlv-legend>How was the agency?</legend>
+        <div class="dlv__stars">
+          {
+            [1, 2, 3, 4, 5].map((n) => (
+              <>
+                <input type="radio" name="rating" value={n} id={`dlv-star-${n}`} class="dlv__radio" />
+                <label for={`dlv-star-${n}`} class="dlv__star">
+                  <svg viewBox="0 0 24 24" width="30" height="30" aria-hidden="true"><path d={star} /></svg>
+                  <span class="sr-only">{n} star{n > 1 ? 's' : ''}</span>
+                </label>
+              </>
+            ))
+          }
+          <span class="dlv__star-word" data-dlv-word aria-hidden="true"></span>
+        </div>
+      </fieldset>
+      <p class="dlv__err" id="dlv-rating-err" data-dlv-rating-err role="alert"></p>
+      <label for="dlv-body" class="dlv__label">Your review <span class="dlv__muted">(optional, shown publicly without your name)</span></label>
+      <textarea id="dlv-body" class="dlv__text" rows="3" maxlength={REVIEW_MAX} data-dlv-body placeholder="What went well? Anything to improve?"></textarea>
+      <div class="dlv__row">
+        <Button type="submit" size="sm" data-dlv-submit>Post review</Button>
+        <p class="dlv__err" data-dlv-review-err role="alert"></p>
+      </div>
+    </form>
+
+    <p class="dlv__thanks" data-dlv-thanks role="status" tabindex="-1" hidden></p>
+  </div>
+</details>
+
+<style>
+  .dlv {
+    border-bottom: 1px solid var(--color-border);
+    background: var(--color-surface-2);
+  }
+  .dlv__sum {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+    min-height: var(--tap-min);
+    padding: var(--space-2) var(--space-5);
+    font-size: var(--text-sm);
+    font-weight: var(--weight-semibold);
+    cursor: pointer;
+    list-style: none;
+  }
+  .dlv__sum::-webkit-details-marker {
+    display: none;
+  }
+  .dlv__dot {
+    width: 0.55rem;
+    height: 0.55rem;
+    border-radius: 50%;
+    background: var(--color-success);
+  }
+  .dlv[data-needs] .dlv__dot {
+    background: var(--color-accent);
+    box-shadow: 0 0 0 0.25rem var(--color-accent-tint);
+  }
+  .dlv__chev {
+    margin-left: auto;
+    transition: transform var(--duration-fast) var(--ease-out);
+  }
+  .dlv[open] .dlv__chev {
+    transform: rotate(180deg);
+  }
+  .dlv__body {
+    display: grid;
+    gap: var(--space-4);
+    max-height: min(22rem, 45dvh);
+    overflow-y: auto;
+    padding: 0 var(--space-5) var(--space-4);
+  }
+  .dlv__list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: grid;
+    gap: var(--space-3);
+  }
+  .dlv__list :global(li) {
+    display: grid;
+    gap: var(--space-2);
+    padding: var(--space-3) var(--space-4);
+    border-radius: var(--radius-md);
+    background: var(--color-surface);
+    border: 1px solid var(--color-border);
+  }
+  .dlv__list :global(time) {
+    font-size: var(--text-xs);
+    color: var(--color-ink-3);
+  }
+  .dlv__list :global(.dlv__note) {
+    font-size: var(--text-sm);
+    white-space: pre-line;
+    overflow-wrap: anywhere;
+  }
+  .dlv__list :global(.dlv__file) {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+    font-size: var(--text-sm);
+    min-height: 2rem;
+    overflow-wrap: anywhere;
+  }
+  .dlv__muted {
+    color: var(--color-ink-2);
+    font-size: var(--text-sm);
+    font-weight: var(--weight-regular);
+  }
+  .dlv__step {
+    display: grid;
+    gap: var(--space-2);
+    justify-items: start;
+  }
+  .dlv__err {
+    font-size: var(--text-sm);
+    color: var(--color-danger);
+  }
+  .dlv__err:empty {
+    display: none;
+  }
+  .dlv__review {
+    gap: var(--space-3);
+    justify-items: stretch;
+  }
+  .dlv__stars-set {
+    border: 0;
+    margin: 0;
+    padding: 0;
+    min-width: 0;
+  }
+  .dlv__legend {
+    font-weight: var(--weight-semibold);
+    margin-bottom: var(--space-2);
+  }
+  .dlv__stars {
+    display: flex;
+    align-items: center;
+    gap: 2px;
+  }
+  .dlv__radio {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    opacity: 0;
+  }
+  .dlv__star {
+    display: grid;
+    place-items: center;
+    width: var(--tap-min);
+    height: var(--tap-min);
+    border-radius: var(--radius-md);
+    cursor: pointer;
+    fill: var(--color-surface-3);
+    stroke: var(--color-border-strong);
+    stroke-width: 1;
+    transition: fill var(--duration-fast) var(--ease-out), transform var(--duration-fast) var(--ease-out);
+  }
+  .dlv__radio:focus-visible + .dlv__star {
+    outline: 2px solid var(--color-focus);
+    outline-offset: 1px;
+  }
+  /* Fill every star up to the chosen one (and up to the hovered one). */
+  .dlv__stars:has(#dlv-star-1:checked) .dlv__star:nth-of-type(-n + 1),
+  .dlv__stars:has(#dlv-star-2:checked) .dlv__star:nth-of-type(-n + 2),
+  .dlv__stars:has(#dlv-star-3:checked) .dlv__star:nth-of-type(-n + 3),
+  .dlv__stars:has(#dlv-star-4:checked) .dlv__star:nth-of-type(-n + 4),
+  .dlv__stars:has(#dlv-star-5:checked) .dlv__star:nth-of-type(-n + 5) {
+    fill: var(--color-accent);
+    stroke: var(--color-accent);
+  }
+  @media (hover: hover) {
+    .dlv__stars:has(.dlv__star:hover) .dlv__star {
+      fill: var(--color-surface-3);
+      stroke: var(--color-border-strong);
+    }
+    .dlv__stars .dlv__star:has(~ .dlv__star:hover),
+    .dlv__stars .dlv__star:hover {
+      fill: var(--color-accent);
+      stroke: var(--color-accent);
+    }
+    .dlv__star:hover {
+      transform: scale(1.12);
+    }
+  }
+  .dlv__radio:checked + .dlv__star svg {
+    animation: dlv-pop 320ms var(--ease-out);
+  }
+  @keyframes dlv-pop {
+    40% {
+      transform: scale(1.3) rotate(-8deg);
+    }
+    100% {
+      transform: scale(1);
+    }
+  }
+  .dlv__star-word {
+    margin-left: var(--space-2);
+    font-size: var(--text-sm);
+    color: var(--color-ink-2);
+  }
+  .dlv__label {
+    font-size: var(--text-sm);
+    font-weight: var(--weight-semibold);
+  }
+  .dlv__text {
+    width: 100%;
+    padding: var(--space-3);
+    border: 1px solid var(--color-border-strong);
+    border-radius: var(--radius-md);
+    background: var(--color-surface);
+    color: var(--color-ink);
+    font: inherit;
+    resize: vertical;
+  }
+  .dlv__row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-3);
+    align-items: center;
+  }
+  .dlv__thanks {
+    padding: var(--space-3) var(--space-4);
+    border-radius: var(--radius-md);
+    background: var(--color-success-tint);
+    color: var(--color-success);
+    font-size: var(--text-sm);
+    font-weight: var(--weight-semibold);
+  }
+  @media (max-width: 47.99rem) {
+    .dlv__sum,
+    .dlv__body {
+      padding-inline: var(--space-4);
+    }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .dlv__radio:checked + .dlv__star svg {
+      animation: none;
+    }
+    .dlv__star:hover {
+      transform: none;
+    }
+  }
+  @media (forced-colors: active) {
+    .dlv__radio:checked + .dlv__star {
+      outline: 2px solid CanvasText;
+    }
+  }
+</style>

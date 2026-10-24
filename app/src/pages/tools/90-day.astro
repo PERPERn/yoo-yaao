@@ -98,7 +98,7 @@ const howTo = [
           <p class="result__window" data-window></p>
 
           <div class="result__next">
-            <p class="result__sub">The next three reports, if you file on time</p>
+            <p class="result__sub" data-next-label>The next three reports, if you file on time</p>
             <ol class="result__list tabular" data-next></ol>
           </div>
 
@@ -150,7 +150,6 @@ const howTo = [
   const result = $('[data-result]');
   const hint = $('[data-pro-hint]');
   const now = today();
-  input.max = toISODate(now);
 
   let dues: Date[] = [];
   let base: Date | null = null;
@@ -167,6 +166,8 @@ const howTo = [
 
   function render(scroll = false) {
     basis = basisValue();
+    // A trip can be planned ahead (future arrival); a report can only have happened already.
+    input.max = basis === 'report' ? toISODate(now) : '';
     base = parseISODate(input.value);
     hint.hidden = true;
     if (!input.value || !base) {
@@ -175,8 +176,8 @@ const howTo = [
       result.hidden = true;
       return;
     }
-    if (diffDays(base, now) > 0) {
-      showError(basis === 'entry' ? "Entry date can't be in the future." : "Report date can't be in the future.");
+    if (basis === 'report' && diffDays(base, now) > 0) {
+      showError("Report date can't be in the future.");
       empty.hidden = false;
       result.hidden = true;
       return;
@@ -187,7 +188,10 @@ const howTo = [
     history.replaceState(null, '', `${location.pathname}?${params}`);
 
     const due = addDays(base, 90);
-    dues = [due, addDays(due, 90), addDays(due, 180), addDays(due, 270)];
+    // The list skips cycles whose window has already closed, so it always shows dates still ahead.
+    let n = 2;
+    while (diffDays(now, addDays(base, 90 * n + 7)) > 0) n++;
+    dues = [due, ...[n, n + 1, n + 2].map((k) => addDays(base!, 90 * k))];
     const open = addDays(due, -15);
     const close = addDays(due, 7);
     const toDue = diffDays(due, now);
@@ -200,6 +204,7 @@ const howTo = [
 
     const overdue = diffDays(now, close) > 0;
     $('[data-overdue]').hidden = !overdue;
+    $('[data-next-label]').textContent = n > 2 ? 'Your next three upcoming reports' : 'The next three reports, if you file on time';
     const dueNow = !overdue && diffDays(now, open) >= 0;
     $('[data-duenow]').hidden = !dueNow;
     if (dueNow) $('[data-duenow-text]').textContent = `Your filing window is open now. File by ${fmtDate(close)}.`;

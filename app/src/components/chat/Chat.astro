@@ -8,6 +8,7 @@ import Icon from '../ui/Icon.astro';
 import Button from '../ui/Button.astro';
 import { visas } from '../../data/visas';
 import { MESSAGE_MAX } from '../../lib/ops';
+import DeliveryPanel from './DeliveryPanel.astro';
 import './chat.css';
 
 interface Props {
@@ -53,7 +54,9 @@ const visaNames = JSON.stringify(Object.fromEntries(visas.map((v) => [v.slug, v.
           <h2 id="chat-title" class="chat__title" data-chat-title></h2>
           <p class="chat__sub" data-chat-sub></p>
         </div>
+        {side === 'customer' && <span class="chat__rating" data-chat-rating hidden />}
       </header>
+      {side === 'customer' && <DeliveryPanel />}
       <p class="chat__safety">
         <Icon name="lock" size={16} />
         <span>Never share passport scans or payment details in chat. Pay only through Yoo Yaao.</span>

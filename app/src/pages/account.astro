@@ -10,10 +10,16 @@ import PayNotice from '../components/money/PayNotice.astro';
 import '../components/money/money.css';
 import { SITE } from '../config/site';
 import { visas } from '../data/visas';
+import { COUNTRIES } from '../data/finder';
 import { PRO_MONTHLY, PRO_YEARLY, CITY_OPTIONS } from '../components/money/plans';
 
 const visaOptions = [...visas.map((v) => ({ value: v.slug, label: v.shortName })), { value: 'other', label: 'Other' }];
 const visaNames = JSON.stringify(Object.fromEntries(visas.map((v) => [v.slug, v.shortName])));
+const notSet = { value: '', label: 'Not set' };
+const countryOptions = [notSet, ...COUNTRIES.map((c) => ({ value: c.code, label: c.name }))];
+const profileCityOptions = [notSet, ...CITY_OPTIONS, { value: 'other', label: 'Somewhere else' }];
+// Google sign-in shows only when the provider is enabled in Supabase (Auth → Providers → Google).
+const googleOn = import.meta.env.PUBLIC_AUTH_GOOGLE === '1';
 ---
 
 <Base title="Your account" description={`Log in to ${SITE.name} with a magic link to save your stays and get deadline reminders.`} noindex>
@@ -103,12 +109,30 @@ const visaNames = JSON.stringify(Object.fromEntries(visas.map((v) => [v.slug, v.
       <div class="login__intro stack" style="--stack-gap: var(--space-4)">
         <h2 class="acc-title" data-view-title>Log in or sign up</h2>
         <p class="lead">No password needed. We'll email you a secure link.</p>
+        <ol class="how">
+          <li>Enter your email. We send a one-time login link.</li>
+          <li>Open the <strong>newest</strong> email from us on this device and tap the link.</li>
+          <li>You're signed in. New here? You'll set up your profile in about a minute.</li>
+        </ol>
         <p class="muted" data-intent-note hidden></p>
       </div>
       <div class="form-panel">
         <div data-login-expired hidden>
-          <Callout tone="warning" title="That link has expired">Enter your email and we'll send a new one.</Callout>
+          <Callout tone="warning" title="That link has expired or was already used">
+            Each link works once, and sending a new one cancels the old ones. Enter your email for a fresh link.
+          </Callout>
         </div>
+        {
+          googleOn && (
+            <div class="oauth">
+              <Button variant="secondary" size="lg" block data-google>
+                <svg class="oauth__g" viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path fill="#4285F4" d="M22.5 12.3c0-.8-.1-1.5-.2-2.2H12v4.2h5.9a5 5 0 0 1-2.2 3.3v2.7h3.6c2-1.9 3.2-4.7 3.2-8z"/><path fill="#34A853" d="M12 23c3 0 5.5-1 7.3-2.7l-3.6-2.7c-1 .7-2.2 1.1-3.7 1.1-2.9 0-5.3-1.9-6.2-4.5H2.1v2.8A11 11 0 0 0 12 23z"/><path fill="#FBBC05" d="M5.8 14.2a6.6 6.6 0 0 1 0-4.3V7.1H2.1a11 11 0 0 0 0 9.9l3.7-2.8z"/><path fill="#EA4335" d="M12 5.4c1.6 0 3 .6 4.2 1.6l3.1-3.1A11 11 0 0 0 2.1 7.1l3.7 2.8C6.7 7.3 9.1 5.4 12 5.4z"/></svg>
+                Continue with Google
+              </Button>
+              <p class="or"><span>or use email</span></p>
+            </div>
+          )
+        }
         <form class="form" data-login novalidate>
           <Input
             name="email"
@@ -135,6 +159,8 @@ const visaNames = JSON.stringify(Object.fromEntries(visas.map((v) => [v.slug, v.
           <span class="done__mark"><Icon name="check" size={28} strokeWidth={2.25} /></span>
           <h2>Check your inbox</h2>
           <p>We sent a link to <strong data-sent-email></strong>. It expires in 1 hour.</p>
+          <p><strong>Next:</strong> open that email on this device and tap <em>Log in</em>. You can leave this page open; it signs you in by itself once the link is used.</p>
+          <p class="small muted">Only the newest email works. Sending another link cancels the earlier ones.</p>
           <div class="cluster">
             <Button variant="secondary" data-resend disabled>Resend link</Button>
             <Button variant="ghost" data-other-email>Use a different email</Button>
@@ -145,18 +171,59 @@ const visaNames = JSON.stringify(Object.fromEntries(visas.map((v) => [v.slug, v.
       </div>
     </div>
 
+    <!-- First-run setup / edit profile -->
+    <div data-view="setup" hidden class="login">
+      <div class="login__intro stack" style="--stack-gap: var(--space-4)">
+        <h2 class="acc-title" data-view-title data-setup-title>Set up your profile</h2>
+        <p class="lead" data-setup-lead>About a minute. We use your visa and entry date to pre-fill your stay, and you can change anything later.</p>
+      </div>
+      <form class="form-panel form" data-profile-form novalidate>
+        <div class="ph">
+          <span class="ph__preview" data-ph-preview aria-hidden="true"></span>
+          <div class="stack" style="--stack-gap: var(--space-1)">
+            <input id="p-photo" name="photo" type="file" accept="image/jpeg,image/png,image/webp" class="sr-only" aria-describedby="p-photo-hint" />
+            <label for="p-photo" class="ph__pick" data-ph-label>Add a photo</label>
+            <p id="p-photo-hint" class="small muted">Optional. JPG, PNG or WebP, up to 2 MB.</p>
+            <p class="small ph__err" role="alert" data-photo-error></p>
+          </div>
+        </div>
+        <Input name="displayName" id="p-name" label="Your name" required maxlength="60" autocomplete="name" />
+        <div class="form-row">
+          <Select name="nationality" id="p-nat" label="Nationality" optional options={countryOptions} />
+          <Select name="currentVisa" id="p-visa" label="Current visa" optional options={[notSet, ...visaOptions]} />
+        </div>
+        <div class="form-row">
+          <Input name="entryDate" id="p-entry" type="date" label="Date you entered Thailand" optional />
+          <Select name="city" id="p-city" label="City" optional options={profileCityOptions} />
+        </div>
+        <div data-profile-error hidden><Callout tone="danger" live><span data-profile-error-text></span></Callout></div>
+        <div class="cluster">
+          <Button type="submit" data-profile-save>Save and continue</Button>
+          <Button variant="ghost" data-profile-skip>Skip for now</Button>
+        </div>
+      </form>
+    </div>
+
     <!-- Logged in -->
     <div data-view="app" hidden class="app">
       <header class="app__head">
-        <div class="stack" style="--stack-gap: var(--space-2)">
+        <div class="app__who">
+          <span class="ph__preview app__avatar" data-me-avatar aria-hidden="true"></span>
+          <div class="stack" style="--stack-gap: var(--space-2)">
           <h2 class="acc-title app__hi" data-view-title>Hi <span data-hi-email></span></h2>
+          <p class="small muted" data-me-facts></p>
           <p class="cluster" style="--cluster-gap: var(--space-2)">
             <span data-plan-free><Badge variant="neutral">Free plan</Badge></span>
             <span data-plan-pro hidden><Badge variant="pro">Pro</Badge></span>
             <span class="small muted" data-plan-renew></span>
           </p>
+          </div>
         </div>
-        <Button variant="ghost" data-logout>Log out</Button>
+        <div class="cluster" style="--cluster-gap: var(--space-2)">
+          <Button variant="ghost" size="sm" icon="user" data-edit-profile>Edit profile</Button>
+          <Button variant="secondary" size="sm" icon="message" href="/messages">Messages</Button>
+          <Button variant="secondary" size="sm" icon="log-out" data-logout>Log out</Button>
+        </div>
       </header>
 
       <div class="app__grid">
@@ -249,7 +316,10 @@ const visaNames = JSON.stringify(Object.fromEntries(visas.map((v) => [v.slug, v.
           <section class="panel" aria-labelledby="msg-title">
             <h2 id="msg-title" class="panel__title">Messages</h2>
             <p class="small muted">Chat with the licensed agency handling your visa request.</p>
-            <p><a href="/messages">Open messages</a></p>
+            <div class="cluster">
+              <Button href="/messages" size="sm" icon="message">Open messages</Button>
+              <Button href="/experts" size="sm" variant="ghost">Find an agency</Button>
+            </div>
           </section>
 
           <!-- Bookings -->
@@ -379,6 +449,91 @@ const visaNames = JSON.stringify(Object.fromEntries(visas.map((v) => [v.slug, v.
   }
   .sent:focus {
     outline: none;
+  }
+  .how {
+    display: grid;
+    gap: var(--space-2);
+    margin: 0;
+    padding-left: 1.25rem;
+    color: var(--color-ink-2);
+  }
+  .oauth {
+    display: grid;
+    gap: var(--space-4);
+    margin-bottom: var(--space-4);
+  }
+  .oauth__g {
+    flex-shrink: 0;
+  }
+  .or {
+    display: flex;
+    align-items: center;
+    gap: var(--space-3);
+    color: var(--color-ink-2);
+    font-size: var(--text-sm);
+  }
+  .or::before,
+  .or::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: var(--color-border);
+  }
+  .ph {
+    display: flex;
+    align-items: center;
+    gap: var(--space-4);
+  }
+  .ph__preview {
+    display: grid;
+    place-items: center;
+    flex-shrink: 0;
+    width: 72px;
+    height: 72px;
+    overflow: hidden;
+    border-radius: 50%;
+    background: var(--color-brand-tint);
+    color: var(--color-brand);
+    font-family: var(--font-display);
+    font-size: 1.5rem;
+    font-weight: var(--weight-bold);
+  }
+  .ph__preview :global(img) {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+  .ph__pick {
+    align-self: start;
+    display: inline-flex;
+    align-items: center;
+    min-height: var(--tap-min);
+    padding: 0 var(--space-4);
+    border-radius: var(--radius-pill);
+    background: var(--color-surface-2);
+    color: var(--color-ink);
+    font-size: var(--text-sm);
+    font-weight: var(--weight-semibold);
+    cursor: pointer;
+  }
+  .ph__pick:hover {
+    background: var(--color-surface-3);
+  }
+  .ph:focus-within .ph__pick {
+    outline: 2px solid var(--color-focus);
+    outline-offset: 2px;
+  }
+  .ph__err {
+    color: var(--color-danger);
+  }
+  .ph__err:empty {
+    display: none;
+  }
+  .app__who {
+    display: flex;
+    gap: var(--space-4);
+    align-items: center;
+    min-width: 0;
   }
   .app {
     display: grid;
@@ -604,7 +759,12 @@ const visaNames = JSON.stringify(Object.fromEntries(visas.map((v) => [v.slug, v.
     getSession,
     getProfile,
     signInWithMagicLink,
+    signInWithGoogle,
     signOut,
+    updateProfile,
+    uploadAvatar,
+    AVATAR_TYPES,
+    AVATAR_MAX_BYTES,
     onAuthChange,
     listStays,
     saveStay,
@@ -629,7 +789,8 @@ const visaNames = JSON.stringify(Object.fromEntries(visas.map((v) => [v.slug, v.
     watchNetwork,
     type Validator,
   } from '../components/money/client';
-  import { rankVisas } from '../data/finder';
+  import { rankVisas, countryName } from '../data/finder';
+  import { CITY_OPTIONS, cityLabel } from '../components/money/plans';
   import type { FinderInput } from '../types/contracts';
 
   initMotion();
@@ -642,9 +803,10 @@ const visaNames = JSON.stringify(Object.fromEntries(visas.map((v) => [v.slug, v.
   const RETURN_KEY = 'yy:auth-return';
   const ONBOARD_KEY = 'yy:onboarding-hidden';
   const REM_KEY = 'yy:reminders';
+  const EMAIL_KEY = 'yy:last-email';
 
   const $ = <T extends HTMLElement = HTMLElement>(sel: string, scope: ParentNode = document) => scope.querySelector<T>(sel)!;
-  const show = (view: 'loading' | 'unavailable' | 'login' | 'app') => {
+  const show = (view: 'loading' | 'unavailable' | 'login' | 'setup' | 'app') => {
     document.querySelectorAll<HTMLElement>('[data-view]').forEach((el) => {
       el.hidden = el.dataset.view !== view;
       // Exactly one h1 in the DOM: the visible view's title. Hidden views keep theirs as h2.
@@ -811,6 +973,9 @@ const visaNames = JSON.stringify(Object.fromEntries(visas.map((v) => [v.slug, v.
     try {
       await signInWithMagicLink(email, redirectTo());
       restore();
+      try {
+        localStorage.setItem(EMAIL_KEY, email);
+      } catch {}
       $('[data-sent-email]').textContent = email;
       loginForm.hidden = true;
       $('[data-login-expired]').hidden = true;
@@ -838,6 +1003,18 @@ const visaNames = JSON.stringify(Object.fromEntries(visas.map((v) => [v.slug, v.
     e.preventDefault();
     if (!applyValidation(loginForm, validateLogin)) return;
     send(val(loginForm, 'email'), loginForm.querySelector('button[type="submit"]'));
+  });
+  document.querySelector<HTMLButtonElement>('[data-google]')?.addEventListener('click', async (e) => {
+    const btn = e.currentTarget as HTMLButtonElement;
+    const restore = setBusy(btn, 'Opening Google…');
+    loginErr.hidden = true;
+    try {
+      await signInWithGoogle(redirectTo()); // navigates away on success
+    } catch {
+      restore();
+      loginErrText.textContent = "Google sign-in isn't available right now. Use the email link instead.";
+      loginErr.hidden = false;
+    }
   });
   resendBtn.addEventListener('click', () => send($('[data-sent-email]').textContent ?? '', resendBtn));
   $('[data-other-email]').addEventListener('click', () => {
@@ -991,8 +1168,10 @@ const visaNames = JSON.stringify(Object.fromEntries(visas.map((v) => [v.slug, v.
       set('lastReportDate', s.lastReportDate);
       set('note', s.note);
     } else {
-      const fv = finderVisa();
+      const fv = profile?.currentVisa || finderVisa();
       if (fv) set('visaType', fv);
+      set('entryDate', profile?.entryDate);
+      if (CITY_OPTIONS.some((c) => c.value === profile?.city)) set('city', profile?.city);
     }
     $<HTMLInputElement>('#s-entry').max = new Date().toISOString().slice(0, 10);
     stayForm.hidden = false;
@@ -1126,7 +1305,16 @@ const visaNames = JSON.stringify(Object.fromEntries(visas.map((v) => [v.slug, v.
     if (!session) return;
     profile = await getProfile().catch(() => null);
     const pro = Boolean(profile?.isPro);
-    $('[data-hi-email]').textContent = session.user.email ?? 'there';
+    $('[data-hi-email]').textContent = profile?.displayName || session.user.email || 'there';
+    paintAvatar($('[data-me-avatar]'), profile?.avatarUrl ?? null, profile?.displayName || session.user.email || '');
+    $('[data-me-facts]').textContent = [
+      profile?.nationality ? countryName(profile.nationality) : '',
+      profile?.currentVisa ? (VISA_NAMES[profile.currentVisa] ?? 'Other visa') : '',
+      profile?.city ? (profile.city === 'other' ? 'Elsewhere in Thailand' : cityLabel(profile.city)) : '',
+      profile?.entryDate ? `Entered ${fmtDate(profile.entryDate)}` : '',
+    ]
+      .filter(Boolean)
+      .join(' · ');
     $('[data-plan-free]').hidden = pro;
     $('[data-plan-pro]').hidden = !pro;
     $('[data-plan-renew]').textContent = pro && profile?.proUntil ? `Renews ${fmtDate(profile.proUntil)}` : '';
@@ -1143,6 +1331,130 @@ const visaNames = JSON.stringify(Object.fromEntries(visas.map((v) => [v.slug, v.
     renderBookings();
     show('app');
   }
+
+  // ------------------------------------------------------------------ profile setup / edit
+  const profileForm = $<HTMLFormElement>('[data-profile-form]');
+  const photoInput = $<HTMLInputElement>('#p-photo');
+  const photoErr = $('[data-photo-error]');
+  const preview = $('[data-ph-preview]');
+  let setupMode: 'first' | 'edit' = 'first';
+  let photo: File | null = null;
+
+  function paintAvatar(el: HTMLElement, src: string | null, name: string) {
+    if (src) {
+      const img = document.createElement('img');
+      img.src = src;
+      img.alt = '';
+      el.replaceChildren(img);
+    } else {
+      el.textContent =
+        name
+          .split(/[\s._@-]+/)
+          .filter(Boolean)
+          .slice(0, 2)
+          .map((p) => p[0]!.toUpperCase())
+          .join('') || '?';
+    }
+  }
+
+  const validateProfile: Validator = (f) => {
+    const e: Record<string, string> = {};
+    const name = val(f, 'displayName');
+    if (!name) e['p-name'] = 'Enter your name, or choose Skip for now.';
+    else if (name.length > 60) e['p-name'] = 'Keep it under 60 characters.';
+    const entry = val(f, 'entryDate');
+    if (entry && parse(entry) > today()) e['p-entry'] = "Entry date can't be in the future.";
+    else if (entry && entry < '1990-01-01') e['p-entry'] = 'Check the year.';
+    return e;
+  };
+  liveValidate(profileForm, validateProfile);
+
+  photoInput.addEventListener('change', () => {
+    const f = photoInput.files?.[0] ?? null;
+    photoErr.textContent = '';
+    if (!f) return;
+    if (!AVATAR_TYPES.includes(f.type)) photoErr.textContent = 'Use a JPG, PNG or WebP image.';
+    else if (f.size > AVATAR_MAX_BYTES) photoErr.textContent = 'That photo is over 2 MB. Pick a smaller one.';
+    if (photoErr.textContent) {
+      photoInput.value = '';
+      return;
+    }
+    photo = f;
+    paintAvatar(preview, URL.createObjectURL(f), '');
+    $('[data-ph-label]').textContent = 'Change photo';
+  });
+
+  async function showSetup(mode: 'first' | 'edit') {
+    setupMode = mode;
+    const session = await getSession();
+    profile = profile ?? (await getProfile().catch(() => null));
+    photo = null;
+    photoInput.value = '';
+    photoErr.textContent = '';
+    $('[data-profile-error]').hidden = true;
+    const set = (name: string, v: string | null | undefined) => {
+      const el = profileForm.elements.namedItem(name) as HTMLInputElement | null;
+      if (el) el.value = v ?? '';
+    };
+    set('displayName', profile?.displayName ?? (mode === 'first' ? '' : null));
+    set('nationality', profile?.nationality);
+    set('currentVisa', profile?.currentVisa);
+    set('entryDate', profile?.entryDate);
+    set('city', profile?.city);
+    $<HTMLInputElement>('#p-entry').max = new Date().toISOString().slice(0, 10);
+    paintAvatar(preview, profile?.avatarUrl ?? null, profile?.displayName || session?.user.email || '');
+    $('[data-ph-label]').textContent = profile?.avatarUrl ? 'Change photo' : 'Add a photo';
+    $('[data-setup-title]').textContent = mode === 'first' ? 'Set up your profile' : 'Edit your profile';
+    $('[data-setup-lead]').hidden = mode !== 'first';
+    $('[data-profile-save] .btn__label').textContent = mode === 'first' ? 'Save and continue' : 'Save changes';
+    $('[data-profile-skip] .btn__label').textContent = mode === 'first' ? 'Skip for now' : 'Cancel';
+    show('setup');
+    $<HTMLInputElement>('#p-name').focus();
+  }
+
+  async function finishSetup() {
+    window.dispatchEvent(new Event('yy:profile')); // header menu repaints name + photo
+    if (setupMode === 'first') await afterLogin();
+    else {
+      await renderApp();
+      $<HTMLButtonElement>('[data-edit-profile]').focus();
+    }
+  }
+
+  profileForm.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    if (!applyValidation(profileForm, validateProfile)) return;
+    const restore = setBusy($<HTMLButtonElement>('[data-profile-save]'), 'Saving…');
+    $('[data-profile-error]').hidden = true;
+    try {
+      const avatar_url = photo ? await uploadAvatar(photo) : undefined;
+      await updateProfile({
+        display_name: val(profileForm, 'displayName'),
+        nationality: val(profileForm, 'nationality') || null,
+        current_visa: val(profileForm, 'currentVisa') || null,
+        entry_date: val(profileForm, 'entryDate') || null,
+        city: val(profileForm, 'city') || null,
+        onboarded_at: profile?.onboardedAt ?? new Date().toISOString(),
+        ...(avatar_url ? { avatar_url } : {}),
+      });
+      restore();
+      profile = null; // re-read on render
+      await finishSetup();
+    } catch (err) {
+      restore();
+      const msg = String((err as { message?: string })?.message ?? '');
+      $('[data-profile-error-text]').textContent = /2 MB|JPG|size|mime/i.test(msg)
+        ? msg
+        : "Couldn't save your profile. Check your connection and try again.";
+      $('[data-profile-error]').hidden = false;
+    }
+  });
+  $('[data-profile-skip]').addEventListener('click', async () => {
+    if (setupMode === 'first' && !profile?.onboardedAt) await updateProfile({ onboarded_at: new Date().toISOString() }).catch(() => undefined);
+    profile = null;
+    await finishSetup();
+  });
+  $('[data-edit-profile]').addEventListener('click', () => showSetup('edit'));
 
   async function upgrade(productId: 'pro_monthly' | 'pro_yearly', btn: HTMLButtonElement | null) {
     const scope = $('[data-upgrade]');
@@ -1182,7 +1494,7 @@ const visaNames = JSON.stringify(Object.fromEntries(visas.map((v) => [v.slug, v.
 
   // ------------------------------------------------------------------ boot
   async function boot() {
-    const expired = hash.get('error_code') === 'otp_expired' || /expired/i.test(hash.get('error_description') ?? '');
+    const expired = hash.has('error_code') || hash.has('error'); // otp_expired, or a link already used
     if (!supabase) {
       show('unavailable');
       if (isReturn) handleReturn(false);
@@ -1191,6 +1503,9 @@ const visaNames = JSON.stringify(Object.fromEntries(visas.map((v) => [v.slug, v.
     const session = await getSession().catch(() => null);
     if (!session) {
       show('login');
+      try {
+        if (!emailInput.value) emailInput.value = localStorage.getItem(EMAIL_KEY) ?? '';
+      } catch {}
       if (expired) {
         $('[data-login-expired]').hidden = false;
         history.replaceState(null, '', location.pathname + location.search);
@@ -1204,6 +1519,17 @@ const visaNames = JSON.stringify(Object.fromEntries(visas.map((v) => [v.slug, v.
       return;
     }
 
+    if (!isReturn) {
+      profile = await getProfile().catch(() => null);
+      if (profile && !profile.onboardedAt) {
+        await showSetup('first');
+        return;
+      }
+    }
+    await afterLogin();
+  }
+
+  async function afterLogin() {
     // Signed in and arrived with an intent: finish what the user started.
     if (!isReturn && (intent === 'pro_monthly' || intent === 'pro_yearly')) {
       clearReturn();
@@ -1227,9 +1553,20 @@ const visaNames = JSON.stringify(Object.fromEntries(visas.map((v) => [v.slug, v.
     if (isReturn) handleReturn(true);
   }
 
-  // Magic-link arrivals: the session lands a moment after load.
+  // Magic-link arrivals: the session lands a moment after load, or in another tab
+  // (supabase-js relays that over BroadcastChannel; storage/visibility cover older browsers).
+  const loginShown = () => document.querySelector<HTMLElement>('[data-view="login"]')?.hidden === false;
   onAuthChange((s) => {
-    if (s && document.querySelector<HTMLElement>('[data-view="login"]')?.hidden === false) boot();
+    if (s && loginShown()) boot();
+  });
+  const recheck = () => {
+    if (loginShown()) getSession().then((s) => s && boot()).catch(() => undefined);
+  };
+  window.addEventListener('storage', (e) => {
+    if (e.key && /^sb-.+-auth-token$/.test(e.key)) recheck();
+  });
+  document.addEventListener('visibilitychange', () => {
+    if (!document.hidden) recheck();
   });
   boot();
 </script>

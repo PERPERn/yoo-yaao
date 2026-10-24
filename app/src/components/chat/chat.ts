@@ -16,7 +16,8 @@ import { DEMO_MESSAGES, DEMO_REPLIES, DEMO_THREADS } from '../../data/demo-ops';
 type Side = OpsThread['my_role'];
 type Pending = OpsMessage & { state?: 'sending' | 'failed' };
 
-export function initChat(root: HTMLElement, { demo }: { demo: boolean }) {
+/** onOpen: called with the open thread (or null) so a page can add panels, e.g. the customer delivery panel. */
+export function initChat(root: HTMLElement, { demo, onOpen }: { demo: boolean; onOpen?: (t: OpsThread | null) => void }) {
   const side = root.dataset.side as Side;
   const $ = <T extends HTMLElement = HTMLElement>(s: string) => root.querySelector<T>(s)!;
   const listEl = $<HTMLUListElement>('[data-chat-threads]');
@@ -312,6 +313,7 @@ export function initChat(root: HTMLElement, { demo }: { demo: boolean }) {
     $('[data-chat-placeholder-text]').textContent = leadId && !current ? "This conversation isn't available. Pick one from the list." : 'Choose a conversation to read it.';
     pill.hidden = true;
     drawList();
+    onOpen?.(current);
     if (!current) return;
     const t = current;
     $('[data-chat-title]').textContent = titleOf(t);

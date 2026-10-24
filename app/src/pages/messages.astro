@@ -79,6 +79,7 @@ import Chat from '../components/chat/Chat.astro';
 
 <script>
   import { initChat } from '../components/chat/chat';
+  import { initDelivery } from '../components/chat/delivery';
   import { getSession } from '../lib/supabase';
 
   getSession()
@@ -89,6 +90,7 @@ import Chat from '../components/chat/Chat.astro';
       banner.hidden = !demo;
       // Keep ?lead=<id> (deep link from /experts) through the sign-in round trip.
       banner.querySelector<HTMLAnchorElement>('a')!.href = `/account?next=${encodeURIComponent(location.pathname + location.search)}`;
-      initChat(document.querySelector<HTMLElement>('[data-chat]')!, { demo });
+      const root = document.querySelector<HTMLElement>('[data-chat]')!;
+      initChat(root, { demo, onOpen: initDelivery(root, { demo }) });
     });
 </script>

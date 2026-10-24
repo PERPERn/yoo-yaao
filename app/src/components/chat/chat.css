@@ -183,6 +183,29 @@
 }
 .chat__head-text {
   min-width: 0;
+  flex: 1;
+}
+.chat__rating {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 0.3em;
+  flex: none;
+  padding: 0.2rem 0.6rem;
+  border-radius: var(--radius-pill);
+  background: var(--color-accent-tint);
+  color: var(--color-ink);
+  font-size: var(--text-sm);
+  font-variant-numeric: tabular-nums;
+}
+.chat__rating[hidden] {
+  display: none;
+}
+.chat__rating-star {
+  color: var(--color-accent-text);
+}
+.chat__rating-n {
+  color: var(--color-ink-2);
+  font-size: var(--text-xs);
 }
 .chat__title {
   font-size: var(--text-lg);

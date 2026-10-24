@@ -47,7 +47,7 @@ const jsonLd = JSON.stringify({
       )
     }
     <h1 class="phead__title" data-intro>{title}</h1>
-    {lead && <p class="phead__lead" data-intro>{lead}</p>}
+    {lead && <p class="phead__lead">{lead}</p>}
     {Astro.slots.has('default') && <div class="phead__extra" data-intro><slot /></div>}
   </div>
   {crumbs.length > 0 && <script type="application/ld+json" set:html={jsonLd} />}
@@ -73,6 +73,7 @@ const jsonLd = JSON.stringify({
     color: var(--color-ink-3);
   }
   .crumbs a {
+    padding-block: 4px; /* tap target >= 24px (WCAG 2.5.8) */
     color: var(--color-ink-2);
     text-decoration: underline;
     text-decoration-color: var(--color-border-strong);

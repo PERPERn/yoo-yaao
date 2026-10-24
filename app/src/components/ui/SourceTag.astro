@@ -68,6 +68,7 @@ if (verifiedAt) {
     margin-top: 0.1em;
   }
   .source__link {
+    padding-block: 5px; /* inline, so no reflow; lifts the tap target to >= 24px */
     color: var(--color-ink);
     font-weight: var(--weight-medium);
     text-decoration-color: var(--color-border-strong);

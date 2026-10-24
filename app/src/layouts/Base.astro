@@ -13,10 +13,14 @@
  */
 import '../styles/fonts.css';
 import '../styles/global.css';
+// Same hashed files fonts.css pulls in: preloading them skips the CSS → font request chain.
+import bodyFont from '@fontsource-variable/public-sans/files/public-sans-latin-wght-normal.woff2?url';
+import displayFont from '@fontsource-variable/bricolage-grotesque/files/bricolage-grotesque-latin-opsz-normal.woff2?url';
 import { SITE, NAV } from '../config/site';
 import Logo from '../components/ui/Logo.astro';
 import Button from '../components/ui/Button.astro';
 import Icon from '../components/ui/Icon.astro';
+import AccountMenu from '../components/auth/AccountMenu.astro';
 
 interface Props {
   title: string;
@@ -70,9 +74,11 @@ const year = new Date().getFullYear();
 
     <!-- PWA -->
     <link rel="manifest" href="/manifest.webmanifest" />
-    <meta name="theme-color" content="#f6f3ec" media="(prefers-color-scheme: light)" />
-    <meta name="theme-color" content="#0b1f21" media="(prefers-color-scheme: dark)" />
-    <meta name="color-scheme" content="light dark" />
+    <!-- Light only, on purpose (docs/design.md § Dark mode) -->
+    <meta name="theme-color" content="#f6f3ec" />
+    <meta name="color-scheme" content="light" />
+    <link rel="preload" href={bodyFont} as="font" type="font/woff2" crossorigin />
+    <link rel="preload" href={displayFont} as="font" type="font/woff2" crossorigin />
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-title" content={SITE.name} />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
@@ -103,7 +109,7 @@ const year = new Date().getFullYear();
 
         <div class="site-header__actions">
           <a href="/business" class="site-header__login" style="color: var(--color-ink-2); font-weight: var(--weight-medium)">For business</a>
-          <a href="/account" class="site-header__login" aria-current={isActive('/account') ? 'page' : undefined}>Log in</a>
+          <AccountMenu />
           <Button href="/finder" size="sm" iconRight="arrow-right" class="site-header__cta">Find my visa</Button>
           <button
             type="button"
@@ -135,7 +141,7 @@ const year = new Date().getFullYear();
           </ul>
           <div class="mobile-nav__actions">
             <Button href="/finder" size="lg" block iconRight="arrow-right">Find my visa</Button>
-            <Button href="/account" size="lg" variant="secondary" block>Log in</Button>
+            <AccountMenu variant="mobile" />
           </div>
         </nav>
       </div>
@@ -378,6 +384,11 @@ const year = new Date().getFullYear();
       display: inline-flex;
     }
   }
+  @media (max-width: 63.99rem) {
+    :global(html[data-signed-in]) .site-header :global(.site-header__cta) {
+      display: none;
+    }
+  }
 
   .menu-toggle {
     display: inline-grid;
@@ -562,8 +573,10 @@ const year = new Date().getFullYear();
     color: var(--color-accent);
     margin-top: 0.15em;
   }
-  .site-footer__disclaimer a {
+  /* Links inside running text: underline, never colour alone (WCAG 1.4.1) */
+  :is(.site-footer__disclaimer, .site-footer__copy) a {
     text-decoration: underline;
+    text-underline-offset: 0.2em;
   }
   .site-footer__copy {
     flex-shrink: 0;

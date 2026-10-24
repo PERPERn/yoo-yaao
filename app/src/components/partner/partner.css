@@ -230,6 +230,8 @@
   color: var(--color-info);
 }
 .pp-pill[data-s='won'],
+.pp-pill[data-s='delivered'],
+.pp-pill[data-s='completed'],
 .pp-pill[data-s='approved'],
 .pp-pill[data-s='paid'] {
   background: var(--color-success-tint);

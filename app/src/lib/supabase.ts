@@ -27,7 +27,26 @@ export type Profile = {
   plan: 'free' | 'pro';
   proUntil: string | null;
   isPro: boolean; // plan === 'pro' and pro_until in the future (or unset)
+  role: 'user' | 'partner' | 'admin';
+  displayName: string | null;
+  avatarUrl: string | null;
+  nationality: string | null; // ISO 3166-1 alpha-2
+  currentVisa: string | null; // VisaSlug or 'other'
+  entryDate: string | null; // 'YYYY-MM-DD'
+  city: string | null;
+  onboardedAt: string | null; // null = show the first-run setup
 };
+
+/** The columns an owner may change on their own profile (column grant + RLS in migration 0007). */
+export type ProfilePatch = Partial<{
+  display_name: string | null;
+  avatar_url: string | null;
+  nationality: string | null;
+  current_visa: string | null;
+  entry_date: string | null;
+  city: string | null;
+  onboarded_at: string | null;
+}>;
 
 export type StayInput = {
   id?: string;               // pass to update an existing stay
@@ -105,6 +124,15 @@ export async function signInWithMagicLink(email: string, redirectTo?: string): P
   if (error) throw error;
 }
 
+/** Google OAuth (full-page redirect). Needs the Google provider enabled in Supabase → Auth → Providers. */
+export async function signInWithGoogle(redirectTo?: string): Promise<void> {
+  const { error } = await client().auth.signInWithOAuth({
+    provider: 'google',
+    options: { redirectTo: redirectTo ?? `${window.location.origin}/account` },
+  });
+  if (error) throw error;
+}
+
 export async function signOut(): Promise<void> {
   if (!supabase) return;
   const { error } = await supabase.auth.signOut();
@@ -127,14 +155,52 @@ export async function getProfile(): Promise<Profile | null> {
   if (!session || !supabase) return null;
   const { data, error } = await supabase
     .from('profiles')
-    .select('id, email, plan, pro_until')
+    .select('id, email, plan, pro_until, role, display_name, avatar_url, nationality, current_visa, entry_date, city, onboarded_at')
     .eq('id', session.user.id)
     .maybeSingle();
   if (error) throw error;
   if (!data) return null;
   const proUntil = data.pro_until as string | null;
   const isPro = data.plan === 'pro' && (!proUntil || new Date(proUntil).getTime() > Date.now());
-  return { id: data.id, email: data.email, plan: data.plan, proUntil, isPro };
+  return {
+    id: data.id,
+    email: data.email,
+    plan: data.plan,
+    proUntil,
+    isPro,
+    role: data.role ?? 'user',
+    displayName: data.display_name,
+    avatarUrl: data.avatar_url,
+    nationality: data.nationality,
+    currentVisa: data.current_visa,
+    entryDate: data.entry_date,
+    city: data.city,
+    onboardedAt: data.onboarded_at,
+  };
+}
+
+/** Saves the signed-in user's own profile fields. */
+export async function updateProfile(patch: ProfilePatch): Promise<void> {
+  const session = await getSession();
+  if (!session) throw new Error('Sign in to edit your profile.');
+  const { error } = await client().from('profiles').update(patch).eq('id', session.user.id);
+  if (error) throw error;
+}
+
+export const AVATAR_TYPES = ['image/jpeg', 'image/png', 'image/webp'];
+export const AVATAR_MAX_BYTES = 2 * 1024 * 1024;
+
+/** Uploads to avatars/<uid>/avatar and returns its public URL (cache-busted). Bucket enforces 2 MB + types too. */
+export async function uploadAvatar(file: File): Promise<string> {
+  const session = await getSession();
+  if (!session) throw new Error('Sign in to upload a photo.');
+  if (!AVATAR_TYPES.includes(file.type)) throw new Error('Use a JPG, PNG or WebP image.');
+  if (file.size > AVATAR_MAX_BYTES) throw new Error('That photo is over 2 MB. Pick a smaller one.');
+  const path = `${session.user.id}/avatar`;
+  const bucket = client().storage.from('avatars');
+  const { error } = await bucket.upload(path, file, { upsert: true, contentType: file.type, cacheControl: '3600' });
+  if (error) throw error;
+  return `${bucket.getPublicUrl(path).data.publicUrl}?v=${Date.now()}`;
 }
 
 // ---------------------------------------------------------------------------

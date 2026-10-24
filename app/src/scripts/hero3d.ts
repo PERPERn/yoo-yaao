@@ -22,7 +22,8 @@
  *   - A static poster image is shown immediately (good LCP), then the WebGL scene crossfades in.
  *     `el.dataset.ready = 'true'` is set once the poster or the first frame is up (ui/HeroStage contract).
  *   - prefers-reduced-motion, Save-Data, or no WebGL: the poster stays and nothing else loads.
- *   - three + GLTFLoader are lazy-imported; nothing heavy loads until the element is near the viewport.
+ *   - three + GLTFLoader are lazy-imported; nothing heavy loads until the element is near the viewport
+ *     and the browser is idle. Story elements below 640px never load them (poster only).
  *   - Rendering pauses when off-screen, hidden, or (story mode) faded out; DPR capped at 2.
  */
 
@@ -187,7 +188,8 @@ export function mountHero(el: HTMLElement): HeroHandle {
   };
 
   // Static only: reduced motion, data saver, or no WebGL.
-  if (prefersReducedMotion() || saveData() || !hasWebGL()) {
+  // Story pages on small screens keep the poster too: three.js + the glb cost seconds on slow phones.
+  if (prefersReducedMotion() || saveData() || (el.hasAttribute("data-hero-story") && !story) || !hasWebGL()) {
     fallBack();
     return handle;
   }
@@ -198,12 +200,16 @@ export function mountHero(el: HTMLElement): HeroHandle {
       if (!entries.some((e) => e.isIntersecting)) return;
       lazyIO?.disconnect();
       lazyIO = null;
-      start().catch((err) => {
-        console.warn("[hero3d] falling back to static image:", err);
-        cleanup?.();
-        cleanup = null;
-        fallBack();
-      });
+      const go = () =>
+        start().catch((err) => {
+          console.warn("[hero3d] falling back to static image:", err);
+          cleanup?.();
+          cleanup = null;
+          fallBack();
+        });
+      // Wait for an idle moment so the download and shader compile never block first input.
+      if ("requestIdleCallback" in window) requestIdleCallback(go, { timeout: 1500 });
+      else setTimeout(go, 300);
     },
     { rootMargin: "200px" },
   );

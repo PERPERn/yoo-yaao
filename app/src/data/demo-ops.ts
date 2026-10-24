@@ -1,5 +1,7 @@
 import type {
+  AgentRating,
   ApplicationReview,
+  OpsDelivery,
   Applications,
   OpsAgent,
   OpsBooking,
@@ -246,3 +248,34 @@ export const DEMO_REPLIES: Record<OpsThread['my_role'], string[]> = {
     "Great, I'll send those over tonight.",
   ],
 };
+
+// ---------------------------------------------------------------------------
+// Delivery + reviews (/partner/deliver, the /messages delivery panel, /experts stars).
+// File links are null: demo files exist only as names, nothing is stored.
+// ---------------------------------------------------------------------------
+export const DEMO_DELIVERIES: OpsDelivery[] = [
+  {
+    id: 'demo-delivery-1', lead_id: 'demo-lead-6', created_at: ago(DAY + 60),
+    note: 'Your DTV application pack is ready: filled form, cover letter and the document checklist we went through. Upload them to the e-Visa portal in this order.',
+    files: [
+      { path: 'demo-lead-6/dtv-application-form.pdf', name: 'dtv-application-form.pdf', url: null },
+      { path: 'demo-lead-6/cover-letter.docx', name: 'cover-letter.docx', url: null },
+    ],
+  },
+  {
+    id: 'demo-delivery-2', lead_id: 'demo-lead-4', created_at: '2026-10-18T09:00:00Z',
+    note: 'Final LTR submission receipt attached.',
+    files: [{ path: 'demo-lead-4/ltr-receipt.pdf', name: 'ltr-receipt.pdf', url: null }],
+  },
+];
+
+/** Demo customer thread statuses (/messages): lead 6 has work waiting to be confirmed. */
+export const DEMO_THREAD_STATUS: Record<string, OpsLead['status']> = { 'demo-lead-3': 'sent', 'demo-lead-6': 'delivered' };
+
+export const DEMO_AGENT_RATINGS: AgentRating[] = [
+  { agent_id: 'demo-agent-siam', avg_rating: 4.8, review_count: 23 },
+  { agent_id: 'demo-agent-lanna', avg_rating: 4.6, review_count: 9 },
+];
+
+/** Which demo thread "Message" opens for each demo agency on /experts. */
+export const DEMO_AGENT_THREAD: Record<string, string> = { 'demo-agent-siam': 'demo-lead-3', 'demo-agent-lanna': 'demo-lead-6' };

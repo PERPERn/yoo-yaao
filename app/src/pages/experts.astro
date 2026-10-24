@@ -124,6 +124,30 @@ const faq = [
     </div>
   </section>
 
+  <Section
+    id="agencies"
+    title="Or message an agency directly"
+    lead="Licensed agencies we've checked. Ratings come from nomads who confirmed their work was delivered."
+  >
+    <p class="ag-demo" data-ag-demo hidden><Icon name="info" size={16} /> Demo view — sample data</p>
+    <ul class="ag-list" data-ag-list aria-busy="true">
+      <li class="ag-card ag-card--skel" aria-hidden="true"></li>
+      <li class="ag-card ag-card--skel" aria-hidden="true"></li>
+    </ul>
+    <p class="ag-err" data-ag-err role="alert"></p>
+    <template data-ag-tpl>
+      <li class="ag-card">
+        <div class="ag-card__top">
+          <h3 class="ag-card__name" data-name></h3>
+          <span class="ag-verified"><Icon name="shield" size={14} /> Verified</span>
+        </div>
+        <p class="ag-card__meta" data-meta></p>
+        <p class="ag-stars" data-stars></p>
+        <Button size="sm" iconRight="arrow-right" data-message>Message</Button>
+      </li>
+    </template>
+  </Section>
+
   <Section tone="tint" width="narrow" title="Questions about expert help">
     <Accordion items={faq} />
   </Section>
@@ -140,6 +164,88 @@ const faq = [
     border: 0;
     margin: 0;
     padding: 0;
+  }
+  .ag-demo {
+    display: inline-flex;
+    gap: var(--space-2);
+    align-items: center;
+    margin-bottom: var(--space-4);
+    padding: var(--space-1) var(--space-3);
+    border: 1px dashed var(--color-accent);
+    border-radius: var(--radius-pill);
+    font-size: var(--text-sm);
+    font-weight: var(--weight-semibold);
+    color: var(--color-accent-text);
+  }
+  .ag-list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: grid;
+    gap: var(--space-4);
+    grid-template-columns: repeat(auto-fill, minmax(min(100%, 18rem), 1fr));
+  }
+  .ag-list :global(.ag-card) {
+    display: grid;
+    gap: var(--space-2);
+    align-content: start;
+    justify-items: start;
+    padding: var(--space-5);
+    border-radius: var(--radius-lg);
+    background: var(--color-surface);
+    border: 1px solid var(--color-border);
+    min-width: 0;
+  }
+  .ag-list :global(.ag-card--skel) {
+    min-height: 10rem;
+    background: var(--color-surface-2);
+  }
+  .ag-list :global(.ag-card__top) {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-2);
+    align-items: baseline;
+    justify-content: space-between;
+    width: 100%;
+  }
+  .ag-list :global(.ag-card__name) {
+    font-size: var(--text-lg);
+    overflow-wrap: anywhere;
+  }
+  .ag-list :global(.ag-verified) {
+    display: inline-flex;
+    gap: 0.25em;
+    align-items: center;
+    font-size: var(--text-xs);
+    font-weight: var(--weight-semibold);
+    color: var(--color-success);
+  }
+  .ag-list :global(.ag-card__meta) {
+    font-size: var(--text-sm);
+    color: var(--color-ink-2);
+  }
+  .ag-list :global(.ag-stars) {
+    display: inline-flex;
+    gap: 0.35em;
+    align-items: baseline;
+    font-size: var(--text-sm);
+    font-variant-numeric: tabular-nums;
+    margin-bottom: var(--space-2);
+  }
+  .ag-list :global(.ag-stars__icons) {
+    color: var(--color-accent);
+    letter-spacing: 0.05em;
+  }
+  .ag-list :global(.ag-stars__n) {
+    color: var(--color-ink-2);
+  }
+  .ag-err {
+    margin-top: var(--space-3);
+    color: var(--color-danger);
+    font-size: var(--text-sm);
+  }
+  .ag-err:empty {
+    display: none;
   }
   .disclosure {
     display: flex;
@@ -162,8 +268,100 @@ const faq = [
     shortRef,
     type Validator,
   } from '../components/money/client';
+  import { agentRatings, listAgents, type AgentRating, type OpsAgent } from '../lib/ops';
+  import { getSession } from '../lib/supabase';
+  import { DEMO_AGENTS, DEMO_AGENT_RATINGS, DEMO_AGENT_THREAD } from '../data/demo-ops';
+  import { ratingLabel } from '../components/chat/delivery';
+  import { cityLabel } from '../components/money/plans';
+
+  const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+  /** Agency cards: verified agents from the DB, or sample ones (labelled) when there are none. */
+  async function initAgencies() {
+    const ul = document.querySelector<HTMLUListElement>('[data-ag-list]')!;
+    const tpl = document.querySelector<HTMLTemplateElement>('[data-ag-tpl]')!;
+    const err = document.querySelector<HTMLElement>('[data-ag-err]')!;
+    const [a, r, session] = await Promise.all([listAgents(), agentRatings(), getSession().catch(() => null)]);
+    let agents: OpsAgent[] = (a.data ?? []).filter((x) => x.verified);
+    let ratings: AgentRating[] = r.data ?? [];
+    const demo = !agents.length;
+    if (demo) {
+      agents = DEMO_AGENTS.filter((x) => x.verified);
+      ratings = DEMO_AGENT_RATINGS;
+    }
+    document.querySelector<HTMLElement>('[data-ag-demo]')!.hidden = !demo;
+    const byId = new Map(ratings.map((x) => [x.agent_id, x]));
+
+    async function contact(agent: OpsAgent, btn: HTMLButtonElement) {
+      err.textContent = '';
+      const sample = !UUID_RE.test(agent.id);
+      // Signed out + sample agency: open its sample chat, nothing is written.
+      if (!session && sample) return void (location.href = `/messages?lead=${encodeURIComponent(DEMO_AGENT_THREAD[agent.id] ?? '')}`);
+      if (!session) return void (location.href = `/account?next=${encodeURIComponent(`/experts?contact=${agent.id}#agencies`)}`);
+      const email = session.user.email ?? '';
+      const restore = setBusy(btn, 'Opening chat…');
+      const res = await postJson('/api/lead', {
+        name: email.split('@')[0].slice(0, 120) || 'Nomad',
+        email,
+        source: 'experts:message',
+        message: `Hi ${agent.name}, I'd like to ask about my visa.`,
+        agentId: sample ? null : agent.id, // sample agency: our team picks a real one
+      });
+      if (!res.ok || typeof res.data.id !== 'string') {
+        restore();
+        err.textContent = res.ok ? 'Something went wrong. Try again.' : formErrorMessage(res);
+        return;
+      }
+      location.href = `/messages?lead=${encodeURIComponent(res.data.id)}`;
+    }
+
+    ul.replaceChildren(
+      ...agents.map((ag) => {
+        const li = tpl.content.firstElementChild!.cloneNode(true) as HTMLLIElement;
+        li.querySelector('[data-name]')!.textContent = ag.name;
+        li.querySelector('[data-meta]')!.textContent = [ag.company, ag.cities.map(cityLabel).join(', ')].filter(Boolean).join(' · ');
+        const stars = li.querySelector<HTMLElement>('[data-stars]')!;
+        const rt = byId.get(ag.id);
+        if (rt) {
+          const full = Math.round(rt.avg_rating);
+          const icons = document.createElement('span');
+          icons.className = 'ag-stars__icons';
+          icons.textContent = '★'.repeat(full) + '☆'.repeat(5 - full);
+          icons.setAttribute('aria-hidden', 'true');
+          const val = document.createElement('strong');
+          val.textContent = rt.avg_rating.toFixed(1);
+          const n = document.createElement('span');
+          n.className = 'ag-stars__n';
+          n.textContent = `(${rt.review_count})`;
+          n.setAttribute('aria-hidden', 'true');
+          val.setAttribute('aria-hidden', 'true');
+          const sr = document.createElement('span');
+          sr.className = 'sr-only';
+          sr.textContent = ratingLabel(rt);
+          stars.append(icons, val, n, sr);
+        } else stars.textContent = 'No reviews yet';
+        const btn = li.querySelector<HTMLButtonElement>('[data-message]')!;
+        btn.setAttribute('aria-label', `Message ${ag.name}`);
+        btn.addEventListener('click', () => contact(ag, btn));
+        return li;
+      }),
+    );
+    ul.removeAttribute('aria-busy');
+
+    // Back from sign-in with ?contact=<agent id>: finish what the user started.
+    const want = new URLSearchParams(location.search).get('contact');
+    if (want && session) {
+      const url = new URL(location.href);
+      url.searchParams.delete('contact');
+      history.replaceState(null, '', url); // a reload must not create a second lead
+      const ag = agents.find((x) => x.id === want);
+      const btn = [...ul.querySelectorAll<HTMLButtonElement>('[data-message]')][agents.indexOf(ag!)];
+      if (ag && btn) void contact(ag, btn);
+    }
+  }
 
   initMotion();
+  void initAgencies();
   const form = document.querySelector<HTMLFormElement>('[data-lead]')!;
   const errBox = form.querySelector<HTMLElement>('[data-form-error]')!;
   const errText = form.querySelector<HTMLElement>('[data-form-error-text]')!;

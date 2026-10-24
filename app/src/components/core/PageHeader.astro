@@ -24,7 +24,7 @@ const hasAside = Astro.slots.has('aside');
     <div class:list={['phead__grid', hasAside && 'phead__grid--aside']}>
       <div class="phead__text">
         <h1 class="phead__title" data-intro>{title}</h1>
-        {lead && <p class="phead__lead" data-intro>{lead}</p>}
+        {lead && <p class="phead__lead">{lead}</p>}
         <div class="phead__extra" data-intro><slot /></div>
       </div>
       {hasAside && <div class="phead__aside" data-intro><slot name="aside" /></div>}

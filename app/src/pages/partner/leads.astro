@@ -9,6 +9,8 @@ const filters = [
   { id: 'sent', label: 'Replied' },
   { id: 'won', label: 'Won' },
   { id: 'lost', label: 'Lost' },
+  { id: 'delivered', label: 'Delivered' },
+  { id: 'completed', label: 'Completed' },
 ];
 ---
 
@@ -53,6 +55,7 @@ const filters = [
       <div class="pp-lead__actions">
         <a class="pp-lead__email" data-email></a>
         <Button size="sm" variant="ghost" href="/partner/messages" data-chat>Open chat</Button>
+        <Button size="sm" variant="secondary" href="/partner/deliver" data-deliver>Deliver work</Button>
         <div class="cluster" style="--cluster-gap: var(--space-2)" role="group" data-actions>
           <Button size="sm" data-to="sent">Mark replied</Button>
           <Button size="sm" variant="secondary" data-to="won">Won</Button>
@@ -73,7 +76,7 @@ const filters = [
   const tpl = document.querySelector<HTMLTemplateElement>('[data-lead-tpl]')!;
   const chips = [...document.querySelectorAll<HTMLButtonElement>('[data-filter]')];
 
-  const FILTERS = ['all', 'new', 'sent', 'won', 'lost'];
+  const FILTERS = ['all', 'new', 'sent', 'won', 'lost', 'delivered', 'completed'];
   const q = new URLSearchParams(location.search).get('status');
   let filter = q && FILTERS.includes(q) ? q : 'all';
   let leads: Lead[] = [];
@@ -101,6 +104,11 @@ const filters = [
     const chat = $('[data-chat]') as HTMLAnchorElement;
     chat.href = `/partner/messages?lead=${encodeURIComponent(l.id)}`;
     chat.setAttribute('aria-label', `Open chat with ${l.name}`);
+    const deliver = $('[data-deliver]') as HTMLAnchorElement;
+    if (['new', 'sent', 'won', 'delivered'].includes(l.status)) {
+      deliver.href = `/partner/deliver?lead=${encodeURIComponent(l.id)}`;
+      deliver.setAttribute('aria-label', `Deliver work to ${l.name}`);
+    } else deliver.remove();
     const group = $('[data-actions]');
     group.setAttribute('aria-label', `Update status for ${l.name}`);
     group.querySelectorAll<HTMLButtonElement>('[data-to]').forEach((b) => {

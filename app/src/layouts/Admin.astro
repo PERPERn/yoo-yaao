@@ -106,7 +106,7 @@ const path = Astro.url.pathname.replace(/\/$/, '') || '/';
 
         <section class="adm-denied" data-denied hidden aria-labelledby="denied-title">
           <span class="adm-denied__icon"><Icon name="lock" size={28} /></span>
-          <h1 id="denied-title">Not authorised</h1>
+          <h2 id="denied-title">Not authorised</h2>
           <p class="muted">
             This account (<span data-denied-email></span>) doesn't have admin access. If you think it should, ask the team
             to set your role.
@@ -408,7 +408,7 @@ const path = Astro.url.pathname.replace(/\/$/, '') || '/';
     justify-items: start;
     gap: var(--space-4);
   }
-  .adm-denied h1 {
+  .adm-denied h2 {
     margin: 0;
     font-family: var(--font-display);
     font-size: var(--text-2xl);

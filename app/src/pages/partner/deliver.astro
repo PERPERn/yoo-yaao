@@ -1,0 +1,437 @@
+---
+import PartnerShell from '../../components/partner/PartnerShell.astro';
+import Button from '../../components/ui/Button.astro';
+import Callout from '../../components/ui/Callout.astro';
+import Icon from '../../components/ui/Icon.astro';
+import { DELIVERY_FILES_MAX, DELIVERY_NOTE_MAX, DELIVERY_TYPES } from '../../lib/ops';
+---
+
+<PartnerShell
+  title="Deliver work · Partner portal"
+  heading="Deliver work"
+  lede="Upload the finished documents for this client. They get a private download link and confirm they've received it."
+  current="leads"
+>
+  <div class="stack" style="--stack-gap: var(--space-5)">
+    <a href="/partner/leads" class="dv-back pp-small">← All leads</a>
+
+    <div data-dv-missing hidden>
+      <Callout tone="warning" title="Lead not found">
+        This lead isn't assigned to you, or the link is wrong. <a href="/partner/leads">Pick a lead from your list</a>.
+      </Callout>
+    </div>
+
+    <div class="pp-grid" data-dv-main hidden>
+      <div class="stack" style="--stack-gap: var(--space-5)">
+        <section class="pp-panel" aria-labelledby="dv-lead-name">
+          <div class="pp-panel__row">
+            <h2 class="pp-h2" id="dv-lead-name" data-dv-name></h2>
+            <span class="pp-pill" data-dv-pill></span>
+          </div>
+          <p class="pp-small pp-muted" data-dv-facts></p>
+          <p class="pp-lead__msg" data-dv-msg hidden></p>
+        </section>
+
+        <form class="pp-panel dv-form" data-dv-form novalidate aria-labelledby="dv-form-title">
+          <h2 class="pp-h2" id="dv-form-title">Send the finished work</h2>
+          <p class="pp-small pp-muted" data-dv-closed hidden>This lead is closed, so you can't add a delivery.</p>
+
+          <div class="dv-drop" data-dv-drop>
+            <input
+              type="file"
+              id="dv-files"
+              class="dv-input"
+              multiple
+              accept={[...DELIVERY_TYPES, '.pdf', '.docx', '.heic'].join(',')}
+              aria-describedby="dv-files-hint dv-files-err"
+              data-dv-input
+            />
+            <label for="dv-files" class="dv-drop__label">
+              <span class="dv-drop__icon" aria-hidden="true"><Icon name="plus" size={22} /></span>
+              <span class="dv-drop__title">Drop files here or <u>choose files</u></span>
+              <span class="pp-small pp-muted" id="dv-files-hint">PDF, Word (.docx) or images · up to 10 MB each · max {DELIVERY_FILES_MAX} files</span>
+            </label>
+          </div>
+          <p class="dv-err" id="dv-files-err" data-dv-files-err role="alert"></p>
+          <ul class="dv-files" data-dv-list aria-label="Files to send"></ul>
+
+          <div class="dv-field">
+            <label for="dv-note" class="dv-label">Note to the client <span class="pp-muted">(optional)</span></label>
+            <textarea id="dv-note" class="dv-note" rows="4" maxlength={DELIVERY_NOTE_MAX} aria-describedby="dv-note-count" data-dv-note placeholder="What's in the pack and what they should do next"></textarea>
+            <p class="pp-count" id="dv-note-count" data-dv-count>0 / {DELIVERY_NOTE_MAX}</p>
+          </div>
+
+          <div class="dv-submit">
+            <Button type="submit" data-dv-submit>Deliver and notify client</Button>
+            <p class="pp-small pp-muted" data-dv-demo-note hidden>Demo: files stay in this tab. Nothing is uploaded.</p>
+          </div>
+          <div data-dv-ok hidden tabindex="-1" class="dv-ok" role="status">
+            <Icon name="check" size={20} /> <span data-dv-ok-text>Delivered. The client can now download the files and confirm.</span>
+          </div>
+          <div data-dv-fail hidden>
+            <Callout tone="danger" title="Couldn't deliver" live><span data-dv-fail-text></span></Callout>
+          </div>
+        </form>
+      </div>
+
+      <section class="pp-panel" aria-labelledby="dv-prev-title">
+        <h2 class="pp-h2" id="dv-prev-title">Previous deliveries</h2>
+        <p class="pp-small pp-muted" data-dv-prev-empty>Nothing delivered yet.</p>
+        <ol class="dv-prev" data-dv-prev></ol>
+      </section>
+    </div>
+  </div>
+</PartnerShell>
+
+<style>
+  .dv-back {
+    justify-self: start;
+  }
+  .dv-form {
+    gap: var(--space-4);
+  }
+  .dv-drop {
+    position: relative;
+    border: 2px dashed var(--color-border-strong);
+    border-radius: var(--radius-lg);
+    background: var(--color-surface-2);
+    transition: border-color var(--duration-fast) var(--ease-out), background-color var(--duration-fast) var(--ease-out);
+  }
+  .dv-drop:hover,
+  .dv-drop[data-over] {
+    border-color: var(--color-brand);
+    background: var(--color-brand-tint);
+  }
+  .dv-drop:focus-within {
+    outline: 2px solid var(--color-focus);
+    outline-offset: 2px;
+  }
+  .dv-drop[data-disabled] {
+    opacity: 0.55;
+    pointer-events: none;
+  }
+  .dv-input {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    opacity: 0;
+  }
+  .dv-drop__label {
+    display: grid;
+    justify-items: center;
+    gap: var(--space-2);
+    padding: var(--space-6) var(--space-4);
+    text-align: center;
+    cursor: pointer;
+  }
+  .dv-drop__icon {
+    display: grid;
+    place-items: center;
+    width: 2.75rem;
+    height: 2.75rem;
+    border-radius: 50%;
+    background: var(--color-surface);
+    color: var(--color-brand);
+    box-shadow: var(--elev-1);
+  }
+  .dv-drop__title {
+    font-weight: var(--weight-semibold);
+  }
+  .dv-err {
+    font-size: var(--text-sm);
+    color: var(--color-danger);
+  }
+  .dv-err:empty {
+    display: none;
+  }
+  .dv-files,
+  .dv-prev {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: grid;
+    gap: var(--space-2);
+  }
+  .dv-files:empty {
+    display: none;
+  }
+  .dv-files :global(li) {
+    display: flex;
+    align-items: center;
+    gap: var(--space-3);
+    padding: var(--space-2) var(--space-2) var(--space-2) var(--space-4);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    min-width: 0;
+  }
+  .dv-files :global(.dv-fname),
+  .dv-prev :global(.dv-fname) {
+    flex: 1;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .dv-files :global(.dv-size) {
+    font-size: var(--text-xs);
+    color: var(--color-ink-3);
+    font-variant-numeric: tabular-nums;
+  }
+  .dv-files :global(.dv-remove) {
+    display: grid;
+    place-items: center;
+    min-width: var(--tap-min);
+    min-height: var(--tap-min);
+    border: 0;
+    border-radius: var(--radius-md);
+    background: transparent;
+    color: var(--color-ink-2);
+    cursor: pointer;
+  }
+  .dv-files :global(.dv-remove:hover) {
+    background: var(--color-surface-2);
+    color: var(--color-danger);
+  }
+  .dv-field {
+    display: grid;
+    gap: var(--space-2);
+  }
+  .dv-label {
+    font-weight: var(--weight-semibold);
+    font-size: var(--text-sm);
+  }
+  .dv-note {
+    width: 100%;
+    padding: var(--space-3);
+    border: 1px solid var(--color-border-strong);
+    border-radius: var(--radius-md);
+    background: var(--color-surface);
+    color: var(--color-ink);
+    font: inherit;
+    resize: vertical;
+  }
+  .dv-submit {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-3);
+    align-items: center;
+  }
+  .dv-ok {
+    display: flex;
+    gap: var(--space-2);
+    align-items: center;
+    padding: var(--space-3) var(--space-4);
+    border-radius: var(--radius-md);
+    background: var(--color-success-tint);
+    color: var(--color-success);
+    font-weight: var(--weight-semibold);
+  }
+  .dv-prev :global(li) {
+    display: grid;
+    gap: var(--space-2);
+    padding-block: var(--space-3);
+    border-top: 1px solid var(--color-border);
+  }
+  .dv-prev :global(li:first-child) {
+    border-top: 0;
+    padding-top: 0;
+  }
+  .dv-prev :global(time) {
+    font-size: var(--text-xs);
+    color: var(--color-ink-3);
+  }
+  .dv-prev :global(.dv-pnote) {
+    font-size: var(--text-sm);
+    white-space: pre-line;
+    overflow-wrap: anywhere;
+  }
+  .dv-prev :global(.dv-pfile) {
+    display: flex;
+    gap: var(--space-2);
+    font-size: var(--text-sm);
+    min-width: 0;
+  }
+</style>
+
+<script>
+  import { boot, loadDeliveries, submitDelivery, statusLabel, fmtDate, cityName, visaName, type OpsDelivery, type OpsLead } from '../../components/partner/portal';
+  import { DELIVERY_FILE_MAX, DELIVERY_FILES_MAX, DELIVERY_NOTE_MAX, DELIVERY_TYPES } from '../../lib/ops';
+
+  const $ = <T extends HTMLElement = HTMLElement>(s: string) => document.querySelector<T>(s)!;
+  const form = $<HTMLFormElement>('[data-dv-form]');
+  const input = $<HTMLInputElement>('[data-dv-input]');
+  const drop = $('[data-dv-drop]');
+  const list = $<HTMLUListElement>('[data-dv-list]');
+  const fileErr = $('[data-dv-files-err]');
+  const note = $<HTMLTextAreaElement>('[data-dv-note]');
+  const count = $('[data-dv-count]');
+  const submit = $<HTMLButtonElement>('[data-dv-submit]');
+  const ok = $('[data-dv-ok]');
+  const fail = $('[data-dv-fail]');
+  const prev = $<HTMLOListElement>('[data-dv-prev]');
+
+  const OPEN = ['new', 'sent', 'won', 'delivered']; // a partner can still deliver (again) in these
+  const leadId = new URLSearchParams(location.search).get('lead');
+  let lead: OpsLead | undefined;
+  let files: File[] = [];
+  let busy = false;
+  let currentPrev: OpsDelivery[] = [];
+
+  const size = (n: number) => (n < 1024 * 1024 ? `${Math.max(1, Math.round(n / 1024))} KB` : `${(n / 1024 / 1024).toFixed(1)} MB`);
+  const el = <K extends keyof HTMLElementTagNameMap>(tag: K, cls = '', text?: string) => {
+    const e = document.createElement(tag);
+    if (cls) e.className = cls;
+    if (text !== undefined) e.textContent = text;
+    return e;
+  };
+  // Some browsers give .heic/.docx an empty type; fall back to the extension.
+  const okType = (f: File) => DELIVERY_TYPES.includes(f.type) || /\.(pdf|docx|png|jpe?g|webp|heic)$/i.test(f.name);
+
+  function add(incoming: FileList | File[]) {
+    const problems: string[] = [];
+    for (const f of incoming) {
+      if (!okType(f)) problems.push(`${f.name}: only PDF, Word (.docx) or images.`);
+      else if (f.size > DELIVERY_FILE_MAX) problems.push(`${f.name} is ${size(f.size)}; the limit is 10 MB.`);
+      else if (files.length >= DELIVERY_FILES_MAX) problems.push(`Max ${DELIVERY_FILES_MAX} files per delivery.`);
+      else if (!files.some((x) => x.name === f.name && x.size === f.size)) files.push(f);
+    }
+    fileErr.textContent = [...new Set(problems)].join(' ');
+    drawFiles();
+  }
+
+  function drawFiles() {
+    list.replaceChildren(
+      ...files.map((f, i) => {
+        const li = el('li');
+        const rm = el('button', 'dv-remove');
+        rm.type = 'button';
+        rm.setAttribute('aria-label', `Remove ${f.name}`);
+        rm.innerHTML = '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg>';
+        rm.addEventListener('click', () => {
+          files.splice(i, 1);
+          drawFiles();
+          (list.querySelectorAll<HTMLButtonElement>('.dv-remove')[Math.min(i, files.length - 1)] ?? input).focus();
+        });
+        li.append(el('span', 'dv-fname', f.name), el('span', 'dv-size', size(f.size)), rm);
+        return li;
+      }),
+    );
+    input.setAttribute('aria-invalid', String(!!fileErr.textContent));
+  }
+
+  input.addEventListener('change', () => {
+    if (input.files) add(input.files);
+    input.value = ''; // same file can be picked again after removing it
+  });
+  drop.addEventListener('dragover', (e) => {
+    e.preventDefault();
+    drop.dataset.over = '';
+  });
+  drop.addEventListener('dragleave', () => delete drop.dataset.over);
+  drop.addEventListener('drop', (e) => {
+    e.preventDefault();
+    delete drop.dataset.over;
+    if (e.dataTransfer?.files.length) add(e.dataTransfer.files);
+  });
+  note.addEventListener('input', () => {
+    count.textContent = `${note.value.length} / ${DELIVERY_NOTE_MAX}`;
+  });
+
+  function drawPrev(ds: OpsDelivery[]) {
+    $('[data-dv-prev-empty]').hidden = ds.length > 0;
+    prev.replaceChildren(
+      ...ds.map((d) => {
+        const li = el('li');
+        const t = el('time', '', new Date(d.created_at).toLocaleString('en-GB', { dateStyle: 'medium', timeStyle: 'short' }));
+        t.dateTime = d.created_at;
+        li.append(t);
+        if (d.note) li.append(el('p', 'dv-pnote', d.note));
+        for (const f of d.files) {
+          const row = el('span', 'dv-pfile');
+          if (f.url) {
+            const a = el('a', 'dv-fname', f.name);
+            a.href = f.url;
+            a.target = '_blank';
+            a.rel = 'noopener';
+            row.append(a);
+          } else row.append(el('span', 'dv-fname', f.name));
+          li.append(row);
+        }
+        return li;
+      }),
+    );
+  }
+
+  function drawLead() {
+    if (!lead) return;
+    $('[data-dv-name]').textContent = lead.name;
+    const pill = $('[data-dv-pill]');
+    pill.dataset.s = lead.status;
+    pill.textContent = statusLabel(lead.status);
+    $('[data-dv-facts]').textContent = [visaName(lead.visa_slug), cityName(lead.city), lead.nationality, fmtDate(lead.created_at)].filter(Boolean).join(' · ');
+    const msg = $('[data-dv-msg]');
+    msg.hidden = !lead.message;
+    msg.textContent = lead.message ?? '';
+    const open = OPEN.includes(lead.status);
+    $('[data-dv-closed]').hidden = open;
+    submit.disabled = !open;
+    input.disabled = !open;
+    note.disabled = !open;
+    if (open) delete drop.dataset.disabled;
+    else drop.dataset.disabled = '';
+  }
+
+  form.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    if (busy || !lead) return;
+    ok.hidden = fail.hidden = true;
+    if (!files.length) {
+      fileErr.textContent = 'Add at least one file to deliver.';
+      drawFiles();
+      input.focus();
+      return;
+    }
+    busy = true;
+    submit.disabled = true;
+    submit.setAttribute('aria-busy', 'true');
+    try {
+      const local = await submitDelivery(lead.id, note.value, files);
+      lead.status = 'delivered';
+      currentPrev = local ? [local, ...currentPrev] : await loadDeliveries(lead.id);
+      drawPrev(currentPrev);
+      files = [];
+      note.value = '';
+      count.textContent = `0 / ${DELIVERY_NOTE_MAX}`;
+      drawFiles();
+      drawLead();
+      $('[data-dv-ok-text]').textContent = local
+        ? 'Demo delivery added below. Nothing was uploaded.'
+        : `Delivered. ${lead.name} can now download the files and confirm.`;
+      ok.hidden = false;
+      ok.focus();
+    } catch (err) {
+      $('[data-dv-fail-text]').textContent = `${err instanceof Error ? err.message : 'Unknown error'}. Your files are still listed; try again.`;
+      fail.hidden = false;
+    } finally {
+      busy = false;
+      submit.removeAttribute('aria-busy');
+      submit.disabled = !lead || !OPEN.includes(lead.status);
+    }
+  });
+
+  boot(async (d, isDemo) => {
+    $('[data-dv-demo-note]').hidden = !isDemo;
+    // Demo with no ?lead: show the first sample lead so the page is never empty.
+    lead = d.leads.find((l) => l.id === leadId) ?? (isDemo && !leadId ? d.leads.find((l) => OPEN.includes(l.status)) : undefined);
+    $('[data-dv-missing]').hidden = !!lead;
+    $('[data-dv-main]').hidden = !lead;
+    if (!lead) return;
+    drawLead();
+    try {
+      currentPrev = await loadDeliveries(lead.id);
+    } catch {
+      currentPrev = [];
+    }
+    drawPrev(currentPrev);
+  });
+</script>

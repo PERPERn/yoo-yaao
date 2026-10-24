@@ -7,7 +7,7 @@
   All text pairs meet WCAG AA (ratios inline, against --color-bg unless stated). See docs/design.md.
 */
 :root {
-  color-scheme: light dark;
+  color-scheme: light; /* light only by design; the dark block below is unused (docs/design.md) */
 
   /* ---------- Neutrals ---------- */
   --color-bg: #f6f3ec;            /* warm paper */
@@ -45,7 +45,7 @@
   /* ---------- Status (functional) ---------- */
   --color-info: #1d5fa8;
   --color-info-tint: #e7eff9;     /* 5.6:1 */
-  --color-success: #1e7a44;
+  --color-success: #1a703e;      /* 5.1:1 on surface-2, 4.6:1 on surface-3 */
   --color-success-tint: #e3f2e8;  /* 4.6:1 */
   --color-warning: #845a0c;
   --color-warning-tint: #f5e6c8;  /* 4.9:1 */

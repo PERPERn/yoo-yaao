@@ -1,0 +1,409 @@
+---
+/**
+ * Session-aware account entry for the site headers.
+ *   variant="header"  → "Log in" link, or an avatar + name button that opens a small menu.
+ *   variant="mobile"  → the same items as a flat list inside the mobile nav panel.
+ * tone="inverse" for the dark Business header.
+ * Supabase is only loaded when a session token (or a magic-link hash) is present, so
+ * signed-out visitors don't download the auth client on every page.
+ */
+import Button from '../ui/Button.astro';
+import Icon from '../ui/Icon.astro';
+
+interface Props {
+  variant?: 'header' | 'mobile';
+  tone?: 'default' | 'inverse';
+}
+const { variant = 'header', tone = 'default' } = Astro.props;
+const id = `acct-menu-${variant}`;
+const path = Astro.url.pathname.replace(/\/$/, '') || '/';
+const current = (href: string) => (path === href || path.startsWith(`${href}/`) ? 'page' : undefined);
+---
+
+<div class:list={['am', `am--${variant}`, `am--${tone}`]} data-acct-menu={variant}>
+  {
+    variant === 'header' ? (
+      <a href="/account" class="am__login" data-am-login aria-current={current('/account')}>
+        Log in
+      </a>
+    ) : (
+      <div data-am-login>
+        <Button href="/account" size="lg" variant="secondary" block>
+          Log in
+        </Button>
+      </div>
+    )
+  }
+
+  <div class="am__wrap" data-am-signed hidden>
+    {
+      variant === 'header' ? (
+        <button type="button" class="am__btn" aria-expanded="false" aria-controls={id} data-am-toggle>
+          <span class="am__avatar" data-am-avatar aria-hidden="true" />
+          <span class="am__name" data-am-name />
+          <span class="am__dot" data-am-dot hidden />
+          <span class="sr-only" data-am-sr>Account menu</span>
+          <Icon name="chevron-down" size={16} class="am__chev" />
+        </button>
+      ) : (
+        <p class="am__who">
+          <span class="am__avatar" data-am-avatar aria-hidden="true" />
+          <span class="am__name" data-am-name />
+        </p>
+      )
+    }
+    <ul id={id} class="am__list" data-am-list hidden={variant === 'header'}>
+      <li><a href="/account" aria-current={current('/account')}><Icon name="user" size={18} /> My profile</a></li>
+      <li>
+        <a href="/messages" aria-current={current('/messages')}>
+          <Icon name="message" size={18} /> Messages <span class="am__badge" data-am-unread hidden />
+        </a>
+      </li>
+      <li data-am-role="partner" hidden><a href="/partner" aria-current={current('/partner')}><Icon name="briefcase" size={18} /> Partner portal</a></li>
+      <li data-am-role="admin" hidden><a href="/admin" aria-current={current('/admin')}><Icon name="shield" size={18} /> Admin</a></li>
+      <li class="am__sep">
+        <button type="button" data-am-logout><Icon name="log-out" size={18} /> Log out</button>
+      </li>
+    </ul>
+  </div>
+</div>
+
+<script>
+  import type { Session } from '@supabase/supabase-js';
+
+  const roots = [...document.querySelectorAll<HTMLElement>('[data-acct-menu]')];
+  const tokenStored = () => {
+    try {
+      return Object.keys(localStorage).some((k) => /^sb-.+-auth-token$/.test(k));
+    } catch {
+      return false;
+    }
+  };
+  // Magic-link / OAuth arrivals carry tokens (implicit flow) or an error in the URL fragment.
+  const authInUrl = /(^|[#&])(access_token|error_code)=/.test(location.hash);
+
+  const initials = (s: string) =>
+    s
+      .split(/[\s._@-]+/)
+      .filter(Boolean)
+      .slice(0, 2)
+      .map((p) => p[0]!.toUpperCase())
+      .join('') || '?';
+
+  function close(root: HTMLElement, focus = false) {
+    const btn = root.querySelector<HTMLButtonElement>('[data-am-toggle]');
+    const list = root.querySelector<HTMLElement>('[data-am-list]');
+    if (!btn || !list || btn.getAttribute('aria-expanded') !== 'true') return;
+    btn.setAttribute('aria-expanded', 'false');
+    list.hidden = true;
+    if (focus) btn.focus();
+  }
+
+  roots.forEach((root) => {
+    const btn = root.querySelector<HTMLButtonElement>('[data-am-toggle]');
+    const list = root.querySelector<HTMLElement>('[data-am-list]');
+    if (!btn || !list) return;
+    btn.addEventListener('click', () => {
+      const open = btn.getAttribute('aria-expanded') !== 'true';
+      btn.setAttribute('aria-expanded', String(open));
+      list.hidden = !open;
+      if (open) list.querySelector<HTMLElement>('a')?.focus();
+    });
+    root.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape') close(root, true);
+    });
+    root.addEventListener('focusout', (e) => {
+      if (!root.contains(e.relatedTarget as Node | null)) close(root);
+    });
+  });
+  document.addEventListener('click', (e) => {
+    roots.forEach((r) => {
+      if (!r.contains(e.target as Node)) close(r);
+    });
+  });
+
+  let started = false;
+  async function start() {
+    if (started || !roots.length) return;
+    started = true;
+    const { supabase, getProfile, onAuthChange, signOut } = await import('../../lib/supabase');
+    if (!supabase) return;
+
+    async function render(session: Session | null) {
+      const profile = session ? await getProfile().catch(() => null) : null;
+      const email = session?.user.email ?? '';
+      const name = profile?.displayName || email.split('@')[0] || 'Account';
+      document.documentElement.toggleAttribute('data-signed-in', Boolean(session)); // Base hides the small-screen CTA to fit the avatar
+      roots.forEach((root) => {
+        root.querySelector<HTMLElement>('[data-am-login]')!.hidden = Boolean(session);
+        root.querySelector<HTMLElement>('[data-am-signed]')!.hidden = !session;
+        if (!session) return close(root);
+        root.querySelectorAll<HTMLElement>('[data-am-name]').forEach((el) => (el.textContent = name));
+        root.querySelectorAll<HTMLElement>('[data-am-avatar]').forEach((el) => {
+          if (profile?.avatarUrl) {
+            const img = document.createElement('img');
+            img.src = profile.avatarUrl;
+            img.alt = '';
+            img.width = img.height = 32;
+            el.replaceChildren(img);
+          } else el.textContent = initials(profile?.displayName || email);
+        });
+        const sr = root.querySelector('[data-am-sr]');
+        if (sr) sr.textContent = `Account menu for ${name}`;
+        root.querySelectorAll<HTMLElement>('[data-am-role]').forEach((li) => {
+          const r = li.dataset.amRole;
+          li.hidden = !(profile?.role === r || (r === 'partner' && profile?.role === 'admin'));
+        });
+      });
+      if (!session) return;
+      // Unread badge: optional, never blocks the menu.
+      import('../../lib/ops')
+        .then(({ listThreads }) => listThreads())
+        .then(({ data }) => {
+          const n = (data ?? []).reduce((a, t) => a + (Number(t.unread) || 0), 0);
+          roots.forEach((root) => {
+            const badge = root.querySelector<HTMLElement>('[data-am-unread]');
+            if (badge) {
+              badge.hidden = n === 0;
+              badge.textContent = n > 9 ? '9+' : String(n);
+              badge.setAttribute('aria-label', `${n} unread`);
+            }
+            const dot = root.querySelector<HTMLElement>('[data-am-dot]');
+            if (dot) dot.hidden = n === 0;
+          });
+        })
+        .catch(() => undefined);
+      // First sign-in that landed somewhere else (e.g. the Site URL fallback): send them to set up their profile.
+      if (authInUrl && profile && !profile.onboardedAt && !location.pathname.startsWith('/account')) location.replace('/account');
+    }
+
+    const { data } = await supabase.auth.getSession();
+    await render(data.session);
+    onAuthChange((s) => render(s));
+    window.addEventListener('yy:profile', async () => render((await supabase.auth.getSession()).data.session));
+    roots.forEach((root) =>
+      root.querySelector('[data-am-logout]')?.addEventListener('click', async () => {
+        await signOut().catch(() => undefined);
+        location.href = '/account';
+      }),
+    );
+  }
+
+  if (tokenStored() || authInUrl) start();
+  // Signed in from another tab (e.g. the magic link opened in a new tab).
+  window.addEventListener('storage', (e) => {
+    if (e.key && /^sb-.+-auth-token$/.test(e.key)) start();
+  });
+</script>
+
+<style>
+  .am {
+    position: relative;
+  }
+  .am__login {
+    display: inline-flex;
+    align-items: center;
+    min-height: var(--tap-min);
+    padding: 0 var(--space-3);
+    color: inherit;
+    font-size: var(--text-sm);
+    font-weight: var(--weight-semibold);
+    text-decoration: none;
+    border-radius: var(--radius-pill);
+  }
+  .am--default .am__login:hover {
+    color: var(--color-brand);
+    background: var(--color-surface-2);
+  }
+  .am--inverse .am__login:hover {
+    background: rgb(255 255 255 / 0.08);
+  }
+  .am__btn {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-2);
+    min-height: var(--tap-min);
+    padding: 0 var(--space-2) 0 6px;
+    border: 0;
+    border-radius: var(--radius-pill);
+    background: transparent;
+    color: inherit;
+    font: inherit;
+    font-size: var(--text-sm);
+    font-weight: var(--weight-semibold);
+    cursor: pointer;
+    transition: background-color var(--duration-fast) var(--ease-out);
+  }
+  .am--default .am__btn:hover,
+  .am--default .am__btn[aria-expanded='true'] {
+    background: var(--color-surface-2);
+  }
+  .am--inverse .am__btn:hover,
+  .am--inverse .am__btn[aria-expanded='true'] {
+    background: rgb(255 255 255 / 0.1);
+  }
+  .am__avatar {
+    display: grid;
+    place-items: center;
+    flex-shrink: 0;
+    width: 32px;
+    height: 32px;
+    overflow: hidden;
+    border-radius: 50%;
+    background: var(--color-brand-tint);
+    color: var(--color-brand);
+    font-family: var(--font-display);
+    font-size: 0.75rem;
+    font-weight: var(--weight-bold);
+  }
+  .am__avatar :global(img) {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+  .am__name {
+    max-width: 9rem;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .am--header .am__name {
+    display: none;
+  }
+  .am__dot {
+    position: absolute;
+    top: 6px;
+    left: 30px;
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    background: var(--color-accent);
+    box-shadow: 0 0 0 2px var(--color-bg);
+  }
+  .am__chev {
+    display: none;
+  }
+  .am--header .am__list {
+    position: absolute;
+    top: calc(100% + 6px);
+    right: 0;
+    z-index: var(--z-overlay);
+    min-width: 14rem;
+    margin: 0;
+    padding: 6px;
+    list-style: none;
+    border-radius: var(--radius-lg);
+    background: var(--color-surface);
+    color: var(--color-ink);
+    box-shadow: var(--elev-2);
+    transform-origin: top right;
+    animation: am-in 160ms cubic-bezier(0.23, 1, 0.32, 1);
+  }
+  @keyframes am-in {
+    from {
+      opacity: 0;
+      transform: scale(0.96);
+    }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .am--header .am__list {
+      animation: none;
+    }
+  }
+  .am__list a,
+  .am__list button {
+    display: flex;
+    align-items: center;
+    gap: var(--space-3);
+    width: 100%;
+    min-height: var(--tap-min);
+    padding: 0 var(--space-3);
+    border: 0;
+    border-radius: var(--radius-md);
+    background: none;
+    color: var(--color-ink);
+    font: inherit;
+    font-size: var(--text-sm);
+    font-weight: var(--weight-medium);
+    text-align: left;
+    text-decoration: none;
+    cursor: pointer;
+  }
+  .am__list a:hover,
+  .am__list button:hover {
+    background: var(--color-surface-2);
+  }
+  .am__list a[aria-current='page'] {
+    color: var(--color-brand);
+    font-weight: var(--weight-semibold);
+  }
+  .am__list :global(svg) {
+    flex-shrink: 0;
+    color: var(--color-ink-2);
+  }
+  .am__sep {
+    margin-top: 4px;
+    padding-top: 4px;
+    box-shadow: 0 -1px 0 var(--color-border);
+  }
+  .am__badge {
+    margin-left: auto;
+    min-width: 1.4rem;
+    padding: 0 0.4rem;
+    border-radius: var(--radius-pill);
+    background: var(--color-accent);
+    color: var(--color-on-accent);
+    font-size: var(--text-xs);
+    font-weight: var(--weight-bold);
+    line-height: 1.4rem;
+    text-align: center;
+    font-variant-numeric: tabular-nums;
+  }
+
+  /* Mobile panel: flat list, bigger targets. */
+  .am--mobile .am__who {
+    display: flex;
+    align-items: center;
+    gap: var(--space-3);
+    margin: 0 0 var(--space-2);
+    font-weight: var(--weight-semibold);
+  }
+  .am--mobile .am__name {
+    max-width: none;
+  }
+  .am--mobile .am__list {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+  .am--mobile .am__list a,
+  .am--mobile .am__list button {
+    min-height: 52px;
+    padding: 0;
+    font-size: var(--text-lg);
+  }
+
+  /* The header login link stays in the mobile panel on small screens, as before. */
+  .am--header .am__login {
+    display: none;
+  }
+  @media (min-width: 64rem) {
+    .am--header.am--default .am__login {
+      display: inline-flex;
+    }
+    .am--header .am__name {
+      display: inline;
+    }
+    .am__chev {
+      display: inline;
+    }
+  }
+  /* Business header already has "Partner sign-in"; show only the signed-in menu there. */
+  .am--inverse .am__login {
+    display: none;
+  }
+  .am--inverse .am__dot {
+    box-shadow: 0 0 0 2px var(--color-inverse-bg);
+  }
+</style>

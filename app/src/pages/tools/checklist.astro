@@ -40,6 +40,7 @@ import { visas } from '../../data/visas';
         <div data-empty>
           <EmptyState
             title="Pick a visa to load its checklist."
+            titleLevel={2}
             description="Every list comes from the visa's official requirements. Not sure which visa? The Visa Finder ranks them for you in about 2 minutes."
             icon="passport"
             actionLabel="Find my visa"
@@ -59,7 +60,7 @@ import { visas } from '../../data/visas';
         }
       </div>
 
-      <aside class="side" aria-label="Save and sync">
+      <div class="side">
         <div class="side__card">
           <h2 class="side__title">Take it with you</h2>
           <p class="small">Free: saved in this browser. Pro syncs your list to your phone and laptop.</p>
@@ -70,7 +71,7 @@ import { visas } from '../../data/visas';
           <ProHint data-pdf-hint />
         </div>
         <LegalNote />
-      </aside>
+      </div>
     </div>
   </Section>
 </Base>

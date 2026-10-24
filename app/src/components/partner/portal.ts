@@ -1,7 +1,9 @@
 // Browser glue for /partner pages: picks demo or live data, toggles the shell's views, and routes
 // writes to ops.ts (live) or local state (demo). Pages only render; they never talk to Supabase.
 import {
+  deliverWork,
   getOpsSession,
+  listDeliveries,
   listThreads,
   myApplications,
   myLeads,
@@ -9,17 +11,18 @@ import {
   updateLeadStatus,
   updateMyListing,
   type Applications,
+  type OpsDelivery,
   type ListingPatch,
   type OpsLead,
   type OpsListing,
   type PartnerLeadStatus,
 } from '../../lib/ops';
-import { DEMO_MY_APPLICATIONS, DEMO_MY_LEADS, DEMO_MY_LISTINGS, DEMO_SESSION_PARTNER, DEMO_THREADS } from '../../data/demo-ops';
+import { DEMO_DELIVERIES, DEMO_MY_APPLICATIONS, DEMO_MY_LEADS, DEMO_MY_LISTINGS, DEMO_SESSION_PARTNER, DEMO_THREADS } from '../../data/demo-ops';
 import { signOut } from '../../lib/supabase';
 import { cityLabel } from '../money/plans';
 
 export type PartnerData = { email: string; listings: OpsListing[]; leads: OpsLead[]; apps: Applications; review?: boolean };
-export type { OpsLead, OpsListing, PartnerLeadStatus };
+export type { OpsDelivery, OpsLead, OpsListing, PartnerLeadStatus };
 
 let demo = true;
 
@@ -110,6 +113,24 @@ export async function setLeadStatus(id: string, status: PartnerLeadStatus): Prom
   must(await updateLeadStatus(id, status));
 }
 
+/** Demo: files stay local, nothing is uploaded; returns the delivery to show. Live: storage + RLS. */
+export async function submitDelivery(leadId: string, note: string, files: File[]): Promise<OpsDelivery | null> {
+  if (demo) {
+    await new Promise((r) => setTimeout(r, 700));
+    return {
+      id: `demo-local-${crypto.randomUUID()}`, lead_id: leadId, note: note.trim() || null, created_at: new Date().toISOString(),
+      files: files.map((f) => ({ path: f.name, name: f.name, url: null })),
+    };
+  }
+  must(await deliverWork(leadId, note, files));
+  return null; // caller reloads the list (fresh signed links)
+}
+
+export async function loadDeliveries(leadId: string): Promise<OpsDelivery[]> {
+  if (demo) return structuredClone(DEMO_DELIVERIES.filter((d) => d.lead_id === leadId));
+  return must(await listDeliveries(leadId)) ?? [];
+}
+
 /** Returns true when the save was demo-only. */
 export async function saveListing(id: string, patch: ListingPatch): Promise<boolean> {
   if (demo) {
@@ -124,7 +145,7 @@ export async function saveListing(id: string, patch: ListingPatch): Promise<bool
 // Labels
 // ---------------------------------------------------------------------------
 const LABELS: Record<string, string> = {
-  new: 'New', sent: 'Replied', won: 'Won', lost: 'Lost', spam: 'Spam',
+  new: 'New', sent: 'Replied', won: 'Won', lost: 'Lost', spam: 'Spam', delivered: 'Delivered', completed: 'Completed',
   approved: 'Approved', rejected: 'Not approved', paid: 'Approved and paid', review: 'In review',
 };
 export const statusLabel = (s: string) => LABELS[s] ?? s;
