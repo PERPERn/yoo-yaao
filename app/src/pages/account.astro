@@ -942,7 +942,7 @@ const visaNames = JSON.stringify(Object.fromEntries(visas.map((v) => [v.slug, v.
 
   // "Open Gmail" shortcut: the biggest drop-off is people not finding the email.
   const MAILBOXES: [RegExp, string, string][] = [
-    [/@(gmail|googlemail)\.com$/i, 'Gmail', 'https://mail.google.com/mail/u/0/#search/from%3Asupabase+OR+from%3Ayoo'],
+    [/@(gmail|googlemail)\.com$/i, 'Gmail', 'https://mail.google.com/mail/u/0/#inbox'],
     [/@(outlook|hotmail|live|msn)\./i, 'Outlook', 'https://outlook.live.com/mail/0/'],
     [/@(yahoo|ymail)\./i, 'Yahoo Mail', 'https://mail.yahoo.com/'],
     [/@(icloud|me|mac)\.com$/i, 'iCloud Mail', 'https://www.icloud.com/mail'],
