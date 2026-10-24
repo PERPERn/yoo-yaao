@@ -1,0 +1,4 @@
+Prototype (เว็บจริง): https://yoo-yaao.vercel.app
+คลิปเดโม 2 นาที: yoo-yaao-demo-2min.mp4
+Wireframe (Miro): https://miro.com/app/board/uXjVEWEwo1M=/
+Code: https://github.com/PERPERn/yoo-yaao

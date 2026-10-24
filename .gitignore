@@ -39,3 +39,4 @@ docs/pitch/*.mp4
 graphify-out/*
 !graphify-out/graph.html
 !graphify-out/GRAPH_REPORT.md
+docs/checkpoint3/*.mp4
