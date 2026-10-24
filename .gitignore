@@ -29,3 +29,8 @@ REPOKUB-STACK.md
 /*.pdf
 /package.json
 /package-lock.json
+
+video/node_modules/
+video/out/
+video/public/clips/
+docs/pitch/*.mp4
