@@ -31,6 +31,13 @@ interface Props { class?: string }
     display: block;
     margin-top: var(--space-3);
   }
+  /* Narrow cards (buddy booking at 375px): let the long label wrap instead of overflowing. */
+  .pay-notice__demo :global(.btn) {
+    white-space: normal;
+    height: auto;
+    min-height: 2.25rem;
+    text-align: start;
+  }
   .pay-notice__demo:has(> [hidden]) {
     display: none;
   }

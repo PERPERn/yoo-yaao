@@ -199,7 +199,10 @@ export function applyValidation(form: HTMLFormElement, validate: Validator, focu
 export function liveValidate(form: HTMLFormElement, validate: Validator): void {
   const touched = new Set<string>();
   const check = (id: string) => {
-    if (!touched.has(id)) return;
+    // A field already flagged (e.g. by submit) re-checks as it is fixed, so the error clears before the
+    // next tap; otherwise it vanishes on blur, shifts the layout and the tap on Submit misses.
+    const flagged = form.querySelector(`#${CSS.escape(id)}`)?.getAttribute('aria-invalid') === 'true';
+    if (!touched.has(id) && !flagged) return;
     const errors = validate(form);
     setFieldError(form, id, errors[id] ?? '');
   };

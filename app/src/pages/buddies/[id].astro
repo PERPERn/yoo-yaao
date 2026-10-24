@@ -193,6 +193,7 @@ const TIMES = [
   }
   .profile {
     display: grid;
+    grid-template-columns: minmax(0, 1fr); /* an implicit auto column grows to fit the pay notice's nowrap button */
     gap: var(--space-10);
     padding-block: var(--space-8) var(--space-section);
   }

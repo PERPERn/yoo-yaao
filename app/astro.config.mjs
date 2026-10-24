@@ -10,7 +10,7 @@ const CSP = [
   "default-src 'self'",
   "script-src 'self' 'unsafe-inline' 'wasm-unsafe-eval'",
   "style-src 'self' 'unsafe-inline'",
-  "img-src 'self' data: blob: https://*.supabase.co",
+  "img-src 'self' data: blob: https://eydalrefulzulohhthcp.supabase.co",
   "font-src 'self' data:",
   "connect-src 'self' blob: data: https://*.supabase.co wss://*.supabase.co",
   "worker-src 'self' blob:",
