@@ -7,6 +7,26 @@
 > เอกสารนี้ใช้ส่งต่องานไปทำต่อบนเครื่องอื่น ไม่ว่าจะเป็นคนหรือ Claude ก็อ่านไฟล์นี้ก่อนเป็นอันดับแรก
 > ตั้งแต่ commit `f9f247a` เป็นต้นไป โค้ดทั้งหมดอยู่บน GitHub และ deploy ขึ้น production แล้ว
 
+## ⏱ จุดที่ค้างล่าสุด (24 ต.ค. 23:40)
+- production ล่าสุด: commit `2f16010` / `fb168ec` (deploy แล้ว)
+- **ยังไม่ได้ commit:** `app/astro.config.mjs` ซึ่งปรับ CSP img-src ให้รับรูปได้เฉพาะ supabase project ของเรา (ผล security review: ไม่พบช่องโหว่ที่ใช้โจมตีได้จริง)
+- **agent ที่กำลังทำงานอยู่ ถ้าย้ายเครื่องให้สั่งใหม่ตามรายการนี้:**
+  1. **QA agent:** ทดสอบทุกฟีเจอร์แบบ end-to-end โดยเน้นหน้าโปรไฟล์ด้วย test user จริง แล้วลบ test user ออกหลังทดสอบเสร็จ
+  2. **Fact-check agent:** แก้ข้อมูลตามรีวิวของ Claude อีกตัว
+     - Plumia → Nomad Citizen
+     - Nomad List $149–200
+     - เปลี่ยนเหตุผลขาย Pro จากค่าปรับ TM30 เป็นค่าปรับ 90 วัน ฿2,000
+     - เป้า ทททท. ที่ปรับลดเมื่อ 8 เม.ย. 2026
+     - ค่าเอเจนต์ DTV ฿3,000–10,000+
+     - LTR 12,010
+     - /pricing แยก Free กับ Pro ให้ชัด
+     - "TAT licence" → "business registration (DBD) + Lawyers Council licence"
+     - ช่องยินยอม PDPA ที่ /experts
+     - ประกัน DTV ต้องมีแหล่งอ้างอิง หรือเขียนให้อ่อนลง
+     - Finder ย้ายคำตอบไปไว้ใน URL hash
+     - ตัวเลือก Study/Learn Thai ใน Finder
+- ถ้าแก้ caption ใน `video/src/script.json` ต้อง render คลิปใหม่ (ดูข้อ 6)
+
 ## 0. ลิงก์สำคัญ
 - Production: https://yoo-yaao.vercel.app
 - Repo (public): https://github.com/PERPERn/yoo-yaao
