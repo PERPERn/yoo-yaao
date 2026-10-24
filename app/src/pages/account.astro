@@ -987,8 +987,10 @@ const googleOn = import.meta.env.PUBLIC_AUTH_GOOGLE === '1';
       const msg = String((err as { message?: string })?.message ?? '');
       const status = (err as { status?: number })?.status;
       loginErrText.textContent =
-        status === 429 || /rate|limit|security purposes/i.test(msg)
-          ? 'Too many tries. Wait a minute and try again.'
+        /security purposes/i.test(msg)
+          ? 'Please wait a minute before asking for another link.'
+          : status === 429 || /rate|limit/i.test(msg)
+          ? "We've sent too many login emails in the last hour. Use the newest link already in your inbox, or try again later."
           : navigator.onLine === false
             ? "You're offline. Connect to the internet and try again."
             : 'Something went wrong on our side. Try again — your email is still here.';
