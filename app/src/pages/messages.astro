@@ -85,7 +85,10 @@ import Chat from '../components/chat/Chat.astro';
     .catch(() => null)
     .then((session) => {
       const demo = !session;
-      document.querySelector<HTMLElement>('[data-msgs-demo]')!.hidden = !demo;
+      const banner = document.querySelector<HTMLElement>('[data-msgs-demo]')!;
+      banner.hidden = !demo;
+      // Keep ?lead=<id> (deep link from /experts) through the sign-in round trip.
+      banner.querySelector<HTMLAnchorElement>('a')!.href = `/account?next=${encodeURIComponent(location.pathname + location.search)}`;
       initChat(document.querySelector<HTMLElement>('[data-chat]')!, { demo });
     });
 </script>

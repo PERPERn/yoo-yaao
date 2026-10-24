@@ -31,7 +31,6 @@ export function initChat(root: HTMLElement, { demo }: { demo: boolean }) {
   let threads: OpsThread[] = [];
   let current: OpsThread | null = null;
   let messages: Pending[] = [];
-  let unsubscribe = () => {};
   let replyIdx = 0;
   let openSeq = 0; // ignores late responses after switching threads
 
@@ -220,6 +219,18 @@ export function initChat(root: HTMLElement, { demo }: { demo: boolean }) {
     if (!isMine(m) && seen && !demo) void markRead(m.lead_id);
   }
 
+  /** Every live insert I can see (RLS). Open thread: append; other thread: preview + unread; unknown: refetch list. */
+  function live(m: OpsMessage) {
+    if (m.lead_id === current?.lead_id) return incoming(m);
+    if (threads.some((t) => t.lead_id === m.lead_id)) return bumpThread(m, !isMine(m));
+    void listThreads().then((r) => {
+      if (!r.data) return;
+      threads = r.data.filter((t) => t.my_role === side);
+      current = threads.find((t) => t.lead_id === current?.lead_id) ?? current;
+      drawList();
+    });
+  }
+
   async function deliver(m: Pending) {
     m.state = 'sending';
     replace(m);
@@ -293,8 +304,6 @@ export function initChat(root: HTMLElement, { demo }: { demo: boolean }) {
 
   // ---------- open / close a thread ----------
   async function open(leadId: string | null, focus = false) {
-    unsubscribe();
-    unsubscribe = () => {};
     const seq = ++openSeq;
     current = threads.find((t) => t.lead_id === leadId) ?? null;
     root.dataset.open = String(!!current);
@@ -329,7 +338,6 @@ export function initChat(root: HTMLElement, { demo }: { demo: boolean }) {
         return;
       }
       messages = r.data ?? [];
-      unsubscribe = subscribeMessages(t.lead_id, incoming);
     }
     drawMessages();
     if (t.unread) {
@@ -367,6 +375,7 @@ export function initChat(root: HTMLElement, { demo }: { demo: boolean }) {
         return;
       }
       threads = (r.data ?? []).filter((t) => t.my_role === side);
+      subscribeMessages(live); // one channel for the page's lifetime
     }
     drawList();
     const want = new URLSearchParams(location.search).get('lead');

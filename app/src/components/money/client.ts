@@ -251,7 +251,7 @@ export function suggestEmail(email: string): string | null {
   return best && best.d > 0 && best.d <= 2 ? `${user}@${best.c}` : null;
 }
 
-export type PostResult = { ok: true } | { ok: false; status: number; error: string; details?: Record<string, string> };
+export type PostResult = { ok: true; data: Record<string, unknown> } | { ok: false; status: number; error: string; details?: Record<string, string> };
 
 /** POST JSON to one of our form routes. */
 export async function postJson(url: string, body: Record<string, unknown>): Promise<PostResult> {
@@ -262,7 +262,7 @@ export async function postJson(url: string, body: Record<string, unknown>): Prom
       headers: { 'content-type': 'application/json' },
       body: JSON.stringify(body),
     });
-    if (res.ok) return { ok: true };
+    if (res.ok) return { ok: true, data: await res.json().catch(() => ({})) };
     const data = (await res.json().catch(() => ({}))) as { error?: string; details?: Record<string, string> };
     return { ok: false, status: res.status, error: data.error ?? 'error', details: data.details };
   } catch {

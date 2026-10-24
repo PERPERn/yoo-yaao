@@ -47,6 +47,16 @@ const { colspan } = Astro.props;
         <p class="rv__error" data-note-err hidden>Add a note that tells the applicant why.</p>
       </div>
 
+      <div class="rv__link" data-link-wrap>
+        <label class="rv__label" data-link-label="listing">Link to listing</label>
+        <select class="control" data-link="listing"><option value="">Create later</option></select>
+        <div class="rv__link" data-agent-wrap>
+          <label class="rv__label" data-link-label="agent">Link to agent (receives leads)</label>
+          <select class="control" data-link="agent"><option value="">Create later</option></select>
+        </div>
+        <p class="rv__hint">Only rows nobody owns yet are listed. Approving gives the applicant edit access to the row you pick.</p>
+      </div>
+
       <div class="rv__actions">
         <p class="rv__why" data-why></p>
         <div class="rv__btns">
@@ -137,7 +147,16 @@ const { colspan } = Astro.props;
     display: grid;
     gap: var(--space-1);
   }
-  .rv__note .rv__hint {
+  .rv__link {
+    display: grid;
+    gap: var(--space-1);
+    align-content: start;
+  }
+  .rv__link select {
+    font-size: var(--text-sm);
+  }
+  .rv__note .rv__hint,
+  .rv__link .rv__hint {
     margin-left: 0;
   }
   .rv__note textarea {

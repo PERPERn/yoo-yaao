@@ -212,9 +212,20 @@ export function setApplicationStatus(type: ApplicationType, id: string, status: 
 export const verifyApplication = (type: ApplicationType, id: string, review: ReviewPatch) =>
   run<{ id: string }>((sb) => sb.from(appTable(type)).update(pickReview(review)).eq('id', id).select('id').single());
 
+/** Which directory rows to hand to the applicant on approval (each only if still unowned). Omit = link nothing. */
+export type PartnerLink = { listingId?: string | null; agentId?: string | null };
+
 /** Approves a verified application and makes the applicant a partner (admin-only RPC). */
-export const approvePartner = (type: ApplicationType, id: string) =>
-  run<ApprovePartnerResult>((sb) => sb.rpc('approve_partner', { app_type: type, app_id: id }));
+export const approvePartner = (type: ApplicationType, id: string, link: PartnerLink = {}) =>
+  run<ApprovePartnerResult>((sb) =>
+    sb.rpc('approve_partner', { app_type: type, app_id: id, listing_id: link.listingId ?? null, agent_id: link.agentId ?? null }),
+  );
+
+/** An unowned listing or agent row the admin can link on approval. */
+export type LinkCandidate = { target: 'listing' | 'agent'; id: string; name: string; kind: ListingKind; city: string | null };
+
+/** Unowned listings + agents for the approve picker (admin-only; others get an empty list). */
+export const linkCandidates = () => run<LinkCandidate[]>((sb) => sb.rpc('link_candidates'));
 
 export const listLeads = (status?: LeadStatus) =>
   run<OpsLead[]>((sb) => {
@@ -310,15 +321,13 @@ export const sendMessage = (leadId: string, body: string) =>
 export const markRead = (leadId: string) =>
   run<null>((sb) => sb.from('lead_messages').update({ read_at: new Date().toISOString() }).eq('lead_id', leadId).is('read_at', null));
 
-/** Live inserts in one thread (Realtime applies the select policy). Returns an unsubscribe function. */
-export function subscribeMessages(leadId: string, onInsert: (m: OpsMessage) => void): () => void {
+/** Live inserts in all my threads: one channel, rows filtered per subscriber by the select policy. Returns an unsubscribe function. */
+export function subscribeMessages(onInsert: (m: OpsMessage) => void): () => void {
   const sb = supabase;
   if (!sb) return () => {};
   const channel = sb
-    .channel(`lead_messages:${leadId}`)
-    .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'lead_messages', filter: `lead_id=eq.${leadId}` }, (p) =>
-      onInsert(p.new as OpsMessage),
-    )
+    .channel('lead_messages:mine')
+    .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'lead_messages' }, (p) => onInsert(p.new as OpsMessage))
     .subscribe();
   return () => void sb.removeChannel(channel);
 }

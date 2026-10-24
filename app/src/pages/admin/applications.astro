@@ -69,7 +69,7 @@ import Button from '../../components/ui/Button.astro';
 <script>
   import { announce, boot, fmtDate, put, renderRows, setState, stamp, type Mode } from '../../components/admin/admin';
   import { source, syncCounts } from '../../components/admin/data';
-  import type { Applications, ApplicationType, BuddyApplication, ListingApplication } from '../../lib/ops';
+  import type { Applications, ApplicationType, BuddyApplication, LinkCandidate, ListingApplication } from '../../lib/ops';
 
   type App = ListingApplication | BuddyApplication;
   const CITY: Record<string, string> = { bangkok: 'Bangkok', 'chiang-mai': 'Chiang Mai', phuket: 'Phuket' };
@@ -86,6 +86,7 @@ import Button from '../../components/ui/Button.astro';
   const err = document.querySelector<HTMLElement>('[data-err]')!;
   let mode: Mode = 'demo';
   let data: Applications | null = null;
+  let candidates: LinkCandidate[] = [];
   const show = (type: ApplicationType) => document.querySelector<HTMLSelectElement>(`[data-filter="${type}"]`)!.value;
 
   /** Agencies need a licence check on top of identity (same rule as the DB trigger). */
@@ -112,6 +113,8 @@ import Button from '../../components/ui/Button.astro';
     const reject = q<HTMLButtonElement>('[data-reject]');
     const approve = q<HTMLButtonElement>('[data-approve]');
     const licence = needsLicence(type, a);
+    const linkListing = q<HTMLSelectElement>('[data-link="listing"]');
+    const linkAgent = q<HTMLSelectElement>('[data-link="agent"]');
 
     // Per-row ids (the markup is a cloned template)
     drawer.id = `rv-${uid}`;
@@ -123,6 +126,20 @@ import Button from '../../components/ui/Button.astro';
     noteErr.id = `note-err-${uid}`;
     why.id = `why-${uid}`;
     approve.setAttribute('aria-describedby', why.id);
+    for (const sel of [linkListing, linkAgent]) {
+      sel.id = `link-${sel.dataset.link}-${uid}`;
+      q(`[data-link-label="${sel.dataset.link}"]`).setAttribute('for', sel.id);
+    }
+
+    // Link picker: the admin chooses the directory row explicitly (nothing is matched by name).
+    q('[data-link-wrap]').hidden = type !== 'listing';
+    q('[data-agent-wrap]').hidden = !licence;
+    if (type === 'listing') {
+      const kind = (a as ListingApplication).kind;
+      const label = (c: LinkCandidate) => (c.city ? `${c.name} · ${CITY[c.city] ?? c.city}` : c.name);
+      linkListing.append(...candidates.filter((c) => c.target === 'listing' && c.kind === kind).map((c) => new Option(label(c), c.id)));
+      if (licence) linkAgent.append(...candidates.filter((c) => c.target === 'agent').map((c) => new Option(label(c), c.id)));
+    }
 
     // Facts (textContent only: everything here was typed by the applicant)
     put(drawer, 'message', 'message' in a ? a.message : a.bio);
@@ -189,7 +206,7 @@ import Button from '../../components/ui/Button.astro';
 
     /** Runs a write with the drawer locked; on failure keeps what was typed and says why. */
     async function act(btn: HTMLButtonElement, work: () => Promise<unknown>, ok: () => string) {
-      const ctrls = [id, lic, note, save, reject, approve];
+      const ctrls = [id, lic, note, linkListing, linkAgent, save, reject, approve];
       ctrls.forEach((c) => (c.disabled = true));
       btn.setAttribute('aria-busy', 'true');
       try {
@@ -204,7 +221,7 @@ import Button from '../../components/ui/Button.astro';
         announce(err.textContent);
       } finally {
         btn.removeAttribute('aria-busy');
-        [id, lic, note, save, approve].forEach((c) => (c.disabled = false));
+        [id, lic, note, linkListing, linkAgent, save, approve].forEach((c) => (c.disabled = false));
         sync();
         (btn.disabled ? toggle : btn).focus();
       }
@@ -252,12 +269,21 @@ import Button from '../../components/ui/Button.astro';
         approve,
         async () => {
           if (dirty()) await saveReview(); // the DB checks the saved flags, so save first
-          const res = await source(mode).approve(type, a.id);
+          const link = { listingId: linkListing.value || null, agentId: (licence && linkAgent.value) || null };
+          const res = await source(mode).approve(type, a.id, link);
           a.status = 'approved';
           approveMsg =
             res && res.profiles_updated === 0
               ? `${name} approved. They become a partner the first time they sign in with ${res.email}.`
               : `${name} approved and given partner access.`;
+          // Someone else took the row between loading and approving: the DB linked nothing.
+          if (res && ((link.listingId && !res.listings_linked) || (link.agentId && !res.agents_linked)))
+            approveMsg += ' The row you picked already has an owner, so it was not linked.';
+          // Linked rows are owned now: drop them from every picker on the page.
+          candidates = candidates.filter((c) => c.id !== link.listingId && c.id !== link.agentId);
+          document.querySelectorAll<HTMLOptionElement>('[data-link] option').forEach((o) => {
+            if (o.value && (o.value === link.listingId || o.value === link.agentId)) o.remove();
+          });
           syncCounts(mode);
         },
         () => approveMsg,
@@ -301,7 +327,10 @@ import Button from '../../components/ui/Button.astro';
   async function load() {
     Object.values(panels).forEach((p) => setState(p, 'loading'));
     try {
-      data = await source(mode).applications();
+      [data, candidates] = await Promise.all([
+        source(mode).applications(),
+        source(mode).linkCandidates().catch(() => []), // picker falls back to "Create later" only
+      ]);
       render();
     } catch {
       Object.values(panels).forEach((p) => setState(p, 'error', "Couldn't load applications."));

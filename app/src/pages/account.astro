@@ -82,7 +82,7 @@ const visaNames = JSON.stringify(Object.fromEntries(visas.map((v) => [v.slug, v.
 
     <!-- Loading -->
     <div data-view="loading" class="loading" aria-busy="true">
-      <h1 class="sr-only">Your account</h1>
+      <h1 class="sr-only" data-view-title>Your account</h1>
       <span class="skel" style="height: 3rem; width: 55%"></span>
       <span class="skel" style="height: 1.25rem; width: 35%"></span>
       <span class="skel" style="height: 12rem; width: 100%"></span>
@@ -90,7 +90,7 @@ const visaNames = JSON.stringify(Object.fromEntries(visas.map((v) => [v.slug, v.
 
     <!-- Sign-in unavailable (no Supabase env) -->
     <div data-view="unavailable" hidden class="narrow stack" style="--stack-gap: var(--space-5)">
-      <h1>Your account</h1>
+      <h2 class="acc-title" data-view-title>Your account</h2>
       <Callout tone="info" title="Sign-in isn't available on this preview">
         Accounts need the database connection, which isn't set up here. The free tools still work and keep your data in
         this browser.
@@ -101,7 +101,7 @@ const visaNames = JSON.stringify(Object.fromEntries(visas.map((v) => [v.slug, v.
     <!-- Logged out -->
     <div data-view="login" hidden class="login">
       <div class="login__intro stack" style="--stack-gap: var(--space-4)">
-        <h1>Log in or sign up</h1>
+        <h2 class="acc-title" data-view-title>Log in or sign up</h2>
         <p class="lead">No password needed. We'll email you a secure link.</p>
         <p class="muted" data-intent-note hidden></p>
       </div>
@@ -149,7 +149,7 @@ const visaNames = JSON.stringify(Object.fromEntries(visas.map((v) => [v.slug, v.
     <div data-view="app" hidden class="app">
       <header class="app__head">
         <div class="stack" style="--stack-gap: var(--space-2)">
-          <h1 class="app__hi">Hi <span data-hi-email></span></h1>
+          <h2 class="acc-title app__hi" data-view-title>Hi <span data-hi-email></span></h2>
           <p class="cluster" style="--cluster-gap: var(--space-2)">
             <span data-plan-free><Badge variant="neutral">Free plan</Badge></span>
             <span data-plan-pro hidden><Badge variant="pro">Pro</Badge></span>
@@ -351,9 +351,9 @@ const visaNames = JSON.stringify(Object.fromEntries(visas.map((v) => [v.slug, v.
       align-items: start;
     }
   }
-  .login h1,
-  .narrow h1,
-  .app__hi {
+  /* View titles swap between h1 (visible view) and h2 (hidden views); same look either way. */
+  .acc-title {
+    font-weight: var(--weight-bold);
     font-size: var(--text-4xl);
     line-height: var(--leading-tight);
     letter-spacing: var(--tracking-display);
@@ -645,7 +645,17 @@ const visaNames = JSON.stringify(Object.fromEntries(visas.map((v) => [v.slug, v.
 
   const $ = <T extends HTMLElement = HTMLElement>(sel: string, scope: ParentNode = document) => scope.querySelector<T>(sel)!;
   const show = (view: 'loading' | 'unavailable' | 'login' | 'app') => {
-    document.querySelectorAll<HTMLElement>('[data-view]').forEach((el) => (el.hidden = el.dataset.view !== view));
+    document.querySelectorAll<HTMLElement>('[data-view]').forEach((el) => {
+      el.hidden = el.dataset.view !== view;
+      // Exactly one h1 in the DOM: the visible view's title. Hidden views keep theirs as h2.
+      const t = el.querySelector<HTMLElement>('[data-view-title]');
+      const tag = el.hidden ? 'H2' : 'H1';
+      if (!t || t.tagName === tag) return;
+      const h = document.createElement(tag);
+      for (const a of t.attributes) h.setAttribute(a.name, a.value); // incl. Astro's scoped-style data-astro-cid-*
+      h.append(...t.childNodes);
+      t.replaceWith(h);
+    });
   };
 
   // Remember where the user was going (?next=/pricing&intent=pro_yearly) across the magic-link round trip.

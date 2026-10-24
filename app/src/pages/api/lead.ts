@@ -1,5 +1,6 @@
 // POST /api/lead — "Get expert help" form. Inserted with the publishable key; RLS + column
 // grants allow anon INSERT only (no read-back), so the DB is the security boundary.
+// The id is generated here (anon may insert it, never select it) so the reply can deep-link the chat.
 import type { APIRoute } from 'astro';
 import { email, errorJson, getAnonServerClient, json, readJsonBody, str } from '../../lib/server-env';
 
@@ -11,6 +12,7 @@ export const POST: APIRoute = async ({ request }) => {
   if (typeof body.website === 'string' && body.website) return json({ ok: true }, 201); // honeypot
 
   const row = {
+    id: crypto.randomUUID(),
     name: str(body.name, 120, { required: true }),
     email: email(body.email),
     nationality: str(body.nationality, 60),
@@ -36,5 +38,5 @@ export const POST: APIRoute = async ({ request }) => {
     console.error('[lead] insert failed', error.code, error.message);
     return errorJson('db_error', 500);
   }
-  return json({ ok: true }, 201);
+  return json({ ok: true, id: row.id }, 201);
 };

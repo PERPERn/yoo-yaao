@@ -1,8 +1,8 @@
 // One data source per mode: live queries (lib/ops.ts, RLS-guarded) for an admin session,
 // an in-memory copy of the sample data for demo mode. Demo changes live only until the page reloads.
 import * as ops from '../../lib/ops';
-import type { OpsResult, ApplicationType, LeadStatus, ReviewPatch, Role } from '../../lib/ops';
-import { DEMO_AGENTS, DEMO_APPLICATIONS, DEMO_LEADS, DEMO_LISTINGS, DEMO_PROFILES } from '../../data/demo-ops';
+import type { OpsResult, ApplicationType, LeadStatus, LinkCandidate, PartnerLink, ReviewPatch, Role } from '../../lib/ops';
+import { DEMO_AGENTS, DEMO_APPLICATIONS, DEMO_LEADS, DEMO_LISTINGS, DEMO_MY_LISTINGS, DEMO_MY_LEADS, DEMO_PROFILES } from '../../data/demo-ops';
 import { setCount, type Mode } from './admin';
 
 const local = {
@@ -10,6 +10,11 @@ const local = {
   leads: structuredClone(DEMO_LEADS),
   listings: structuredClone(DEMO_LISTINGS),
   profiles: structuredClone(DEMO_PROFILES),
+  // Demo ownership: the demo partner owns DEMO_MY_LISTINGS and the agent on DEMO_MY_LEADS; the rest is unowned.
+  candidates: [
+    ...DEMO_LISTINGS.filter((l) => !DEMO_MY_LISTINGS.some((m) => m.id === l.id)).map((l) => ({ target: 'listing' as const, id: l.id, name: l.name, kind: l.kind, city: l.city })),
+    ...DEMO_AGENTS.filter((a) => !DEMO_MY_LEADS.some((l) => l.agent_id === a.id)).map((a) => ({ target: 'agent' as const, id: a.id, name: a.name, kind: 'agency' as const, city: a.cities[0] ?? null })),
+  ] as LinkCandidate[],
 };
 
 async function unwrap<T>(p: Promise<OpsResult<T>>): Promise<T> {
@@ -37,11 +42,14 @@ export function source(mode: Mode) {
         ? unwrap(ops.verifyApplication(type, id, patch))
         : Promise.resolve(patch_(type, id, { ...patch, reviewed_at: new Date().toISOString() })),
     /** Approves (DB refuses unless verified) and grants the partner role. Returns null in demo mode. */
-    approve: async (type: ApplicationType, id: string) => {
-      if (live) return unwrap(ops.approvePartner(type, id));
+    approve: async (type: ApplicationType, id: string, link: PartnerLink = {}) => {
+      if (live) return unwrap(ops.approvePartner(type, id, link));
       patch_(type, id, { status: 'approved', reviewed_at: new Date().toISOString() });
+      local.candidates = local.candidates.filter((c) => c.id !== link.listingId && c.id !== link.agentId);
       return null;
     },
+    /** Unowned listings + agents for the "Link to listing" picker. */
+    linkCandidates: () => (live ? unwrap(ops.linkCandidates()) : Promise.resolve(local.candidates)),
     /** Rejects and saves the checklist + note in the same write. */
     reject: (type: ApplicationType, id: string, review: ReviewPatch) =>
       live

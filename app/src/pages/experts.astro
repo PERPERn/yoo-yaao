@@ -115,7 +115,7 @@ const faq = [
           <p>A licensed agent will email you within 1 business day. Reference <strong data-ref class="tabular"></strong>.</p>
           <p class="small muted">You can also chat with your agency once they're assigned. Sign in with the same email to open Messages.</p>
           <div class="cluster">
-            <Button href="/messages" iconRight="arrow-right">Message this agency</Button>
+            <Button href="/messages" iconRight="arrow-right" data-chat-link>Message this agency</Button>
             <Button href="/visas" variant="secondary">Read the visa guides</Button>
             <Button href="/tools" variant="ghost">Open Stay Tools</Button>
           </div>
@@ -214,6 +214,7 @@ const faq = [
     }
     const done = document.querySelector<HTMLElement>('[data-done]')!;
     done.querySelector('[data-ref]')!.textContent = `#${ref}`;
+    if (typeof r.data.id === 'string') done.querySelector<HTMLAnchorElement>('[data-chat-link]')!.href = `/messages?lead=${encodeURIComponent(r.data.id)}`;
     form.hidden = true;
     done.hidden = false;
     done.focus();
