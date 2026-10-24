@@ -2,7 +2,7 @@
 
 > **อัปเดต 23:10 (commit 44623b3 deploy แล้ว):** งานที่เสร็จแล้วรอบนี้คือเมนูโปรไฟล์และปุ่ม logout, หน้าตั้งค่าโปรไฟล์ครั้งแรก (ชื่อ รูป สัญชาติ วีซ่า วันเข้า เมือง), ปรับหน้า login, หน้าส่งงานของ agency (`/partner/deliver`), ปุ่มยืนยันรับงานและรีวิวดาว, ปุ่ม Message ในหน้า `/experts`, โมเดล 3D ในฉาก 90 วัน และแก้ตามผล audit P1–P3 (migration 0007 และ 0008)
 > สาเหตุที่ login ดูเหมือนใช้ไม่ได้: header ไม่รู้จัก session (แก้แล้ว) และไปกดลิงก์เก่าที่ใช้ไปแล้ว ส่วนที่ยังค้างคือ **ผู้ใช้ต้องตั้ง Supabase URL Configuration** เอง
-> ไฟล์สรุปที่ทำแล้ว: `docs/สรุปผลงาน-TH.pdf` และ Business Model Canvas `docs/pitch/business-model-canvas-th.pdf` ส่วนข้อ 3–4 ด้านล่างให้ถือว่าเป็นประวัติ ข้อที่ยังไม่ได้ทำจริงๆ ตอนนี้คือ: overstay calculator, checklist 7 วันแรก, แชร์ผล Finder, test reminder email
+> ไฟล์สรุปที่ทำแล้ว: `docs/สรุปผลงาน-TH.pdf` และ Business Model Canvas `docs/pitch/business-model-canvas-th.pdf` ส่วนข้อ 3–4 ด้านล่างให้ถือว่าเป็นประวัติ อัปเดต 23:15 (2f16010): overstay calculator, checklist 7 วันแรก และแชร์ผล Finder เสร็จแล้ว ที่ยังเหลือคือ test reminder email (ต้องใช้คีย์ Resend) และการทดสอบด้วยบัญชีจริงหลังตั้งค่า Supabase URL
 
 > เอกสารนี้ใช้ส่งต่องานไปทำต่อบนเครื่องอื่น ไม่ว่าจะเป็นคนหรือ Claude ก็อ่านไฟล์นี้ก่อนเป็นอันดับแรก
 > ตั้งแต่ commit `f9f247a` เป็นต้นไป โค้ดทั้งหมดอยู่บน GitHub และ deploy ขึ้น production แล้ว
