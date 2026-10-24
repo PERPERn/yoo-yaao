@@ -10,14 +10,17 @@ import PayNotice from '../components/money/PayNotice.astro';
 import '../components/money/money.css';
 import { SITE } from '../config/site';
 import { visas } from '../data/visas';
+import { COUNTRIES } from '../data/finder';
 import { PRO_MONTHLY, PRO_YEARLY, CITY_OPTIONS } from '../components/money/plans';
 
 const visaOptions = [...visas.map((v) => ({ value: v.slug, label: v.shortName })), { value: 'other', label: 'Other' }];
+const countryOptions = [...COUNTRIES].sort((a, b) => a.name.localeCompare(b.name)).map((c) => ({ value: c.code, label: c.name }));
+const countryNames = JSON.stringify(Object.fromEntries(COUNTRIES.map((c) => [c.code, c.name])));
 const visaNames = JSON.stringify(Object.fromEntries(visas.map((v) => [v.slug, v.shortName])));
 ---
 
 <Base title="Your account" description={`Log in to ${SITE.name} with a magic link to save your stays and get deadline reminders.`} noindex>
-  <div class="container acct" data-acct data-visas={visaNames} data-pro-price={PRO_MONTHLY.priceUsd} data-pro-yearly={PRO_YEARLY.priceUsd}>
+  <div class="container acct" data-acct data-visas={visaNames} data-countries={countryNames} data-pro-price={PRO_MONTHLY.priceUsd} data-pro-yearly={PRO_YEARLY.priceUsd}>
     <!-- Payment return -->
     <section class="ret" data-ret hidden aria-live="polite" tabindex="-1">
       <div data-ret-state="confirming" hidden class="ret__card">
@@ -109,6 +112,9 @@ const visaNames = JSON.stringify(Object.fromEntries(visas.map((v) => [v.slug, v.
         <div data-login-expired hidden>
           <Callout tone="warning" title="That link has expired">Enter your email and we'll send a new one.</Callout>
         </div>
+        <div data-login-linkerr hidden>
+          <Callout tone="danger" title="That link didn't work"><span data-login-linkerr-text>Enter your email and we'll send a new one.</span></Callout>
+        </div>
         <form class="form" data-login novalidate>
           <Input
             name="email"
@@ -127,7 +133,12 @@ const visaNames = JSON.stringify(Object.fromEntries(visas.map((v) => [v.slug, v.
             <Callout tone="danger" live><span data-login-error-text></span></Callout>
           </div>
           <Button type="submit" size="lg" block>Email me a login link</Button>
-          <p class="form-foot">New here? The same link creates your free account.</p>
+          <ul class="perks" role="list">
+            <li>Save your stays and get 90-day and visa-expiry reminders</li>
+            <li>Chat with the licensed agency handling your visa request</li>
+            <li>Keep your checklist in sync across phone and laptop</li>
+          </ul>
+          <p class="form-foot">New here? The same link creates your free account and you set up your profile next.</p>
           <p class="form-foot">By continuing you agree to our <a href="/legal#terms">Terms</a> and <a href="/legal#privacy">Privacy Policy</a>.</p>
         </form>
 
@@ -135,20 +146,59 @@ const visaNames = JSON.stringify(Object.fromEntries(visas.map((v) => [v.slug, v.
           <span class="done__mark"><Icon name="check" size={28} strokeWidth={2.25} /></span>
           <h2>Check your inbox</h2>
           <p>We sent a link to <strong data-sent-email></strong>. It expires in 1 hour.</p>
+          <p data-mailbox hidden><Button href="#" variant="accent" iconRight="arrow-right" data-mailbox-link target="_blank" rel="noopener">Open <span data-mailbox-name>your inbox</span></Button></p>
           <div class="cluster">
             <Button variant="secondary" data-resend disabled>Resend link</Button>
             <Button variant="ghost" data-other-email>Use a different email</Button>
           </div>
           <p class="small muted" aria-live="polite" data-resend-note></p>
-          <p class="small muted">Can't find it? Check spam or Promotions.</p>
+          <p class="small muted">Can't find it? Check spam or Promotions. Open the link in the same browser you're using now.</p>
         </div>
+      </div>
+    </div>
+
+    <!-- First login: set up the profile -->
+    <div data-view="setup" hidden class="setup">
+      <div class="setup__intro stack" style="--stack-gap: var(--space-4)">
+        <h2 class="acc-title" data-view-title>Welcome! Set up your profile</h2>
+        <p class="lead">It takes a minute. Agencies see your name and photo when you message them, and your passport country helps them check which visas fit.</p>
+        <button type="button" class="linkish setup__logout" data-logout-setup>Not you? Log out</button>
+      </div>
+      <div class="form-panel" data-profile-slot="setup">
+        <form class="form" data-profile-form novalidate>
+          <div class="avatar-pick">
+            <span class="avatar-pick__img" data-avatar-preview aria-hidden="true"></span>
+            <div class="stack" style="--stack-gap: var(--space-2)">
+              <input type="file" accept="image/jpeg,image/png,image/webp" data-avatar-file class="sr-only" tabindex="-1" aria-label="Profile photo" />
+              <Button variant="secondary" size="sm" icon="plus" data-avatar-pick>Add a photo</Button>
+              <p class="small muted">Optional. JPG, PNG or WebP, up to 2 MB.</p>
+            </div>
+          </div>
+          <Input name="displayName" id="p-name" label="Your name" autocomplete="name" maxlength="80" required />
+          <Select name="nationality" id="p-nat" label="Passport country" placeholder="Choose a country" options={countryOptions} required />
+          <Input
+            name="contact"
+            id="p-contact"
+            label="LINE, WhatsApp or phone"
+            optional
+            maxlength="120"
+            autocomplete="tel"
+            hint="Only an agency you chose can see this. You can always reply in Messages instead."
+          />
+          <div data-profile-error hidden><Callout tone="danger" live><span data-profile-error-text></span></Callout></div>
+          <div class="cluster">
+            <Button type="submit" size="lg" data-profile-save>Save and continue</Button>
+            <Button variant="ghost" data-profile-cancel hidden>Cancel</Button>
+          </div>
+        </form>
       </div>
     </div>
 
     <!-- Logged in -->
     <div data-view="app" hidden class="app">
       <header class="app__head">
-        <div class="stack" style="--stack-gap: var(--space-2)">
+        <span class="pf-avatar" data-app-avatar aria-hidden="true"></span>
+        <div class="stack app__who" style="--stack-gap: var(--space-2)">
           <h2 class="acc-title app__hi" data-view-title>Hi <span data-hi-email></span></h2>
           <p class="cluster" style="--cluster-gap: var(--space-2)">
             <span data-plan-free><Badge variant="neutral">Free plan</Badge></span>
@@ -156,11 +206,26 @@ const visaNames = JSON.stringify(Object.fromEntries(visas.map((v) => [v.slug, v.
             <span class="small muted" data-plan-renew></span>
           </p>
         </div>
-        <Button variant="ghost" data-logout>Log out</Button>
+        <Button variant="secondary" size="sm" icon="log-out" data-logout>Log out</Button>
       </header>
 
       <div class="app__grid">
         <div class="stack" style="--stack-gap: var(--space-6)">
+          <!-- Profile -->
+          <section class="panel" id="profile" aria-labelledby="profile-title">
+            <div class="panel__row">
+              <h2 id="profile-title" class="panel__title">Your profile</h2>
+              <Button size="sm" variant="secondary" data-profile-edit>Edit</Button>
+            </div>
+            <dl class="facts profile-facts" data-profile-facts>
+              <div><dt>Name</dt><dd data-pf-name>—</dd></div>
+              <div><dt>Email</dt><dd data-pf-email>—</dd></div>
+              <div><dt>Passport country</dt><dd data-pf-nat>—</dd></div>
+              <div><dt>Contact</dt><dd data-pf-contact>—</dd></div>
+            </dl>
+            <div data-profile-slot="app" hidden></div>
+          </section>
+
           <!-- Onboarding checklist -->
           <section class="panel onboard" data-onboard aria-labelledby="onboard-title">
             <div class="onboard__head">
@@ -248,8 +313,11 @@ const visaNames = JSON.stringify(Object.fromEntries(visas.map((v) => [v.slug, v.
           <!-- Messages -->
           <section class="panel" aria-labelledby="msg-title">
             <h2 id="msg-title" class="panel__title">Messages</h2>
-            <p class="small muted">Chat with the licensed agency handling your visa request.</p>
-            <p><a href="/messages">Open messages</a></p>
+            <p class="small muted" data-msg-note>Chat with the licensed agency handling your visa request.</p>
+            <div class="cluster">
+              <Button href="/messages" size="sm" iconRight="arrow-right" data-msg-open>Open messages</Button>
+              <Button href="/experts" size="sm" variant="ghost">Ask a visa expert</Button>
+            </div>
           </section>
 
           <!-- Bookings -->
@@ -357,6 +425,83 @@ const visaNames = JSON.stringify(Object.fromEntries(visas.map((v) => [v.slug, v.
     font-size: var(--text-4xl);
     line-height: var(--leading-tight);
     letter-spacing: var(--tracking-display);
+  }
+  .app__who {
+    flex: 1 1 12rem;
+    min-width: 0;
+  }
+  .pf-avatar,
+  .avatar-pick__img {
+    display: inline-grid;
+    place-items: center;
+    flex-shrink: 0;
+    width: 4rem;
+    height: 4rem;
+    border-radius: 50%;
+    overflow: hidden;
+    background: var(--color-brand);
+    color: var(--color-on-brand);
+    font-family: var(--font-display);
+    font-size: var(--text-xl);
+    font-weight: var(--weight-bold);
+  }
+  .pf-avatar :global(img),
+  .avatar-pick__img :global(img) {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+  .avatar-pick {
+    display: flex;
+    align-items: center;
+    gap: var(--space-5);
+  }
+  .avatar-pick__img {
+    width: 5rem;
+    height: 5rem;
+    background: var(--color-surface-3);
+    color: var(--color-ink-2);
+  }
+  .setup {
+    display: grid;
+    gap: var(--space-8);
+    max-width: 64rem;
+  }
+  @media (min-width: 56rem) {
+    .setup {
+      grid-template-columns: 1fr 1fr;
+      align-items: start;
+    }
+  }
+  .setup__logout {
+    align-self: flex-start;
+    font-weight: var(--weight-medium);
+  }
+  .perks {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+    display: grid;
+    gap: var(--space-2);
+    font-size: var(--text-sm);
+    color: var(--color-ink-2);
+  }
+  .perks li {
+    padding-left: var(--space-5);
+    position: relative;
+  }
+  .perks li::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 0.55em;
+    width: 0.5rem;
+    height: 0.5rem;
+    border-radius: 50%;
+    background: var(--color-brand);
+  }
+  .profile-facts dd {
+    overflow-wrap: anywhere;
   }
   .app__hi {
     font-size: var(--text-3xl);
@@ -607,6 +752,10 @@ const visaNames = JSON.stringify(Object.fromEntries(visas.map((v) => [v.slug, v.
     signOut,
     onAuthChange,
     listStays,
+    saveProfile,
+    uploadAvatar,
+    AVATAR_MAX_BYTES,
+    AVATAR_TYPES,
     saveStay,
     deleteStay,
     type Profile,
@@ -637,6 +786,8 @@ const visaNames = JSON.stringify(Object.fromEntries(visas.map((v) => [v.slug, v.
 
   const root = document.querySelector<HTMLElement>('[data-acct]')!;
   const VISA_NAMES = JSON.parse(root.dataset.visas ?? '{}') as Record<string, string>;
+  const COUNTRY_NAMES = JSON.parse(root.dataset.countries ?? '{}') as Record<string, string>;
+  const LAST_EMAIL_KEY = 'yy:last-email';
   const params = new URLSearchParams(location.search);
   const hash = new URLSearchParams(location.hash.replace(/^#/, ''));
   const RETURN_KEY = 'yy:auth-return';
@@ -644,7 +795,7 @@ const visaNames = JSON.stringify(Object.fromEntries(visas.map((v) => [v.slug, v.
   const REM_KEY = 'yy:reminders';
 
   const $ = <T extends HTMLElement = HTMLElement>(sel: string, scope: ParentNode = document) => scope.querySelector<T>(sel)!;
-  const show = (view: 'loading' | 'unavailable' | 'login' | 'app') => {
+  const show = (view: 'loading' | 'unavailable' | 'login' | 'setup' | 'app') => {
     document.querySelectorAll<HTMLElement>('[data-view]').forEach((el) => {
       el.hidden = el.dataset.view !== view;
       // Exactly one h1 in the DOM: the visible view's title. Hidden views keep theirs as h2.
@@ -789,6 +940,26 @@ const visaNames = JSON.stringify(Object.fromEntries(visas.map((v) => [v.slug, v.
     return `${location.origin}/account${qs ? `?${qs}` : ''}`;
   };
 
+  // "Open Gmail" shortcut: the biggest drop-off is people not finding the email.
+  const MAILBOXES: [RegExp, string, string][] = [
+    [/@(gmail|googlemail)\.com$/i, 'Gmail', 'https://mail.google.com/mail/u/0/#inbox'],
+    [/@(outlook|hotmail|live|msn)\./i, 'Outlook', 'https://outlook.live.com/mail/0/'],
+    [/@(yahoo|ymail)\./i, 'Yahoo Mail', 'https://mail.yahoo.com/'],
+    [/@(icloud|me|mac)\.com$/i, 'iCloud Mail', 'https://www.icloud.com/mail'],
+  ];
+  function showMailbox(email: string) {
+    const hit = MAILBOXES.find(([re]) => re.test(email));
+    const box = $('[data-mailbox]');
+    box.hidden = !hit;
+    if (!hit) return;
+    $('[data-mailbox-name]').textContent = hit[1];
+    $<HTMLAnchorElement>('[data-mailbox-link]').href = hit[2];
+  }
+  try {
+    const last = localStorage.getItem(LAST_EMAIL_KEY);
+    if (last && !emailInput.value) emailInput.value = last;
+  } catch {}
+
   let countdown = 0;
   function startCountdown() {
     let left = 30;
@@ -812,6 +983,10 @@ const visaNames = JSON.stringify(Object.fromEntries(visas.map((v) => [v.slug, v.
       await signInWithMagicLink(email, redirectTo());
       restore();
       $('[data-sent-email]').textContent = email;
+      try {
+        localStorage.setItem(LAST_EMAIL_KEY, email);
+      } catch {}
+      showMailbox(email);
       loginForm.hidden = true;
       $('[data-login-expired]').hidden = true;
       sent.hidden = false;
@@ -851,6 +1026,143 @@ const visaNames = JSON.stringify(Object.fromEntries(visas.map((v) => [v.slug, v.
   let profile: Profile | null = null;
   let stays: Stay[] = [];
   let editing: string | null = null;
+
+  // ------------------------------------------------------------------ profile
+  const profileForm = $<HTMLFormElement>('[data-profile-form]');
+  const avatarFile = $<HTMLInputElement>('[data-avatar-file]');
+  const avatarPreview = $('[data-avatar-preview]');
+  const profileErr = $('[data-profile-error]');
+  const profileErrText = $('[data-profile-error-text]');
+  const cancelBtn = $<HTMLButtonElement>('[data-profile-cancel]');
+  let pickedFile: File | null = null;
+  let previewUrl: string | null = null;
+
+  const initialsOf = (name: string) =>
+    name
+      .split(/[\s@._-]+/)
+      .filter(Boolean)
+      .slice(0, 2)
+      .map((x) => x[0]!.toUpperCase())
+      .join('') || '?';
+
+  function paintAvatar(el: HTMLElement, url: string | null, name: string) {
+    el.replaceChildren();
+    if (url) {
+      const img = document.createElement('img');
+      img.src = url;
+      img.alt = '';
+      img.referrerPolicy = 'no-referrer';
+      el.append(img);
+    } else el.textContent = initialsOf(name);
+  }
+
+  const validateProfile: Validator = (f) => {
+    const e: Record<string, string> = {};
+    if (!val(f, 'displayName')) e['p-name'] = 'Enter your name.';
+    if (!val(f, 'nationality')) e['p-nat'] = 'Choose your passport country.';
+    return e;
+  };
+  liveValidate(profileForm, validateProfile);
+
+  $('[data-avatar-pick]').addEventListener('click', () => avatarFile.click());
+  avatarFile.addEventListener('change', () => {
+    const f = avatarFile.files?.[0];
+    profileErr.hidden = true;
+    if (!f) return;
+    if (!AVATAR_TYPES.includes(f.type) || f.size > AVATAR_MAX_BYTES) {
+      avatarFile.value = '';
+      profileErrText.textContent = !AVATAR_TYPES.includes(f.type) ? 'Use a JPG, PNG or WebP photo.' : 'That photo is over 2 MB. Pick a smaller one.';
+      profileErr.hidden = false;
+      return;
+    }
+    pickedFile = f;
+    if (previewUrl) URL.revokeObjectURL(previewUrl);
+    previewUrl = URL.createObjectURL(f);
+    paintAvatar(avatarPreview, previewUrl, '');
+    $('[data-avatar-pick]').lastChild!.textContent = 'Change photo';
+  });
+
+  /** Moves the one profile form into the setup view or the profile panel and fills it. */
+  function mountProfileForm(where: 'setup' | 'app') {
+    const slot = $(`[data-profile-slot="${where}"]`);
+    slot.append(profileForm);
+    slot.hidden = false;
+    cancelBtn.hidden = where === 'setup';
+    profileErr.hidden = true;
+    pickedFile = null;
+    avatarFile.value = '';
+    (profileForm.elements.namedItem('displayName') as HTMLInputElement).value = profile?.displayName ?? '';
+    (profileForm.elements.namedItem('nationality') as HTMLSelectElement).value = profile?.nationality ?? '';
+    (profileForm.elements.namedItem('contact') as HTMLInputElement).value = profile?.contact ?? '';
+    paintAvatar(avatarPreview, profile?.avatarUrl ?? null, profile?.displayName ?? profile?.email?.split('@')[0] ?? '');
+    $('[data-avatar-pick]').lastChild!.textContent = profile?.avatarUrl ? 'Change photo' : 'Add a photo';
+  }
+
+  function renderProfile() {
+    const name = profile?.displayName || profile?.email?.split('@')[0] || 'there';
+    $('[data-hi-email]').textContent = name;
+    paintAvatar($('[data-app-avatar]'), profile?.avatarUrl ?? null, name);
+    $('[data-pf-name]').textContent = profile?.displayName || '—';
+    $('[data-pf-email]').textContent = profile?.email || '—';
+    $('[data-pf-nat]').textContent = (profile?.nationality && COUNTRY_NAMES[profile.nationality]) || '—';
+    $('[data-pf-contact]').textContent = profile?.contact || '—';
+  }
+
+  $('[data-profile-edit]').addEventListener('click', () => {
+    $('[data-profile-facts]').hidden = true;
+    ($('[data-profile-edit]') as HTMLElement).hidden = true;
+    mountProfileForm('app');
+    $<HTMLInputElement>('#p-name').focus();
+  });
+  function closeEdit() {
+    $('[data-profile-slot="app"]').hidden = true;
+    $('[data-profile-facts]').hidden = false;
+    ($('[data-profile-edit]') as HTMLElement).hidden = false;
+    $('[data-profile-slot="setup"]').append(profileForm); // park it; mountProfileForm moves it again
+  }
+  cancelBtn.addEventListener('click', closeEdit);
+
+  let afterSetup: (() => void) | null = null;
+  profileForm.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    profileErr.hidden = true;
+    if (!applyValidation(profileForm, validateProfile)) return;
+    const wasSetup = !profile?.onboarded;
+    const restore = setBusy($('[data-profile-save]') as HTMLButtonElement, pickedFile ? 'Uploading photo…' : 'Saving…');
+    try {
+      const avatarUrl = pickedFile ? await uploadAvatar(pickedFile) : undefined;
+      profile = await saveProfile({
+        displayName: val(profileForm, 'displayName'),
+        nationality: val(profileForm, 'nationality'),
+        contact: val(profileForm, 'contact'),
+        avatarUrl,
+      });
+      restore();
+      window.dispatchEvent(new Event('yy:profile-changed'));
+      if (wasSetup && afterSetup) {
+        const go = afterSetup;
+        afterSetup = null;
+        go();
+      } else {
+        closeEdit();
+        renderProfile();
+      }
+    } catch (err) {
+      restore();
+      const msg = String((err as { message?: string })?.message ?? '');
+      profileErrText.textContent = /photo|jpg|png|mb/i.test(msg)
+        ? msg
+        : navigator.onLine === false
+          ? "You're offline. Connect to the internet and try again."
+          : "We couldn't save your profile. Try again — what you typed is still here.";
+      profileErr.hidden = false;
+    }
+  });
+  $('[data-logout-setup]').addEventListener('click', async () => {
+    await signOut().catch(() => undefined);
+    location.href = '/account';
+  });
+
 
   const addDays = (d: Date, n: number) => {
     const x = new Date(d);
@@ -1126,7 +1438,8 @@ const visaNames = JSON.stringify(Object.fromEntries(visas.map((v) => [v.slug, v.
     if (!session) return;
     profile = await getProfile().catch(() => null);
     const pro = Boolean(profile?.isPro);
-    $('[data-hi-email]').textContent = session.user.email ?? 'there';
+    if (profile && !profile.email) profile = { ...profile, email: session.user.email ?? null };
+    renderProfile();
     $('[data-plan-free]').hidden = pro;
     $('[data-plan-pro]').hidden = !pro;
     $('[data-plan-renew]').textContent = pro && profile?.proUntil ? `Renews ${fmtDate(profile.proUntil)}` : '';
@@ -1194,6 +1507,14 @@ const visaNames = JSON.stringify(Object.fromEntries(visas.map((v) => [v.slug, v.
       if (expired) {
         $('[data-login-expired]').hidden = false;
         history.replaceState(null, '', location.pathname + location.search);
+      } else if (hash.get('error')) {
+        // e.g. #error=access_denied: the link was already used, or opened in a different browser.
+        $('[data-login-linkerr-text]').textContent =
+          hash.get('error_code') === 'otp_disabled' || /used|invalid/i.test(hash.get('error_description') ?? '')
+            ? 'It may already have been used. Enter your email and we\'ll send a new one.'
+            : "Enter your email and we'll send a new one.";
+        $('[data-login-linkerr]').hidden = false;
+        history.replaceState(null, '', location.pathname + location.search);
       }
       if (intent === 'pro_monthly' || intent === 'pro_yearly') {
         const note = $('[data-intent-note]');
@@ -1204,6 +1525,21 @@ const visaNames = JSON.stringify(Object.fromEntries(visas.map((v) => [v.slug, v.
       return;
     }
 
+    // New account: finish the profile before anything else, then carry on with what they came for.
+    const me = await getProfile().catch(() => null);
+    if (me && !me.onboarded) {
+      profile = me;
+      if (!profile.email) profile = { ...profile, email: session.user.email ?? null };
+      afterSetup = () => void proceed();
+      mountProfileForm('setup');
+      show('setup');
+      $<HTMLInputElement>('#p-name').focus({ preventScroll: true });
+      return;
+    }
+    await proceed();
+  }
+
+  async function proceed() {
     // Signed in and arrived with an intent: finish what the user started.
     if (!isReturn && (intent === 'pro_monthly' || intent === 'pro_yearly')) {
       clearReturn();

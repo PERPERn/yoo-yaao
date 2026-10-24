@@ -27,6 +27,18 @@ export type Profile = {
   plan: 'free' | 'pro';
   proUntil: string | null;
   isPro: boolean; // plan === 'pro' and pro_until in the future (or unset)
+  displayName: string | null;
+  avatarUrl: string | null;
+  nationality: string | null;
+  contact: string | null; // LINE / WhatsApp / phone: how an agency can reach them
+  onboarded: boolean; // false until the new-user profile setup is saved
+};
+
+export type ProfileInput = {
+  displayName: string;
+  nationality?: string | null;
+  contact?: string | null;
+  avatarUrl?: string | null;
 };
 
 export type StayInput = {
@@ -127,14 +139,74 @@ export async function getProfile(): Promise<Profile | null> {
   if (!session || !supabase) return null;
   const { data, error } = await supabase
     .from('profiles')
-    .select('id, email, plan, pro_until')
+    .select(PROFILE_COLS)
     .eq('id', session.user.id)
     .maybeSingle();
   if (error) throw error;
   if (!data) return null;
-  const proUntil = data.pro_until as string | null;
-  const isPro = data.plan === 'pro' && (!proUntil || new Date(proUntil).getTime() > Date.now());
-  return { id: data.id, email: data.email, plan: data.plan, proUntil, isPro };
+  return toProfile(data as ProfileRow);
+}
+
+/** Saves the setup / edit form and marks the profile as onboarded. Requires sign-in. */
+export async function saveProfile(input: ProfileInput): Promise<Profile> {
+  const session = await getSession();
+  if (!session) throw new Error('Sign in to save your profile.');
+  const row: Record<string, string | null> = {
+    display_name: input.displayName.trim(),
+    nationality: input.nationality?.trim() || null,
+    contact: input.contact?.trim() || null,
+    onboarded_at: new Date().toISOString(),
+  };
+  if (input.avatarUrl !== undefined) row.avatar_url = input.avatarUrl;
+  const { data, error } = await client().from('profiles').update(row).eq('id', session.user.id).select(PROFILE_COLS).single();
+  if (error) throw error;
+  return toProfile(data as ProfileRow);
+}
+
+export const AVATAR_MAX_BYTES = 2 * 1024 * 1024;
+export const AVATAR_TYPES = ['image/jpeg', 'image/png', 'image/webp'];
+
+/** Uploads a profile photo to avatars/<user id>/ and returns its public URL (cache-busted). */
+export async function uploadAvatar(file: File): Promise<string> {
+  const session = await getSession();
+  if (!session) throw new Error('Sign in to upload a photo.');
+  if (!AVATAR_TYPES.includes(file.type)) throw new Error('Use a JPG, PNG or WebP image.');
+  if (file.size > AVATAR_MAX_BYTES) throw new Error('That photo is over 2 MB.');
+  const ext = file.type === 'image/png' ? 'png' : file.type === 'image/webp' ? 'webp' : 'jpg';
+  const path = `${session.user.id}/avatar.${ext}`;
+  const bucket = client().storage.from('avatars');
+  const { error } = await bucket.upload(path, file, { upsert: true, contentType: file.type, cacheControl: '3600' });
+  if (error) throw error;
+  return `${bucket.getPublicUrl(path).data.publicUrl}?v=${Date.now()}`;
+}
+
+type ProfileRow = {
+  id: string;
+  email: string | null;
+  plan: 'free' | 'pro';
+  pro_until: string | null;
+  display_name: string | null;
+  avatar_url: string | null;
+  nationality: string | null;
+  contact: string | null;
+  onboarded_at: string | null;
+};
+const PROFILE_COLS = 'id, email, plan, pro_until, display_name, avatar_url, nationality, contact, onboarded_at';
+
+function toProfile(r: ProfileRow): Profile {
+  const isPro = r.plan === 'pro' && (!r.pro_until || new Date(r.pro_until).getTime() > Date.now());
+  return {
+    id: r.id,
+    email: r.email,
+    plan: r.plan,
+    proUntil: r.pro_until,
+    isPro,
+    displayName: r.display_name,
+    avatarUrl: r.avatar_url,
+    nationality: r.nationality,
+    contact: r.contact,
+    onboarded: Boolean(r.onboarded_at),
+  };
 }
 
 // ---------------------------------------------------------------------------

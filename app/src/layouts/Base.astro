@@ -103,7 +103,21 @@ const year = new Date().getFullYear();
 
         <div class="site-header__actions">
           <a href="/business" class="site-header__login" style="color: var(--color-ink-2); font-weight: var(--weight-medium)">For business</a>
-          <a href="/account" class="site-header__login" aria-current={isActive('/account') ? 'page' : undefined}>Log in</a>
+          <a href="/account" class="site-header__login" data-auth-out aria-current={isActive('/account') ? 'page' : undefined}>Log in</a>
+          <details class="acct-menu" data-acct-menu data-auth-in hidden>
+            <summary class="acct-menu__btn" aria-label="Your account">
+              <span class="acct-menu__avatar" data-acct-avatar aria-hidden="true"></span>
+              <span class="acct-menu__name" data-acct-name></span>
+            </summary>
+            <div class="acct-menu__panel">
+              <p class="acct-menu__email small" data-acct-email></p>
+              <a href="/account" class="acct-menu__item" aria-current={isActive('/account') ? 'page' : undefined}>Profile &amp; stays</a>
+              <a href="/messages" class="acct-menu__item" aria-current={isActive('/messages') ? 'page' : undefined}>
+                Messages
+              </a>
+              <button type="button" class="acct-menu__item" data-auth-logout>Log out</button>
+            </div>
+          </details>
           <Button href="/finder" size="sm" iconRight="arrow-right" class="site-header__cta">Find my visa</Button>
           <button
             type="button"
@@ -135,7 +149,16 @@ const year = new Date().getFullYear();
           </ul>
           <div class="mobile-nav__actions">
             <Button href="/finder" size="lg" block iconRight="arrow-right">Find my visa</Button>
-            <Button href="/account" size="lg" variant="secondary" block>Log in</Button>
+            <Button href="/account" size="lg" variant="secondary" block data-auth-out>Log in</Button>
+            <div class="mobile-nav__acct" data-auth-in hidden>
+              <p class="mobile-nav__who">
+                <span class="acct-menu__avatar" data-acct-avatar aria-hidden="true"></span>
+                <span><strong data-acct-name></strong><br /><span class="small" data-acct-email></span></span>
+              </p>
+              <Button href="/account" size="lg" variant="secondary" block>Profile &amp; stays</Button>
+              <Button href="/messages" size="lg" variant="secondary" block>Messages</Button>
+              <Button size="lg" variant="ghost" block data-auth-logout>Log out</Button>
+            </div>
           </div>
         </nav>
       </div>
@@ -195,6 +218,9 @@ const year = new Date().getFullYear();
     </a>
 
     <script>
+      import { initAuthNav } from '../components/core/auth-nav';
+      initAuthNav();
+
       const header = document.querySelector<HTMLElement>('[data-site-header]');
       const toggle = document.querySelector<HTMLButtonElement>('[data-menu-toggle]');
       const panel = document.querySelector<HTMLElement>('[data-mobile-nav]');
@@ -455,6 +481,119 @@ const year = new Date().getFullYear();
 
   main:focus {
     outline: none;
+  }
+
+  /* ---------- Signed-in account menu ---------- */
+  .acct-menu {
+    position: relative;
+  }
+  :global([data-auth-out][hidden]),
+  .acct-menu[hidden] {
+    display: none !important;
+  }
+  .acct-menu__btn {
+    display: none;
+    align-items: center;
+    gap: var(--space-2);
+    min-height: var(--tap-min);
+    padding: 0 var(--space-3) 0 var(--space-1);
+    border-radius: var(--radius-pill);
+    background: var(--color-surface-2);
+    color: var(--color-ink);
+    font-size: var(--text-sm);
+    font-weight: var(--weight-semibold);
+    cursor: pointer;
+    list-style: none;
+  }
+  .acct-menu__btn::-webkit-details-marker {
+    display: none;
+  }
+  .acct-menu__btn:hover,
+  .acct-menu[open] .acct-menu__btn {
+    background: var(--color-surface-3);
+  }
+  .acct-menu__name {
+    max-width: 9rem;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .acct-menu__avatar {
+    display: inline-grid;
+    place-items: center;
+    flex-shrink: 0;
+    width: 2rem;
+    height: 2rem;
+    border-radius: 50%;
+    overflow: hidden;
+    background: var(--color-brand);
+    color: var(--color-on-brand);
+    font-size: var(--text-xs);
+    font-weight: var(--weight-bold);
+  }
+  .acct-menu__avatar :global(img) {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+  .acct-menu__panel {
+    position: absolute;
+    right: 0;
+    top: calc(100% + var(--space-2));
+    z-index: var(--z-overlay);
+    display: grid;
+    min-width: 15rem;
+    padding: var(--space-2);
+    border-radius: var(--radius-lg);
+    background: var(--color-surface);
+    box-shadow: var(--shadow-raise);
+  }
+  .acct-menu__email {
+    padding: var(--space-2) var(--space-3);
+    color: var(--color-ink-2);
+    overflow-wrap: anywhere;
+  }
+  .acct-menu__item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    min-height: var(--tap-min);
+    padding: 0 var(--space-3);
+    border: 0;
+    border-radius: var(--radius-md);
+    background: none;
+    color: var(--color-ink);
+    font: inherit;
+    font-weight: var(--weight-medium);
+    text-align: left;
+    text-decoration: none;
+    cursor: pointer;
+  }
+  .acct-menu__item:hover {
+    background: var(--color-surface-2);
+    color: var(--color-brand);
+  }
+  .acct-menu__item[aria-current='page'] {
+    color: var(--color-brand);
+  }
+  .mobile-nav__acct {
+    display: grid;
+    gap: var(--space-3);
+  }
+  .mobile-nav__acct[hidden] {
+    display: none !important;
+  }
+  .mobile-nav__who {
+    display: flex;
+    align-items: center;
+    gap: var(--space-3);
+    color: var(--color-ink-2);
+    overflow-wrap: anywhere;
+  }
+  @media (min-width: 64rem) {
+    .acct-menu__btn {
+      display: inline-flex;
+    }
   }
 
   /* ---------- Footer ---------- */
