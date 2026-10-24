@@ -1,0 +1,142 @@
+---
+import Button from '../ui/Button.astro';
+import Icon from '../ui/Icon.astro';
+import { getProduct, PLATFORM_FEE_RATE } from '../../data/products';
+
+const pro = getProduct('pro_monthly');
+const proYear = getProduct('pro_yearly');
+const listing = getProduct('listing_featured');
+const fee = Math.round(PLATFORM_FEE_RATE * 100);
+
+const panels = [
+  {
+    seg: 'b2c',
+    title: 'Travellers start free',
+    price: pro ? `Pro $${pro.priceUsd}/mo` : '',
+    note: proYear ? `or $${proYear.priceUsd}/year` : '',
+    points: ['Visa Finder and every guide: free', ...(pro?.features.slice(0, 2) ?? [])],
+    cta: { label: 'See Pro', href: '/pricing' },
+  },
+  {
+    seg: 'b2b',
+    title: 'Businesses reach long-stayers',
+    price: listing ? `$${listing.priceUsd}/mo` : '',
+    note: 'Featured listing',
+    points: [...(listing?.features.slice(0, 2) ?? []), 'Leads from people who need an expert'],
+    cta: { label: 'List your business', href: '/business' },
+  },
+  {
+    seg: 'c2c',
+    title: 'Locals earn as buddies',
+    price: `${fee}% fee`,
+    note: 'You set your price',
+    points: ['Help newcomers with viewings, banks and SIMs', 'Paid per session, no fee until you earn'],
+    cta: { label: 'Become a buddy', href: '/buddies' },
+  },
+];
+---
+
+<section class="section scene scene--plans" data-scene="plans" aria-labelledby="plans-title">
+  <div class="container plans">
+    <div class="plans__head" data-reveal>
+      <div class="stack">
+        <h2 id="plans-title" class="display-6xl plans__title">Plans for everyone.</h2>
+        <p class="lead">For people moving here, the businesses that serve them and the locals who help them settle.</p>
+      </div>
+      <div><Button href="/pricing" variant="secondary" iconRight="arrow-right">See pricing</Button></div>
+    </div>
+    <ul class="panels" role="list" data-reveal-stagger="0.12">
+      {
+        panels.map((p) => (
+          <li class:list={['seg', `seg--${p.seg}`, 'panel']}>
+            <h3 class="panel__title">{p.title}</h3>
+            <p class="panel__price tabular">{p.price}</p>
+            <p class="small panel__note">{p.note}</p>
+            <ul class="panel__points" role="list">
+              {p.points.map((pt) => (
+                <li>
+                  <Icon name="check" size={18} class="seg-strong" />
+                  <span>{pt}</span>
+                </li>
+              ))}
+            </ul>
+            <a class="panel__cta seg-strong" href={p.cta.href}>
+              {p.cta.label} <Icon name="arrow-right" size={18} />
+            </a>
+          </li>
+        ))
+      }
+    </ul>
+  </div>
+</section>
+
+<style>
+  .plans {
+    display: grid;
+    gap: var(--space-10);
+  }
+  .plans__head {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    align-items: end;
+    gap: var(--space-6);
+  }
+  .plans__title {
+    font-size: var(--text-5xl);
+  }
+  .panels {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: grid;
+    gap: var(--space-4);
+    grid-template-columns: repeat(auto-fit, minmax(min(18rem, 100%), 1fr));
+  }
+  .panel {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-2);
+    padding: var(--space-8);
+    border-radius: var(--radius-2xl);
+    min-height: 26rem;
+  }
+  .panel__title {
+    font-size: var(--text-3xl);
+    margin: 0;
+  }
+  .panel__price {
+    font-family: var(--font-display);
+    font-weight: var(--weight-bold);
+    font-size: var(--text-2xl);
+    margin: var(--space-4) 0 0;
+  }
+  .panel__note {
+    margin: 0;
+  }
+  .panel__points {
+    list-style: none;
+    margin: var(--space-4) 0 0;
+    padding: 0;
+    display: grid;
+    gap: var(--space-2);
+  }
+  .panel__points li {
+    display: flex;
+    gap: var(--space-2);
+    align-items: flex-start;
+  }
+  .panel__points :global(svg) {
+    flex-shrink: 0;
+    margin-top: 0.2em;
+  }
+  .panel__cta {
+    margin-top: auto;
+    padding-top: var(--space-6);
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-2);
+    min-height: var(--tap-min);
+    font-weight: var(--weight-semibold);
+  }
+</style>

@@ -1,0 +1,157 @@
+---
+import Admin from '../../layouts/Admin.astro';
+import Panel from '../../components/admin/Panel.astro';
+import Button from '../../components/ui/Button.astro';
+---
+
+<Admin
+  title="Users"
+  lead="Everyone with an account. Partners get the partner portal; admins get this dashboard. Role changes ask you to confirm."
+>
+  <p class="adm-err" role="alert" data-err hidden></p>
+  <Panel
+    id="users"
+    title="Accounts"
+    caption="Accounts, newest first. Pick a role, then Apply and confirm."
+    cols={['Email', 'Plan', 'Joined', 'Role', { label: 'Apply', sr: true }]}
+  >
+    <div slot="tools" class="adm-filters">
+      <label class="adm-filters__label" for="f-role">Show</label>
+      <select id="f-role" class="control" data-filter>
+        <option value="all">All roles</option>
+        <option value="user">Users</option>
+        <option value="partner">Partners</option>
+        <option value="admin">Admins</option>
+      </select>
+    </div>
+    <tr slot="row">
+      <th scope="row"><span data-f="email"></span><span class="adm-sub" data-f="note"></span></th>
+      <td><span class="adm-stamp" data-f="plan"></span><span class="adm-sub" data-f="until"></span></td>
+      <td class="nowrap" data-f="joined"></td>
+      <td>
+        <select class="control" data-role>
+          <option value="user">User</option>
+          <option value="partner">Partner</option>
+          <option value="admin">Admin</option>
+        </select>
+      </td>
+      <td><Button size="sm" variant="secondary" data-apply disabled>Apply</Button></td>
+    </tr>
+  </Panel>
+
+  <dialog class="adm-dialog" aria-labelledby="confirm-title" aria-describedby="confirm-text" data-confirm>
+    <form method="dialog">
+      <h2 id="confirm-title">Change role?</h2>
+      <p id="confirm-text" data-confirm-text></p>
+      <div class="adm-dialog__actions">
+        <Button type="submit" variant="ghost" value="cancel" data-cancel>Cancel</Button>
+        <Button type="submit" value="ok" data-ok>Change role</Button>
+      </div>
+    </form>
+  </dialog>
+</Admin>
+
+<script>
+  import { announce, boot, fmtDate, put, renderRows, setState, stamp, type Mode } from '../../components/admin/admin';
+  import { source, syncCounts } from '../../components/admin/data';
+  import type { OpsProfile, Role } from '../../lib/ops';
+
+  const ROLE_NOTE: Record<Role, string> = {
+    user: 'a regular traveller account (no portal access)',
+    partner: 'a partner (sees the partner portal for their own email)',
+    admin: 'an admin (full access to this dashboard and every partner record)',
+  };
+  const panel = document.querySelector<HTMLElement>('[data-panel="users"]')!;
+  const filter = document.querySelector<HTMLSelectElement>('[data-filter]')!;
+  const err = document.querySelector<HTMLElement>('[data-err]')!;
+  const dialog = document.querySelector<HTMLDialogElement>('[data-confirm]')!;
+  const okBtn = dialog.querySelector<HTMLButtonElement>('[data-ok]')!;
+  let mode: Mode = 'demo';
+  let me = '';
+  let rows: OpsProfile[] = [];
+
+  /** Opens the confirm dialog; resolves true when the admin confirms. */
+  function confirmRole(email: string, role: Role): Promise<boolean> {
+    dialog.querySelector('[data-confirm-text]')!.textContent = `${email} will become ${ROLE_NOTE[role]}.`;
+    okBtn.querySelector('.btn__label')!.textContent = role === 'admin' ? 'Make admin' : 'Change role';
+    dialog.returnValue = '';
+    dialog.showModal();
+    dialog.querySelector<HTMLButtonElement>('[data-cancel]')!.focus(); // safe default for a privilege change
+    return new Promise((resolve) => dialog.addEventListener('close', () => resolve(dialog.returnValue === 'ok'), { once: true }));
+  }
+
+  function fill(tr: HTMLTableRowElement, p: OpsProfile) {
+    const email = p.email ?? '(no email)';
+    const self = !!p.email && p.email.toLowerCase() === me.toLowerCase();
+    put(tr, 'email', email);
+    put(tr, 'note', self ? 'You. Another admin has to change your role.' : null);
+    if (!self) tr.querySelector('[data-f="note"]')!.remove();
+    stamp(tr, 'plan', p.plan === 'pro' ? 'Pro' : 'Free', p.plan === 'pro' ? 'info' : 'neutral');
+    put(tr, 'until', p.plan === 'pro' && p.pro_until ? `until ${fmtDate(p.pro_until)}` : null);
+    if (!(p.plan === 'pro' && p.pro_until)) tr.querySelector('[data-f="until"]')!.remove();
+    put(tr, 'joined', fmtDate(p.created_at));
+
+    const sel = tr.querySelector<HTMLSelectElement>('[data-role]')!;
+    const apply = tr.querySelector<HTMLButtonElement>('[data-apply]')!;
+    sel.value = p.role;
+    sel.disabled = self; // RLS would allow it, but locking yourself out is never what you meant
+    sel.setAttribute('aria-label', `Role for ${email}`);
+    apply.setAttribute('aria-label', `Apply role for ${email}`);
+    sel.addEventListener('change', () => (apply.disabled = sel.value === p.role));
+
+    apply.addEventListener('click', async () => {
+      const role = sel.value as Role;
+      if (!(await confirmRole(email, role))) {
+        apply.focus();
+        return;
+      }
+      apply.disabled = sel.disabled = true;
+      apply.setAttribute('aria-busy', 'true');
+      try {
+        await source(mode).setRole(p.id, role);
+        p.role = role;
+        err.hidden = true;
+        announce(`${email} is now ${role === 'user' ? 'a user' : `a ${role}`}.`);
+      } catch {
+        sel.value = p.role;
+        err.textContent = `Couldn't change the role for ${email}. Nothing was changed.`;
+        err.hidden = false;
+        announce(err.textContent);
+      } finally {
+        apply.removeAttribute('aria-busy');
+        sel.disabled = false;
+        apply.disabled = sel.value === p.role;
+        sel.focus();
+      }
+    });
+  }
+
+  const render = () =>
+    renderRows(panel, rows.filter((p) => filter.value === 'all' || p.role === filter.value), fill, 'No accounts with this role.');
+
+  async function load() {
+    setState(panel, 'loading');
+    try {
+      rows = await source(mode).profiles();
+      render();
+    } catch {
+      setState(panel, 'error', "Couldn't load accounts.");
+    }
+  }
+
+  filter.addEventListener('change', render);
+  panel.querySelector('[data-retry]')!.addEventListener('click', load);
+  boot().then((b) => {
+    mode = b.mode;
+    me = b.email;
+    if (mode === 'denied') return;
+    syncCounts(mode);
+    load();
+  });
+</script>
+
+<style>
+  .nowrap {
+    white-space: nowrap;
+  }
+</style>

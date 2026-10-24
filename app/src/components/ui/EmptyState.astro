@@ -1,0 +1,82 @@
+---
+import Icon, { type IconName } from './Icon.astro';
+import Button from './Button.astro';
+
+/**
+ * Shown when a list or tool has nothing yet. Always give one clear next action
+ * (actionLabel + actionHref, or an `action` slot for a button with data hooks).
+ */
+interface Props {
+  title: string;
+  description?: string;
+  icon?: IconName;
+  actionLabel?: string;
+  actionHref?: string;
+  titleLevel?: 2 | 3 | 4;
+  class?: string;
+  [key: string]: unknown;
+}
+const {
+  title,
+  description,
+  icon = 'passport',
+  actionLabel,
+  actionHref,
+  titleLevel = 3,
+  class: className,
+  ...rest
+} = Astro.props;
+const H = `h${titleLevel}` as 'h2' | 'h3' | 'h4';
+---
+
+<div class:list={['empty', className]} {...rest}>
+  <span class="empty__icon"><Icon name={icon} size={28} /></span>
+  <H class="empty__title">{title}</H>
+  {description && <p class="empty__desc">{description}</p>}
+  <slot />
+  {
+    Astro.slots.has('action') ? (
+      <div class="empty__action"><slot name="action" /></div>
+    ) : (
+      actionLabel &&
+      actionHref && (
+        <div class="empty__action">
+          <Button href={actionHref} iconRight="arrow-right">{actionLabel}</Button>
+        </div>
+      )
+    )
+  }
+</div>
+
+<style>
+  .empty {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: var(--space-3);
+    padding: clamp(var(--space-10), 6vw, var(--space-16)) var(--space-6);
+    text-align: center;
+    background: var(--color-surface-2);
+    border-radius: var(--radius-xl);
+  }
+  .empty__icon {
+    display: grid;
+    place-items: center;
+    width: 64px;
+    height: 64px;
+    margin-bottom: var(--space-2);
+    border-radius: 50%;
+    background: var(--color-surface);
+    color: var(--color-brand);
+  }
+  .empty__title {
+    font-size: var(--text-xl);
+  }
+  .empty__desc {
+    max-width: 44ch;
+    color: var(--color-ink-2);
+  }
+  .empty__action {
+    margin-top: var(--space-3);
+  }
+</style>

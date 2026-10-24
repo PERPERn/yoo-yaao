@@ -1,0 +1,127 @@
+---
+import Button from '../ui/Button.astro';
+import Marquee from '../ui/Marquee.astro';
+import Avatar from '../ui/Avatar.astro';
+import Rating from '../ui/Rating.astro';
+import Badge from '../ui/Badge.astro';
+import { buddies, DEMO_NOTICE } from '../../data/buddies';
+import { cities } from '../../data/cities';
+
+const cityName = (slug: string) => cities.find((c) => c.slug === slug)?.name ?? slug;
+const segs = ['b2c', 'b2b', 'c2c'];
+const featured = [...buddies].sort((a, b) => b.rating * b.sessions - a.rating * a.sessions).slice(0, 2);
+---
+
+<section class="scene scene--buddies" data-scene="buddies" aria-labelledby="buddies-title">
+  <div class="container buddies__head" data-reveal>
+    <div class="stack">
+      <h2 id="buddies-title" class="display-6xl buddies__title">Meet a Local Buddy.</h2>
+      <p class="lead">Practical help from locals: condo viewings, bank visits, getting around.</p>
+    </div>
+    <div><Button href="/buddies" variant="secondary" iconRight="arrow-right">Meet a buddy</Button></div>
+  </div>
+
+  <Marquee label="Local Buddies and what they help with (demo profiles)" class="buddies__marquee">
+    {
+      buddies.map((b, i) => (
+        <span class:list={['marquee-chip', `marquee-chip--${segs[i % 3]}`]}>
+          <strong>{b.displayName}</strong> · {cityName(b.city)} · {b.services[0]} · <span class="tabular">${b.priceUsd}</span>
+        </span>
+      ))
+    }
+  </Marquee>
+
+  <div class="container buddies__cards">
+    {
+      featured.map((b) => (
+        <article class="buddy" data-reveal>
+          <div class="buddy__top">
+            <Avatar name={b.displayName.replace(' (demo)', '')} src={b.avatarUrl ?? `/images/buddies/${b.id}.svg`} size="lg" />
+            <div class="stack buddy__who">
+              <h3 class="buddy__name">{b.displayName}</h3>
+              <p class="small muted">
+                {cityName(b.city)} · {b.languages.join(', ')}
+              </p>
+            </div>
+            <Badge variant="demo" />
+          </div>
+          <p class="buddy__bio">{b.bio}</p>
+          <div class="buddy__foot">
+            <Rating value={b.rating} count={b.sessions} />
+            <span class="buddy__price tabular">
+              ${b.priceUsd} <small>/ session</small>
+            </span>
+          </div>
+        </article>
+      ))
+    }
+    <p class="small muted buddies__notice">{DEMO_NOTICE}</p>
+  </div>
+</section>
+
+<style>
+  .scene--buddies {
+    padding-block: var(--space-section);
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    gap: var(--space-10);
+  }
+  .buddies__head {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: var(--space-6);
+  }
+  .buddies__title {
+    font-size: var(--text-5xl);
+  }
+  .buddies__cards {
+    display: grid;
+    gap: var(--space-6);
+    grid-template-columns: repeat(auto-fit, minmax(min(22rem, 100%), 1fr));
+  }
+  .buddy {
+    display: grid;
+    gap: var(--space-4);
+    padding: var(--space-6);
+    border-radius: var(--radius-lg);
+    background: var(--color-surface);
+  }
+  .buddy__top {
+    display: flex;
+    gap: var(--space-4);
+    align-items: center;
+  }
+  .buddy__who {
+    --stack-gap: 0;
+    flex: 1;
+  }
+  .buddy__name {
+    font-size: var(--text-xl);
+    margin: 0;
+  }
+  .buddy__bio {
+    margin: 0;
+    color: var(--color-ink-2);
+  }
+  .buddy__foot {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: var(--space-4);
+  }
+  .buddy__price {
+    font-family: var(--font-display);
+    font-weight: var(--weight-bold);
+    font-size: var(--text-xl);
+  }
+  .buddy__price small {
+    font-size: var(--text-sm);
+    font-weight: var(--weight-regular);
+    color: var(--color-ink-2);
+  }
+  .buddies__notice {
+    grid-column: 1 / -1;
+    max-width: 70ch;
+  }
+</style>

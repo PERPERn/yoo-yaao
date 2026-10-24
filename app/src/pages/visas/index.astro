@@ -1,0 +1,334 @@
+---
+import Base from '../../layouts/Base.astro';
+import Section from '../../components/ui/Section.astro';
+import Button from '../../components/ui/Button.astro';
+import Badge from '../../components/ui/Badge.astro';
+import Icon from '../../components/ui/Icon.astro';
+import SourceTag from '../../components/ui/SourceTag.astro';
+import PageHeader from '../../components/core/PageHeader.astro';
+import LegalNote from '../../components/core/LegalNote.astro';
+import Motion from '../../components/core/Motion.astro';
+import { visas, VERIFIED_ON } from '../../data/visas';
+import { costParts, fmtDateISO, fmtStay, n } from '../../components/core/format';
+import type { Visa } from '../../types/contracts';
+
+type Row = { label: string; value: (v: Visa) => string | null; hint?: string };
+const rows: Row[] = [
+  { label: 'Best for', value: (v) => v.bestFor.slice(0, 2).join(', ') },
+  { label: 'Stay per entry', value: (v) => fmtStay(v.stay.perEntryDays) },
+  { label: 'Validity', value: (v) => (v.stay.validityYears ? fmtStay(v.stay.validityYears * 365) : null), hint: 'Single entry' },
+  { label: 'Government fee', value: (v) => { const c = costParts(v); return c.unit ? `${c.value} ${c.unit}` : c.value; } },
+  { label: 'Minimum income', value: (v) => (v.eligibility.minIncomeUsdYear ? `USD ${n(v.eligibility.minIncomeUsdYear)}/yr` : null) },
+  { label: 'Minimum savings', value: (v) => (v.eligibility.minSavingsThb ? `${n(v.eligibility.minSavingsThb)} THB` : null) },
+  { label: 'Minimum age', value: (v) => (v.eligibility.minAge ? `${v.eligibility.minAge}+` : null) },
+  { label: 'Remote work allowed', value: (v) => (v.eligibility.remoteWorkAllowed ? 'Yes' : 'No') },
+];
+const primary = (v: Visa) => v.sources.find((s) => s.tier === 'primary') ?? v.sources[0];
+
+const jsonLd = JSON.stringify({
+  '@context': 'https://schema.org',
+  '@type': 'ItemList',
+  name: 'Thai long-stay visas',
+  itemListElement: visas.map((v, i) => ({ '@type': 'ListItem', position: i + 1, name: v.name, url: `/visas/${v.slug}` })),
+});
+---
+
+<Base
+  title="Thai long-stay visas compared"
+  description="DTV, LTR, Thailand Privilege, visa exemption and the retirement visa side by side: stay length, cost, income and savings rules, with official sources."
+>
+  <script slot="head" type="application/ld+json" set:html={jsonLd} />
+
+  <PageHeader
+    title="Thai long-stay visas compared"
+    lead="Five ways to stay in Thailand for longer than a holiday, side by side. Every figure comes from an official Thai source, and each guide says when we checked it."
+    crumbs={[{ label: 'Visas' }]}
+  >
+    <p class="verified"><Badge variant="verified">All facts checked {fmtDateISO(VERIFIED_ON)}</Badge></p>
+  </PageHeader>
+
+  <!-- Desktop: one table. Phones: stacked cards (no sideways scrolling). -->
+  <section class="compare" aria-labelledby="compare-title">
+    <div class="container">
+      <h2 id="compare-title" class="sr-only">Comparison</h2>
+
+      <div class="table-wrap" data-reveal>
+        <table class="vtable">
+          <caption class="sr-only">Key rules for each Thai long-stay visa</caption>
+          <thead>
+            <tr>
+              <td></td>
+              {
+                visas.map((v) => (
+                  <th scope="col">
+                    <a href={`/visas/${v.slug}`} class="vtable__name">{v.shortName}</a>
+                  </th>
+                ))
+              }
+            </tr>
+          </thead>
+          <tbody>
+            {
+              rows.map((r) => (
+                <tr>
+                  <th scope="row">{r.label}</th>
+                  {visas.map((v) => {
+                    const val = r.value(v);
+                    return (
+                      <td class:list={[!val && 'is-empty', val === 'Yes' && 'is-yes']}>
+                        {val ?? <span title={r.hint ?? 'Not required'}>—<span class="sr-only">{r.hint ?? 'Not required'}</span></span>}
+                      </td>
+                    );
+                  })}
+                </tr>
+              ))
+            }
+            <tr class="vtable__foot">
+              <th scope="row">Source</th>
+              {
+                visas.map((v) => (
+                  <td>
+                    <SourceTag source={primary(v)} verifiedAt={v.verifiedAt} compact />
+                  </td>
+                ))
+              }
+            </tr>
+            <tr class="vtable__foot">
+              <td></td>
+              {
+                visas.map((v) => (
+                  <td>
+                    <a href={`/visas/${v.slug}`} class="vtable__guide">
+                      Full guide<span class="sr-only"> to {v.shortName}</span> <Icon name="arrow-right" size={16} />
+                    </a>
+                  </td>
+                ))
+              }
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <ul class="vcards" data-reveal-stagger>
+        {
+          visas.map((v) => (
+            <li class="vcard">
+              <h3 class="vcard__title">
+                <a href={`/visas/${v.slug}`}>{v.name}</a>
+              </h3>
+              <p class="vcard__summary">{v.summary}</p>
+              <dl class="vcard__facts">
+                {rows.slice(1).map((r) => {
+                  const val = r.value(v);
+                  return (
+                    <div>
+                      <dt>{r.label}</dt>
+                      <dd>{val ?? <span title={r.hint ?? 'Not required'}>— <span class="vcard__none">{r.hint ?? 'Not required'}</span></span>}</dd>
+                    </div>
+                  );
+                })}
+              </dl>
+              <SourceTag source={primary(v)} verifiedAt={v.verifiedAt} />
+              <Button href={`/visas/${v.slug}`} variant="secondary" iconRight="arrow-right" block>
+                Full {v.shortName} guide
+              </Button>
+            </li>
+          ))
+        }
+      </ul>
+    </div>
+  </section>
+
+  <Section spacing="tight">
+    <div class="finderband" data-reveal>
+      <div>
+        <h2 class="finderband__title">Not sure? Take the Visa Finder.</h2>
+        <p>Six questions about your passport, age, income and plans. You get all five visas ranked for you, with reasons.</p>
+      </div>
+      <Button href="/finder" size="lg" iconRight="arrow-right">Find my visa</Button>
+    </div>
+    <LegalNote class="legal" />
+  </Section>
+</Base>
+
+<Motion />
+
+<style>
+  .verified {
+    margin: 0;
+  }
+  .compare {
+    padding-block: var(--space-4) var(--space-12);
+  }
+
+  /* Table (≥ 60rem) */
+  .table-wrap {
+    display: none;
+  }
+  @media (min-width: 60rem) {
+    .table-wrap {
+      display: block;
+    }
+    .vcards {
+      display: none !important;
+    }
+  }
+  .vtable {
+    width: 100%;
+    table-layout: fixed;
+    border-collapse: separate;
+    border-spacing: 0;
+    font-size: var(--text-sm);
+  }
+  .vtable th,
+  .vtable td {
+    padding: var(--space-4) var(--space-4);
+    text-align: left;
+    vertical-align: top;
+  }
+  .vtable thead th {
+    position: sticky;
+    top: var(--header-h);
+    background: var(--color-bg);
+    z-index: var(--z-raised);
+    padding-block: var(--space-5);
+  }
+  .vtable__name {
+    font-family: var(--font-display);
+    font-size: var(--text-xl);
+    font-weight: var(--weight-bold);
+    letter-spacing: var(--tracking-heading);
+    color: var(--color-ink);
+    text-decoration: none;
+  }
+  .vtable__name:hover {
+    color: var(--color-brand);
+  }
+  .vtable tbody th {
+    width: 11rem;
+    font-weight: var(--weight-semibold);
+    color: var(--color-ink-2);
+  }
+  .vtable tbody tr:nth-child(odd) :is(th, td) {
+    background: var(--color-surface-2);
+  }
+  .vtable tbody tr:nth-child(odd) th {
+    border-radius: var(--radius-md) 0 0 var(--radius-md);
+  }
+  .vtable tbody tr:nth-child(odd) td:last-child {
+    border-radius: 0 var(--radius-md) var(--radius-md) 0;
+  }
+  .vtable td {
+    font-variant-numeric: tabular-nums;
+    color: var(--color-ink);
+  }
+  .vtable td.is-empty {
+    color: var(--color-ink-2);
+  }
+  .vtable td.is-yes {
+    color: var(--color-success);
+    font-weight: var(--weight-semibold);
+  }
+  .vtable__foot :is(th, td) {
+    background: transparent !important;
+  }
+  .vtable__guide {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-1);
+    min-height: var(--tap-min);
+    font-weight: var(--weight-semibold);
+  }
+
+  /* Cards (< 60rem) */
+  .vcards {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    display: grid;
+    gap: var(--space-5);
+  }
+  @media (min-width: 40rem) {
+    .vcards {
+      grid-template-columns: 1fr 1fr;
+    }
+  }
+  .vcard {
+    display: grid;
+    gap: var(--space-4);
+    align-content: start;
+    padding: var(--space-6);
+    border-radius: var(--radius-lg);
+    background: var(--color-surface);
+  }
+  .vcard__title {
+    font-size: var(--text-xl);
+    line-height: var(--leading-snug);
+  }
+  .vcard__title a {
+    color: var(--color-ink);
+    text-decoration: none;
+  }
+  .vcard__summary {
+    color: var(--color-ink-2);
+    font-size: var(--text-sm);
+  }
+  .vcard__facts {
+    margin: 0;
+    display: grid;
+    gap: 0;
+  }
+  .vcard__facts div {
+    display: flex;
+    justify-content: space-between;
+    gap: var(--space-4);
+    padding-block: var(--space-2);
+  }
+  .vcard__facts div:nth-child(odd) {
+    background: var(--color-surface-2);
+    margin-inline: calc(var(--space-3) * -1);
+    padding-inline: var(--space-3);
+    border-radius: var(--radius-sm);
+  }
+  .vcard__facts dt {
+    color: var(--color-ink-2);
+    font-size: var(--text-sm);
+  }
+  .vcard__facts dd {
+    margin: 0;
+    text-align: right;
+    font-weight: var(--weight-semibold);
+    font-variant-numeric: tabular-nums;
+  }
+  .vcard__none {
+    font-weight: var(--weight-regular);
+    color: var(--color-ink-2);
+    font-size: var(--text-sm);
+  }
+
+  .finderband {
+    display: grid;
+    gap: var(--space-6);
+    padding: clamp(var(--space-6), 5vw, var(--space-12));
+    border-radius: var(--radius-xl);
+    background: var(--color-brand-tint);
+  }
+  @media (min-width: 48rem) {
+    .finderband {
+      grid-template-columns: 1fr auto;
+      align-items: center;
+    }
+  }
+  .finderband__title {
+    font-size: var(--text-3xl);
+    line-height: var(--leading-snug);
+    text-wrap: balance;
+  }
+  .finderband p {
+    margin-top: var(--space-3);
+    max-width: 52ch;
+  }
+  .legal {
+    margin-top: var(--space-10);
+  }
+</style>

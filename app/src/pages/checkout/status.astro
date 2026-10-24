@@ -1,0 +1,484 @@
+---
+/**
+ * /checkout/status — where Stripe sends people back (success_url and cancel_url), and where the
+ * labelled no-charge demo runs when Stripe isn't configured.
+ *
+ *   ?session_id=cs_…              real checkout: polls /api/checkout/status until paid / expired
+ *   ?session_id=cs_…&cancelled=1  user pressed back on Stripe
+ *   ?demo=1&product=pro_yearly[&buddy=id]   demo: client-only, writes nothing anywhere
+ */
+import Base from '../../layouts/Base.astro';
+import Steps from '../../components/ui/Steps.astro';
+import Button from '../../components/ui/Button.astro';
+import Callout from '../../components/ui/Callout.astro';
+import Badge from '../../components/ui/Badge.astro';
+import Card from '../../components/ui/Card.astro';
+import Icon from '../../components/ui/Icon.astro';
+import { products } from '../../data/products';
+import { buddies } from '../../data/buddies';
+import { getStripe } from '../../lib/stripe';
+import { SITE } from '../../config/site';
+
+export const prerender = false;
+
+const q = Astro.url.searchParams;
+const isDemo = q.get('demo') === '1';
+const cancelled = q.get('cancelled') === '1';
+const stripeOn = Boolean(getStripe());
+
+// Demo amounts come from products.ts (and the buddy's own price), never from the URL.
+const demoProduct = isDemo ? products.find((p) => p.id === q.get('product')) : undefined;
+const demoBuddy = demoProduct?.id === 'buddy_session' ? buddies.find((b) => b.id === q.get('buddy')) : undefined;
+const demoAmount = demoBuddy?.priceUsd ?? demoProduct?.priceUsd;
+const demoName = demoBuddy ? `${demoProduct!.name} with ${demoBuddy.displayName}` : demoProduct?.name;
+
+// No-JS / first paint state. The script takes over from here.
+const initial = isDemo
+  ? stripeOn ? 'demo-off' : demoProduct ? 'processing' : 'failed'
+  : cancelled ? 'cancelled' : 'processing';
+
+const productNames = Object.fromEntries(products.map((p) => [p.id, { name: p.name, priceUsd: p.priceUsd, interval: p.interval ?? null }]));
+const support = `mailto:${SITE.supportEmail}`;
+---
+
+<Base title={isDemo ? 'Demo payment' : 'Payment status'} description="Where your payment is up to." noindex>
+  <div
+    class="container-narrow co"
+    data-checkout
+    data-initial={initial}
+    data-demo={isDemo && !stripeOn && demoProduct ? '1' : '0'}
+    data-demo-product={demoProduct?.id ?? ''}
+    data-demo-name={demoName ?? ''}
+    data-demo-amount={demoAmount ?? ''}
+    data-demo-interval={demoProduct?.interval ?? ''}
+    data-products={JSON.stringify(productNames)}
+  >
+    {
+      isDemo && (
+        <Callout tone="warning" title="Demo mode: this is not a real payment" class="co__demo">
+          Stripe isn't connected on this preview, so this page only shows what checkout will look like. No card is asked
+          for, nothing is charged, and nothing is saved to your account.
+        </Callout>
+      )
+    }
+
+    <h1 class="co__title">{isDemo ? 'Demo payment' : 'Payment status'}</h1>
+
+    <Steps
+      layout="horizontal"
+      class="co__steps"
+      aria-label="Checkout progress"
+      items={['Selected plan', isDemo ? 'Demo payment (no charge)' : 'Payment', 'Confirmed']}
+    />
+
+    <!-- Screen readers hear every state change from this one region. -->
+    <p class="sr-only" role="status" aria-live="polite" data-announce></p>
+
+    <Card padding="lg" class="co__card">
+      <section data-state="processing" hidden={initial !== 'processing'} aria-labelledby="co-h-processing">
+        <span class="co__icon co__icon--info"><Icon name="clock" size={28} /></span>
+        <h2 id="co-h-processing" tabindex="-1">{isDemo ? 'Running the demo payment…' : 'Confirming your payment…'}</h2>
+        <p>
+          {isDemo ? 'Pretending to talk to the bank. No money moves.' : "This usually takes a few seconds. You can keep this page open; we'll update it for you."}
+        </p>
+        <div class="co__bar" aria-hidden="true"><span></span></div>
+        <noscript><p class="small">Turn on JavaScript to see the result, or check your email for the Stripe receipt.</p></noscript>
+      </section>
+
+      <section data-state="paid" hidden aria-labelledby="co-h-paid">
+        <div class="co__win" aria-hidden="true">
+          <span class="co__burst">{Array.from({ length: 12 }, (_, i) => <i style={`--i:${i}`}></i>)}</span>
+          <span class="co__ripple"></span>
+          <svg class="co__tick" viewBox="0 0 64 64" width="72" height="72">
+            <circle class="co__tick-ring" cx="32" cy="32" r="29" pathLength="1" />
+            <path class="co__tick-mark" d="M20 33.5l8 8 16-17" pathLength="1" />
+          </svg>
+        </div>
+        <h2 id="co-h-paid" tabindex="-1">
+          {isDemo ? 'Demo complete. Nothing was charged.' : 'Payment confirmed. Thank you!'}
+        </h2>
+        <p data-paid-copy>
+          {isDemo
+            ? 'This is how success will look once Stripe is connected. Nothing is booked or switched on by a demo.'
+            : 'A receipt from Stripe is on its way to your email.'}
+        </p>
+        <div class="co__receipt">
+          <p class="co__receipt-head">
+            <strong>{isDemo ? 'Demo receipt' : 'Receipt'}</strong>
+            {isDemo ? <Badge variant="demo">Demo, not a real payment</Badge> : <Badge variant="success" icon="check">Paid</Badge>}
+          </p>
+          <dl>
+            <div><dt>Plan</dt><dd data-r="plan">—</dd></div>
+            <div><dt>{isDemo ? 'Amount (not charged)' : 'Amount'}</dt><dd data-r="amount">—</dd></div>
+            <div><dt>Date</dt><dd data-r="date">—</dd></div>
+            <div><dt>Reference</dt><dd data-r="ref" class="co__mono">—</dd></div>
+          </dl>
+        </div>
+        <div class="co__actions">
+          {
+            isDemo ? (
+              <Button href="/pricing" data-next="return" iconRight="arrow-right">Continue exploring</Button>
+            ) : (
+              <Button href="/account" data-next="account" iconRight="arrow-right">Go to your account</Button>
+            )
+          }
+        </div>
+      </section>
+
+      <section data-state="cancelled" hidden={initial !== 'cancelled'} aria-labelledby="co-h-cancelled">
+        <span class="co__icon co__icon--muted"><Icon name="x" size={28} /></span>
+        <h2 id="co-h-cancelled" tabindex="-1">Payment cancelled</h2>
+        <p>You left checkout before paying, so you weren't charged. Your choices are still here.</p>
+        <div class="co__actions">
+          <Button href="/pricing" data-next="return" icon="arrow-right">Try again</Button>
+          <Button href="/pricing" variant="ghost">Compare plans</Button>
+        </div>
+      </section>
+
+      <section data-state="expired" hidden aria-labelledby="co-h-expired">
+        <span class="co__icon co__icon--warning"><Icon name="clock" size={28} /></span>
+        <h2 id="co-h-expired" tabindex="-1">This checkout expired</h2>
+        <p>Checkout links last 24 hours. You weren't charged. Start again and it takes under a minute.</p>
+        <div class="co__actions">
+          <Button href="/pricing" data-next="return" icon="arrow-right">Start a new checkout</Button>
+        </div>
+      </section>
+
+      <section data-state="failed" hidden={initial !== 'failed'} aria-labelledby="co-h-failed">
+        <span class="co__icon co__icon--danger"><Icon name="alert" size={28} /></span>
+        <h2 id="co-h-failed" tabindex="-1">We couldn't confirm your payment</h2>
+        <p data-failed-copy>
+          {isDemo
+            ? "That demo link doesn't match a plan. Pick one on the pricing page."
+            : "If you paid, don't pay again: Stripe will email your receipt and your plan switches on within a few minutes."}
+        </p>
+        <div class="co__actions">
+          {isDemo ? (
+            <Button href="/pricing" icon="arrow-right">Back to pricing</Button>
+          ) : (
+            <Button data-retry icon="clock">Check again</Button>
+          )}
+          <Button href={support} variant="ghost">Email support</Button>
+        </div>
+      </section>
+
+      <section data-state="demo-off" hidden={initial !== 'demo-off'} aria-labelledby="co-h-demo-off">
+        <span class="co__icon co__icon--info"><Icon name="info" size={28} /></span>
+        <h2 id="co-h-demo-off" tabindex="-1">Demo payments are switched off</h2>
+        <p>Real checkout is live on this site, so the demo is disabled to avoid any mix-up. Pay from the pricing page.</p>
+        <div class="co__actions">
+          <Button href="/pricing" icon="arrow-right">Go to pricing</Button>
+        </div>
+      </section>
+    </Card>
+
+    <p class="co__foot small">
+      <Icon name="lock" size={16} />
+      {isDemo ? 'Demo only. Real payments will run on Stripe; we never see your card.' : 'Payments run on Stripe. We never see your card.'}
+    </p>
+  </div>
+</Base>
+
+<style>
+  .co {
+    padding-block: var(--space-10) var(--space-16);
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-6);
+  }
+  .co__title {
+    font-family: var(--font-display);
+  }
+  .co__card section {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: var(--space-3);
+  }
+  .co__card h2:focus {
+    outline: none;
+  }
+  .co__icon {
+    display: grid;
+    place-items: center;
+    width: 3.25rem;
+    height: 3.25rem;
+    border-radius: 50%;
+  }
+  .co__icon--info { background: var(--color-info-tint); color: var(--color-info); }
+  .co__icon--success { background: var(--color-success-tint); color: var(--color-success); }
+  .co__icon--warning { background: var(--color-warning-tint); color: var(--color-warning); }
+  .co__icon--danger { background: var(--color-danger-tint); color: var(--color-danger); }
+  .co__icon--muted { background: var(--color-surface-2); color: var(--color-ink-2); }
+  .co__bar {
+    width: 100%;
+    height: 6px;
+    border-radius: 3px;
+    background: var(--color-surface-2);
+    overflow: hidden;
+  }
+  .co__bar span {
+    display: block;
+    width: 40%;
+    height: 100%;
+    border-radius: 3px;
+    background: var(--color-brand);
+    animation: co-slide 1.4s ease-in-out infinite;
+  }
+  @keyframes co-slide {
+    from { transform: translateX(-100%); }
+    to { transform: translateX(250%); }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .co__bar span { animation: none; width: 100%; opacity: 0.5; }
+  }
+  .co__receipt {
+    width: 100%;
+    margin-top: var(--space-2);
+    padding: var(--space-4) var(--space-5);
+    border: 1px dashed var(--color-border-strong);
+    border-radius: var(--radius-lg, 12px);
+  }
+  .co__receipt-head {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-2);
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: var(--space-3);
+  }
+  .co__receipt dl { display: grid; gap: var(--space-2); margin: 0; }
+  .co__receipt dl > div { display: flex; justify-content: space-between; gap: var(--space-4); }
+  .co__receipt dt { color: var(--color-ink-2); }
+  .co__receipt dd { margin: 0; text-align: right; font-weight: var(--weight-semibold); font-variant-numeric: tabular-nums; }
+  .co__mono { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: var(--text-sm); word-break: break-all; }
+  .co__actions { display: flex; flex-wrap: wrap; gap: var(--space-3); margin-top: var(--space-2); }
+  .co__foot { display: flex; gap: var(--space-2); align-items: center; color: var(--color-ink-2); }
+
+  /* Stepper states on top of ui/Steps (which has no "current" prop). */
+  .co :global(.steps__item[data-step='todo'])::before {
+    background: var(--color-surface-2);
+    color: var(--color-ink-3);
+  }
+  .co :global(.steps__item[data-step='done'])::before {
+    content: '✓';
+  }
+  .co :global(.steps__item[data-step='stopped'])::before {
+    content: '!';
+    background: var(--color-warning-tint);
+    color: var(--color-warning);
+  }
+  .co :global(.steps__item[aria-current='step'] .steps__title) {
+    text-decoration: underline;
+    text-decoration-thickness: 2px;
+    text-underline-offset: 4px;
+  }
+  .co :global(.steps__item[data-step='todo'] .steps__title) {
+    color: var(--color-ink-2);
+  }
+
+  /* Success moment: ring draws, tick draws, a ripple and a small confetti burst, then the receipt rows rise in.
+     CSS-only: the animations start when the section's `hidden` is removed. */
+  .co__win {
+    position: relative;
+    width: 72px;
+    height: 72px;
+    margin-bottom: var(--space-4);
+  }
+  .co__tick {
+    position: relative;
+    display: block;
+    color: var(--color-success, #1f7a4d);
+    animation: co-pop 420ms var(--ease-out) both;
+  }
+  .co__tick-ring {
+    fill: color-mix(in oklab, currentColor 12%, transparent);
+    stroke: currentColor;
+    stroke-width: 3;
+    stroke-dasharray: 1;
+    stroke-dashoffset: 1;
+    transform: rotate(-90deg);
+    transform-origin: center;
+    animation: co-draw 520ms var(--ease-out) 80ms forwards;
+  }
+  .co__tick-mark {
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 4.5;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+    stroke-dasharray: 1;
+    stroke-dashoffset: 1;
+    animation: co-draw 360ms var(--ease-out) 480ms forwards;
+  }
+  .co__ripple {
+    position: absolute;
+    inset: 0;
+    border-radius: 50%;
+    border: 2px solid var(--color-success, #1f7a4d);
+    opacity: 0;
+    animation: co-ripple 900ms var(--ease-out) 560ms;
+  }
+  .co__burst i {
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    width: 8px;
+    height: 11px;
+    border-radius: 2px;
+    background: var(--color-accent);
+    opacity: 0;
+    --a: calc(var(--i) * 30deg);
+    animation: co-confetti 900ms cubic-bezier(0.2, 0.7, 0.3, 1) 560ms;
+  }
+  .co__burst i:nth-child(3n) { background: var(--color-brand, #0f6b62); }
+  .co__burst i:nth-child(3n + 1) { background: var(--color-success, #1f7a4d); border-radius: 50%; }
+  [data-state='paid'] h2,
+  [data-state='paid'] > p,
+  .co__receipt dl > div,
+  [data-state='paid'] .co__actions {
+    animation: co-rise 480ms var(--ease-out) both;
+  }
+  [data-state='paid'] h2 { animation-delay: 520ms; }
+  [data-state='paid'] > p { animation-delay: 600ms; }
+  .co__receipt dl > div:nth-child(1) { animation-delay: 700ms; }
+  .co__receipt dl > div:nth-child(2) { animation-delay: 760ms; }
+  .co__receipt dl > div:nth-child(3) { animation-delay: 820ms; }
+  .co__receipt dl > div:nth-child(4) { animation-delay: 880ms; }
+  [data-state='paid'] .co__actions { animation-delay: 960ms; }
+  @keyframes co-draw { to { stroke-dashoffset: 0; } }
+  @keyframes co-pop { from { transform: scale(0.6); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+  @keyframes co-ripple { from { transform: scale(1); opacity: 0.6; } to { transform: scale(1.9); opacity: 0; } }
+  @keyframes co-rise { from { transform: translateY(10px); opacity: 0; } to { transform: none; opacity: 1; } }
+  @keyframes co-confetti {
+    0% { opacity: 1; transform: translate(-50%, -50%) rotate(var(--a)) translateY(0) scale(1); }
+    100% { opacity: 0; transform: translate(-50%, -50%) rotate(var(--a)) translateY(-84px) rotate(200deg) scale(0.7); }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .co__tick, .co__ripple, .co__burst i, [data-state='paid'] h2, [data-state='paid'] > p,
+    .co__receipt dl > div, [data-state='paid'] .co__actions { animation: none; }
+    .co__tick-ring, .co__tick-mark { animation: none; stroke-dashoffset: 0; }
+  }
+</style>
+
+<script>
+  import { readPending, clearPending, usd, fmtDate, shortRef } from '../../components/money/client';
+
+  type State = 'processing' | 'paid' | 'cancelled' | 'expired' | 'failed' | 'demo-off';
+  type Status = { status: 'processing' | 'paid' | 'expired'; productId: string | null; amountUsd: number | null; createdAt: string };
+
+  const root = document.querySelector<HTMLElement>('[data-checkout]')!;
+  const d = root.dataset;
+  const products = JSON.parse(d.products ?? '{}') as Record<string, { name: string; priceUsd: number; interval: string | null }>;
+  const params = new URLSearchParams(location.search);
+  const sessionId = params.get('session_id') ?? '';
+  const isDemo = d.demo === '1';
+  const announce = document.querySelector<HTMLElement>('[data-announce]')!;
+  const steps = Array.from(root.querySelectorAll<HTMLLIElement>('.steps__item'));
+
+  const pending = readPending();
+  const productId = isDemo ? d.demoProduct : pending?.productId;
+  const mine = pending && pending.productId === productId ? pending : null;
+  const returnTo = mine?.returnTo || '/pricing';
+
+  const ANNOUNCE: Record<State, string> = {
+    processing: isDemo ? 'Running demo payment.' : 'Confirming your payment.',
+    paid: isDemo ? 'Demo complete. Nothing was charged.' : 'Payment confirmed.',
+    cancelled: "Payment cancelled. You weren't charged.",
+    expired: "This checkout expired. You weren't charged.",
+    failed: "We couldn't confirm your payment.",
+    'demo-off': 'Demo payments are switched off.',
+  };
+  // Selected plan / Payment / Confirmed
+  const STEPS: Record<State, string[]> = {
+    processing: ['done', 'current', 'todo'],
+    paid: ['done', 'done', 'done'],
+    cancelled: ['done', 'stopped', 'todo'],
+    expired: ['done', 'stopped', 'todo'],
+    failed: ['done', 'stopped', 'todo'],
+    'demo-off': ['current', 'todo', 'todo'],
+  };
+
+  root.querySelectorAll<HTMLAnchorElement>('[data-next="return"]').forEach((a) => (a.href = returnTo));
+  const acct = root.querySelector<HTMLAnchorElement>('[data-next="account"]');
+  if (acct && sessionId) acct.href = `/account?checkout=success&session_id=${encodeURIComponent(sessionId)}`;
+
+  function show(state: State, focus = false) {
+    root.querySelectorAll<HTMLElement>('[data-state]').forEach((el) => (el.hidden = el.dataset.state !== state));
+    STEPS[state].forEach((s, i) => {
+      const li = steps[i];
+      if (!li) return;
+      li.dataset.step = s;
+      if (s === 'current' || (state === 'paid' && i === 2)) li.setAttribute('aria-current', 'step');
+      else li.removeAttribute('aria-current');
+    });
+    announce.textContent = ANNOUNCE[state];
+    if (focus) root.querySelector<HTMLElement>(`[data-state="${state}"] h2`)?.focus();
+  }
+
+  function fillReceipt(r: { productId?: string | null; amountUsd?: number | null; date: string; ref: string }) {
+    const p = r.productId ? products[r.productId] : undefined;
+    let plan = (isDemo ? d.demoName : p?.name) || 'Your purchase';
+    if (!isDemo && mine?.buddyName && r.productId === 'buddy_session') plan = `${p?.name ?? 'Session'} with ${mine.buddyName}`;
+    const amount = r.amountUsd ?? p?.priceUsd;
+    const interval = isDemo ? d.demoInterval : p?.interval;
+    const set = (k: string, v: string) => {
+      const el = root.querySelector<HTMLElement>(`[data-r="${k}"]`);
+      if (el) el.textContent = v;
+    };
+    set('plan', plan);
+    set('amount', amount == null ? '—' : `${usd(amount)}${interval ? ` / ${interval}` : ''}`);
+    set('date', fmtDate(r.date));
+    set('ref', r.ref);
+  }
+
+  // --- Demo: client-only, no network, nothing stored. ---
+  if (d.initial === 'demo-off' || d.initial === 'failed' || d.initial === 'cancelled') {
+    show(d.initial as State);
+  } else if (isDemo) {
+    show('processing');
+    setTimeout(() => {
+      fillReceipt({ amountUsd: Number(d.demoAmount), date: new Date().toISOString(), ref: `DEMO-${shortRef()}` });
+      clearPending();
+      show('paid', true);
+    }, 2500);
+  } else {
+    // --- Real Stripe session: poll every 2 s for up to a minute. ---
+    let timer = 0;
+    let tries = 0;
+    const MAX_TRIES = 30;
+
+    async function poll() {
+      tries++;
+      let res: Response | null = null;
+      try {
+        res = await fetch(`/api/checkout/status?session_id=${encodeURIComponent(sessionId)}`, { cache: 'no-store' });
+      } catch {
+        /* network blip: try again below */
+      }
+      if (res && res.ok) {
+        const s = (await res.json()) as Status;
+        if (s.status === 'paid') {
+          fillReceipt({ productId: s.productId, amountUsd: s.amountUsd, date: s.createdAt, ref: sessionId.slice(-10).toUpperCase() });
+          return show('paid', true);
+        }
+        if (s.status === 'expired') return show('expired', true);
+      } else if (res && res.status !== 502) {
+        return show('failed', true); // 422 bad id, 404 unknown session, 503 not configured
+      }
+      if (tries >= MAX_TRIES) return show('failed', true);
+      timer = window.setTimeout(poll, 2000);
+    }
+
+    root.querySelector('[data-retry]')?.addEventListener('click', () => {
+      clearTimeout(timer);
+      tries = 0;
+      show('processing', true);
+      poll();
+    });
+
+    show('processing');
+    if (sessionId) poll();
+    else show('failed');
+  }
+</script>

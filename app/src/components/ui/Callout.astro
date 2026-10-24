@@ -1,0 +1,88 @@
+---
+import Icon, { type IconName } from './Icon.astro';
+
+/**
+ * Inline notice. Tones: info | warning | success | danger.
+ * Use `warning` for legal stakes (overstay fines, rule changes) and `info` for tips.
+ * Set `live` when the callout appears after a user action so it is announced.
+ */
+interface Props {
+  tone?: 'info' | 'warning' | 'success' | 'danger';
+  title?: string;
+  icon?: IconName;
+  live?: boolean;
+  class?: string;
+  [key: string]: unknown;
+}
+const { tone = 'info', title, icon, live = false, class: className, ...rest } = Astro.props;
+const ICON: Record<string, IconName> = { info: 'info', warning: 'alert', success: 'check', danger: 'alert' };
+---
+
+<div
+  class:list={['callout', `callout--${tone}`, className]}
+  role={live ? (tone === 'danger' ? 'alert' : 'status') : 'note'}
+  {...rest}
+>
+  <Icon name={icon ?? ICON[tone]} size={20} class="callout__icon" />
+  <div class="callout__body">
+    {title && <p class="callout__title">{title}</p>}
+    <div class="callout__text"><slot /></div>
+  </div>
+</div>
+
+<style>
+  .callout {
+    display: flex;
+    gap: var(--space-3);
+    padding: var(--space-4) var(--space-5);
+    border-radius: var(--radius-md);
+    background: var(--callout-bg);
+    color: var(--color-ink);
+  }
+  .callout--info {
+    --callout-bg: var(--color-info-tint);
+    --callout-fg: var(--color-info);
+  }
+  .callout--warning {
+    --callout-bg: var(--color-warning-tint);
+    --callout-fg: var(--color-warning);
+  }
+  .callout--success {
+    --callout-bg: var(--color-success-tint);
+    --callout-fg: var(--color-success);
+  }
+  .callout--danger {
+    --callout-bg: var(--color-danger-tint);
+    --callout-fg: var(--color-danger);
+  }
+  .callout :global(.callout__icon) {
+    color: var(--callout-fg);
+    margin-top: 0.15em;
+  }
+  .callout__body {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-1);
+    min-width: 0;
+  }
+  .callout__title {
+    font-weight: var(--weight-semibold);
+    color: var(--callout-fg);
+  }
+  .callout__text {
+    font-size: var(--text-sm);
+    line-height: 1.55;
+  }
+  .callout__text :global(a) {
+    color: inherit;
+    font-weight: var(--weight-semibold);
+  }
+  .callout__text :global(* + *) {
+    margin-top: var(--space-2);
+  }
+  @media (forced-colors: active) {
+    .callout {
+      border: 1px solid CanvasText;
+    }
+  }
+</style>

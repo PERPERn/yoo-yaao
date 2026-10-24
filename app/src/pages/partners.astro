@@ -1,0 +1,33 @@
+---
+// Moved: the business side now lives at /business (separate from the traveller site).
+// Static output, so a meta refresh plus a visible link; the script keeps old ?plan= / #apply deep links working.
+import Business from '../layouts/Business.astro';
+---
+
+<Business title="Moved to Yoo Yaao for Business" noindex>
+  <meta slot="head" http-equiv="refresh" content="0; url=/business" />
+  <div class="container moved">
+    <h1>This page moved</h1>
+    <p>Partner plans and applications are now on <a href="/business" data-moved>Yoo Yaao for Business</a>.</p>
+  </div>
+</Business>
+
+<style>
+  .moved {
+    display: grid;
+    gap: var(--space-4);
+    padding-block: var(--space-16);
+  }
+</style>
+
+<script>
+  const q = new URLSearchParams(location.search);
+  const plan = q.get('plan');
+  const to =
+    q.get('checkout') === 'success'
+      ? '/partner'
+      : plan === 'agent' || plan === 'featured' || location.hash === '#apply'
+        ? `/business/apply${plan ? `?plan=${plan}` : ''}`
+        : '/business';
+  location.replace(to);
+</script>

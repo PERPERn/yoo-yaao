@@ -1,0 +1,161 @@
+---
+/**
+ * Surface container. Separated from the page by tone, not by shadow.
+ * Slots: `media` (bleeds to card edge), default (body), `footer` (pinned to bottom).
+ * With `href`, the card title link stretches over the whole card (keep one link inside).
+ */
+interface Props {
+  as?: 'div' | 'article' | 'li' | 'section' | 'aside';
+  href?: string;          // makes the whole card clickable via a stretched link on `title`
+  title?: string;         // optional heading rendered inside (h3 by default)
+  titleLevel?: 2 | 3 | 4;
+  tone?: 'surface' | 'tint' | 'brand' | 'accent';
+  padding?: 'sm' | 'md' | 'lg';
+  class?: string;
+  [key: string]: unknown;
+}
+
+const {
+  as: Tag = 'div',
+  href,
+  title,
+  titleLevel = 3,
+  tone = 'surface',
+  padding = 'md',
+  class: className,
+  ...rest
+} = Astro.props;
+const H = `h${titleLevel}` as 'h2' | 'h3' | 'h4';
+const hasMedia = Astro.slots.has('media');
+const hasFooter = Astro.slots.has('footer');
+---
+
+<Tag
+  class:list={['card', `card--${tone}`, `card--pad-${padding}`, href && 'card--link', className]}
+  {...rest}
+>
+  {hasMedia && <div class="card__media"><slot name="media" /></div>}
+  <div class="card__body">
+    {
+      title && (
+        <H class="card__title">
+          {href ? <a href={href} class="card__link">{title}</a> : title}
+        </H>
+      )
+    }
+    <slot />
+  </div>
+  {hasFooter && <div class="card__footer"><slot name="footer" /></div>}
+</Tag>
+
+<style>
+  .card {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    background: var(--color-surface);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--elev-1);
+    overflow: hidden;
+    color: var(--color-ink);
+    list-style: none;
+  }
+  .card--tint {
+    background: var(--color-surface-2);
+  }
+  .card--brand {
+    background: var(--color-brand-tint);
+  }
+  .card--accent {
+    background: var(--color-accent-tint);
+  }
+  .card__media {
+    aspect-ratio: 16 / 10;
+    background: var(--color-surface-3);
+    overflow: hidden;
+  }
+  .card__media :global(:is(img, video, svg)) {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    transition: transform var(--duration-slow) var(--ease-out);
+  }
+  .card__body {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-3);
+    flex: 1;
+    padding: var(--card-pad);
+  }
+  .card__footer {
+    padding: 0 var(--card-pad) var(--card-pad);
+    margin-top: auto;
+  }
+  .card--pad-sm {
+    --card-pad: var(--space-4);
+  }
+  .card--pad-md {
+    --card-pad: var(--space-6);
+  }
+  .card--pad-lg {
+    --card-pad: clamp(var(--space-6), 4vw, var(--space-10));
+  }
+  .card__title {
+    font-size: var(--text-xl);
+    line-height: var(--leading-snug);
+  }
+  .card__link {
+    color: inherit;
+    text-decoration: none;
+  }
+  .card__link::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+  }
+  .card__link:focus-visible {
+    outline: none;
+  }
+  .card--link:has(.card__link:focus-visible) {
+    outline: 3px solid var(--color-focus);
+    outline-offset: 2px;
+  }
+  .card--link {
+    transition:
+      transform var(--duration-base) var(--ease-out),
+      box-shadow var(--duration-base) var(--ease-out);
+  }
+  /* Depth on hover: the card lifts while its picture drifts the other way (two-layer parallax) */
+  .card--link:is(:hover, :has(.card__link:focus-visible)) {
+    transform: translateY(-4px);
+    box-shadow: var(--elev-3);
+  }
+  .card--link:is(:hover, :has(.card__link:focus-visible)) .card__media :global(:is(img, video, svg)) {
+    transform: scale(1.06) translateY(3px);
+  }
+  .card--link:hover .card__title {
+    color: var(--color-brand);
+  }
+  .card--link:active {
+    transform: translateY(-1px) scale(0.99);
+    box-shadow: var(--elev-1);
+    transition-duration: var(--duration-fast);
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .card--link,
+    .card--link .card__media :global(*) {
+      transform: none !important;
+    }
+  }
+  /* Interactive children above the stretched link */
+  .card--link :global(:is(button, input, select, .badge a, [data-above])) {
+    position: relative;
+    z-index: 1;
+  }
+  @media (forced-colors: active) {
+    .card {
+      border: 1px solid CanvasText;
+    }
+  }
+</style>

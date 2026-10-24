@@ -1,0 +1,349 @@
+---
+import Base from '../../layouts/Base.astro';
+import Section from '../../components/ui/Section.astro';
+import Button from '../../components/ui/Button.astro';
+import SourceTag from '../../components/ui/SourceTag.astro';
+import Icon from '../../components/ui/Icon.astro';
+import PageHeader from '../../components/core/PageHeader.astro';
+import Motion from '../../components/core/Motion.astro';
+import { cities, cityPhotos } from '../../data/cities';
+import { THAI_CITY_NAMES, n } from '../../components/core/format';
+
+const short = (months: string[]) => `${months[0].slice(0, 3)}–${months[months.length - 1].slice(0, 3)}`;
+const rows = [
+  { label: 'Cost per month', value: (c: (typeof cities)[number]) => `$${n(c.costOfLivingUsdMonth.budget)}–${n(c.costOfLivingUsdMonth.comfortable)}` },
+  { label: 'Studio rent', value: (c: (typeof cities)[number]) => `$${n(c.rentUsdMonth.studio)}/mo` },
+  { label: '1-bed rent', value: (c: (typeof cities)[number]) => `$${n(c.rentUsdMonth.oneBed)}/mo` },
+  { label: 'Home internet', value: (c: (typeof cities)[number]) => `${c.internetMbps} Mbps` },
+  { label: 'Best months', value: (c: (typeof cities)[number]) => short(c.bestMonths) },
+  { label: 'Coworking listed', value: (c: (typeof cities)[number]) => String(c.coworking.length) },
+];
+---
+
+<Base
+  title="Where to base yourself in Thailand"
+  description="Bangkok, Chiang Mai or Phuket for a long stay? Monthly costs, rent, internet speed and the best months, side by side, with sources."
+>
+  <PageHeader
+    title="Where to base yourself"
+    lead="Three cities most long-stayers choose between. Costs are rounded USD ranges for one person, checked against published 2026 sources."
+    crumbs={[{ label: 'Cities' }]}
+  />
+
+  <Section spacing="none" aria-label="Cities">
+    <ul class="cities">
+      {
+        cities.map((c, i) => (
+          <li class="city" data-reveal>
+            <div class="city__mark">
+              <img
+                class="city__img"
+                src={cityPhotos[c.slug].src}
+                alt={cityPhotos[c.slug].alt}
+                width={cityPhotos[c.slug].width}
+                height={cityPhotos[c.slug].height}
+                loading={i === 0 ? 'eager' : 'lazy'}
+                decoding="async"
+              />
+              <span class="city__thai" lang="th" aria-hidden="true" data-parallax={i % 2 ? '0.06' : '-0.06'}>{THAI_CITY_NAMES[c.slug]}</span>
+              <p class="city__credit">
+                Photo: <a href={cityPhotos[c.slug].sourceUrl} target="_blank" rel="noopener noreferrer">{cityPhotos[c.slug].author}<span class="sr-only"> on Wikimedia Commons (opens in a new tab)</span></a>, <a href={cityPhotos[c.slug].licenceUrl} target="_blank" rel="noopener noreferrer license">{cityPhotos[c.slug].licence}</a>
+              </p>
+            </div>
+            <div class="city__body">
+              <h2 class="city__name">
+                <a href={`/cities/${c.slug}`}>{c.name}</a>
+              </h2>
+              <p class="city__summary">{c.summary}</p>
+              <dl class="city__facts tabular">
+                <div>
+                  <dt>Per month</dt>
+                  <dd>
+                    $<span data-count-to={c.costOfLivingUsdMonth.budget}>{n(c.costOfLivingUsdMonth.budget)}</span>–<span data-count-to={c.costOfLivingUsdMonth.comfortable}>{n(c.costOfLivingUsdMonth.comfortable)}</span>
+                  </dd>
+                </div>
+                <div>
+                  <dt>Studio</dt>
+                  <dd>${n(c.rentUsdMonth.studio)}</dd>
+                </div>
+                <div>
+                  <dt>Internet</dt>
+                  <dd>{c.internetMbps} Mbps</dd>
+                </div>
+                <div>
+                  <dt>Best</dt>
+                  <dd>{short(c.bestMonths)}</dd>
+                </div>
+              </dl>
+              <p class="city__go" aria-hidden="true">
+                Read the {c.name} guide <Icon name="arrow-right" size={18} />
+              </p>
+            </div>
+          </li>
+        ))
+      }
+    </ul>
+  </Section>
+
+  <Section title="Side by side" tone="tint">
+    <div class="cmp" data-reveal>
+      <table class="cmp__table">
+        <caption class="sr-only">Cities compared</caption>
+        <thead>
+          <tr>
+            <td></td>
+            {cities.map((c) => <th scope="col"><a href={`/cities/${c.slug}`}>{c.name}</a></th>)}
+          </tr>
+        </thead>
+        <tbody>
+          {
+            rows.map((r) => (
+              <tr>
+                <th scope="row">{r.label}</th>
+                {cities.map((c) => (
+                  <td data-label={c.name}>{r.value(c)}</td>
+                ))}
+              </tr>
+            ))
+          }
+        </tbody>
+      </table>
+    </div>
+    <div class="srcs">
+      {cities[0].sources.slice(0, 2).map((s) => <SourceTag source={s} verifiedAt={cities[0].verifiedAt} />)}
+    </div>
+  </Section>
+
+  <Section spacing="tight">
+    <div class="next" data-reveal>
+      <h2 class="next__title">Picked a city? Find the visa that lets you stay.</h2>
+      <Button href="/finder" size="lg" iconRight="arrow-right">Find your visa next</Button>
+    </div>
+  </Section>
+</Base>
+
+<Motion />
+
+<style>
+  .cities {
+    list-style: none;
+    padding: 0;
+    margin: 0 0 var(--space-section);
+    display: grid;
+    gap: var(--space-6);
+  }
+  .city {
+    position: relative;
+    isolation: isolate;
+    display: grid;
+    border-radius: var(--radius-xl);
+    background: var(--color-surface);
+    overflow: hidden;
+    transition:
+      transform var(--duration-base) var(--ease-out),
+      box-shadow var(--duration-base) var(--ease-out);
+  }
+  .city:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-raise);
+  }
+  .city:has(a:focus-visible) {
+    outline: 3px solid var(--color-focus);
+    outline-offset: 2px;
+  }
+  @media (min-width: 60rem) {
+    .city {
+      grid-template-columns: minmax(0, 1fr) minmax(0, 1.4fr);
+    }
+    .city:nth-child(even) .city__mark {
+      order: 2;
+    }
+  }
+  .city__mark {
+    position: relative;
+    display: grid;
+    place-items: center;
+    min-height: 16rem;
+    background: #0d1f21;
+    overflow: hidden;
+  }
+  .city__img {
+    position: absolute;
+    inset: 0;
+    z-index: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+  /* Even dark scrim: the white Thai name and the credit stay readable on bright skies and sand. */
+  .city__mark::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    z-index: 1;
+    background: linear-gradient(180deg, rgb(6 16 18 / 0.35), rgb(6 16 18 / 0.55) 60%, rgb(6 16 18 / 0.85));
+  }
+  .city__thai {
+    position: relative;
+    z-index: 2;
+    font-family: var(--font-display);
+    font-weight: var(--weight-bold);
+    font-size: clamp(3rem, 1.5rem + 6vw, 6.5rem);
+    line-height: 1.2;
+    color: #fff;
+    text-shadow: 0 2px 12px rgb(0 0 0 / 0.35);
+    white-space: nowrap;
+    display: inline-block;
+  }
+  /* Credit sits above the card's stretched link so it stays clickable. */
+  .city__credit {
+    position: absolute;
+    z-index: 3;
+    left: var(--space-4);
+    bottom: var(--space-3);
+    right: var(--space-4);
+    font-size: var(--text-xs);
+    color: rgb(255 255 255 / 0.92);
+  }
+  .city__credit a {
+    color: inherit;
+  }
+  .city__body {
+    display: grid;
+    gap: var(--space-4);
+    padding: clamp(var(--space-6), 4vw, var(--space-10));
+  }
+  .city__name {
+    font-size: var(--text-3xl);
+    line-height: var(--leading-tight);
+  }
+  .city__name a {
+    color: var(--color-ink);
+    text-decoration: none;
+  }
+  .city__name a:focus-visible {
+    outline: none;
+  }
+  .city__name a::after {
+    content: '';
+    position: absolute;
+    z-index: 2;
+    inset: 0;
+  }
+  .city:hover .city__name a {
+    color: var(--color-brand);
+  }
+  .city__summary {
+    color: var(--color-ink-2);
+    max-width: 56ch;
+  }
+  .city__facts {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: var(--space-4);
+    margin: var(--space-2) 0 0;
+  }
+  @media (min-width: 40rem) {
+    .city__facts {
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+    }
+  }
+  .city__facts dt {
+    font-size: var(--text-sm);
+    color: var(--color-ink-2);
+  }
+  .city__facts dd {
+    margin: 0;
+    font-family: var(--font-display);
+    font-size: var(--text-xl);
+    font-weight: var(--weight-semibold);
+  }
+  .city__go {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-2);
+    font-weight: var(--weight-semibold);
+    color: var(--color-brand);
+  }
+
+  .cmp__table {
+    width: 100%;
+    border-collapse: separate;
+    border-spacing: 0;
+  }
+  .cmp__table :is(th, td) {
+    text-align: left;
+    padding: var(--space-4);
+    font-variant-numeric: tabular-nums;
+  }
+  .cmp__table thead th a {
+    font-family: var(--font-display);
+    font-size: var(--text-xl);
+    color: var(--color-ink);
+  }
+  .cmp__table tbody th {
+    color: var(--color-ink-2);
+    font-weight: var(--weight-semibold);
+  }
+  .cmp__table tbody tr:nth-child(odd) :is(th, td) {
+    background: var(--color-surface);
+  }
+  .cmp__table tbody tr:nth-child(odd) th {
+    border-radius: var(--radius-md) 0 0 var(--radius-md);
+  }
+  .cmp__table tbody tr:nth-child(odd) td:last-child {
+    border-radius: 0 var(--radius-md) var(--radius-md) 0;
+  }
+  /* Phones: each row becomes a small stacked block (no sideways scroll). */
+  @media (max-width: 47.99rem) {
+    .cmp__table thead {
+      display: none;
+    }
+    .cmp__table,
+    .cmp__table tbody,
+    .cmp__table tr {
+      display: block;
+    }
+    .cmp__table tr {
+      margin-bottom: var(--space-4);
+      padding: var(--space-4);
+      border-radius: var(--radius-lg);
+      background: var(--color-surface);
+    }
+    .cmp__table tbody tr:nth-child(odd) :is(th, td) {
+      background: transparent;
+    }
+    .cmp__table :is(th, td) {
+      display: flex;
+      justify-content: space-between;
+      padding: var(--space-1) 0;
+    }
+    .cmp__table tbody th {
+      color: var(--color-ink);
+      padding-bottom: var(--space-2);
+    }
+    .cmp__table td::before {
+      content: attr(data-label);
+      color: var(--color-ink-2);
+    }
+  }
+  .srcs {
+    display: grid;
+    gap: var(--space-2);
+    margin-top: var(--space-6);
+  }
+  .next {
+    display: grid;
+    gap: var(--space-6);
+    justify-items: start;
+    padding: clamp(var(--space-6), 5vw, var(--space-12));
+    border-radius: var(--radius-xl);
+    background: var(--color-brand-tint);
+  }
+  .next__title {
+    font-size: var(--text-3xl);
+    line-height: var(--leading-snug);
+    max-width: 22ch;
+    text-wrap: balance;
+  }
+</style>

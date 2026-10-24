@@ -1,0 +1,164 @@
+---
+import Admin from '../../layouts/Admin.astro';
+import Panel from '../../components/admin/Panel.astro';
+---
+
+<Admin
+  title="Leads"
+  lead="People who asked for expert help. Send each one to a licensed agent, then track whether it was won or lost."
+>
+  <p class="adm-err" role="alert" data-err hidden></p>
+  <Panel
+    id="leads"
+    title="All leads"
+    caption="Leads, newest first. Changing the agent or status saves straight away."
+    cols={['Lead', 'Visa · city', 'Message', 'Received', 'Agent', 'Status']}
+  >
+    <div slot="tools" class="adm-filters">
+      <label class="adm-filters__label" for="f-status">Show</label>
+      <select id="f-status" class="control" data-filter>
+        <option value="all">All</option>
+        <option value="new">New</option>
+        <option value="sent">Sent to agent</option>
+        <option value="won">Won</option>
+        <option value="lost">Lost</option>
+        <option value="spam">Spam</option>
+      </select>
+    </div>
+    <tr slot="row">
+      <th scope="row"><span data-f="name"></span><span class="adm-sub" data-f="email"></span></th>
+      <td><span data-f="visa"></span><span class="adm-sub" data-f="city"></span></td>
+      <td class="msg" data-f="message"></td>
+      <td class="nowrap"><span data-f="date"></span><span class="adm-sub" data-f="nat"></span></td>
+      <td><select class="control" data-agent></select></td>
+      <td>
+        <select class="control" data-status>
+          <option value="new">New</option>
+          <option value="sent">Sent to agent</option>
+          <option value="won">Won</option>
+          <option value="lost">Lost</option>
+          <option value="spam">Spam</option>
+        </select>
+      </td>
+    </tr>
+  </Panel>
+</Admin>
+
+<script>
+  import { announce, boot, fmtDate, put, renderRows, setState, type Mode } from '../../components/admin/admin';
+  import { source, syncCounts } from '../../components/admin/data';
+  import type { LeadStatus, OpsAgent, OpsLead } from '../../lib/ops';
+
+  const CITY: Record<string, string> = { bangkok: 'Bangkok', 'chiang-mai': 'Chiang Mai', phuket: 'Phuket' };
+  const panel = document.querySelector<HTMLElement>('[data-panel="leads"]')!;
+  const filter = document.querySelector<HTMLSelectElement>('[data-filter]')!;
+  const err = document.querySelector<HTMLElement>('[data-err]')!;
+  let mode: Mode = 'demo';
+  let leads: OpsLead[] = [];
+  let agents: OpsAgent[] = [];
+
+  /** Saves one select; disables it while saving and puts the old value back on failure. */
+  async function save(sel: HTMLSelectElement, prev: string, work: () => Promise<unknown>, okMsg: string) {
+    sel.disabled = true;
+    sel.setAttribute('aria-busy', 'true');
+    try {
+      await work();
+      err.hidden = true;
+      announce(okMsg);
+      return true;
+    } catch {
+      sel.value = prev;
+      err.textContent = "Couldn't save that change. Check your connection and try again.";
+      err.hidden = false;
+      announce(err.textContent);
+      return false;
+    } finally {
+      sel.disabled = false;
+      sel.removeAttribute('aria-busy');
+      sel.focus();
+    }
+  }
+
+  function fill(tr: HTMLTableRowElement, l: OpsLead) {
+    put(tr, 'name', l.name);
+    put(tr, 'email', l.email);
+    put(tr, 'visa', l.visa_slug?.toUpperCase());
+    put(tr, 'city', l.city ? CITY[l.city] ?? l.city : null);
+    put(tr, 'message', l.message);
+    put(tr, 'date', fmtDate(l.created_at));
+    put(tr, 'nat', l.nationality);
+
+    const agent = tr.querySelector<HTMLSelectElement>('[data-agent]')!;
+    agent.setAttribute('aria-label', `Agent for ${l.name}`);
+    agent.append(new Option('Unassigned', ''));
+    agents.forEach((a) => agent.append(new Option(a.verified ? a.name : `${a.name} (unverified)`, a.id)));
+    agent.value = l.agent_id ?? '';
+    agent.addEventListener('change', async () => {
+      const prev = l.agent_id ?? '';
+      const next = agent.value || null;
+      const label = next ? agent.selectedOptions[0].text : 'nobody';
+      if (await save(agent, prev, () => source(mode).assignLead(l.id, next), `${l.name} assigned to ${label}.`)) l.agent_id = next;
+    });
+
+    const status = tr.querySelector<HTMLSelectElement>('[data-status]')!;
+    status.setAttribute('aria-label', `Status of ${l.name}`);
+    status.value = l.status;
+    status.dataset.tone = l.status;
+    status.addEventListener('change', async () => {
+      const next = status.value as LeadStatus;
+      const ok = await save(status, l.status, () => source(mode).setLeadStatus(l.id, next), `${l.name} marked ${status.selectedOptions[0].text}.`);
+      if (ok) {
+        l.status = next;
+        syncCounts(mode);
+      }
+      status.dataset.tone = l.status;
+    });
+  }
+
+  const render = () =>
+    renderRows(
+      panel,
+      leads.filter((l) => filter.value === 'all' || l.status === filter.value),
+      fill,
+      filter.value === 'all' ? 'No leads yet. They arrive from the Get expert help form.' : 'No leads with this status.',
+    );
+
+  async function load() {
+    setState(panel, 'loading');
+    try {
+      const s = source(mode);
+      [leads, agents] = await Promise.all([s.leads(), s.agents()]);
+      render();
+    } catch {
+      setState(panel, 'error', "Couldn't load leads.");
+    }
+  }
+
+  filter.addEventListener('change', render);
+  panel.querySelector('[data-retry]')!.addEventListener('click', load);
+  boot().then((b) => {
+    mode = b.mode;
+    if (mode === 'denied') return;
+    syncCounts(mode);
+    load();
+  });
+</script>
+
+<style>
+  .msg {
+    min-width: 14rem;
+    max-width: 24rem;
+    color: var(--color-ink-2);
+  }
+  .nowrap {
+    white-space: nowrap;
+  }
+  /* Status select carries a tone so "new" stands out in a long list (text still says it) */
+  select[data-tone='new'] {
+    border-color: var(--color-accent-strong);
+    background-color: var(--color-accent-tint);
+  }
+  select[data-tone='spam'] {
+    color: var(--color-ink-3);
+  }
+</style>

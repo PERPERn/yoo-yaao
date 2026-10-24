@@ -1,0 +1,27 @@
+---
+/** The standard "not legal advice" line (ux-flow §4.6) with a link to the full disclaimer. */
+import Icon from '../ui/Icon.astro';
+interface Props { class?: string; [key: string]: unknown }
+const { class: className, ...rest } = Astro.props;
+---
+<p class:list={['legalnote', className]} {...rest}>
+  <Icon name="info" size={18} />
+  <span>
+    General information, not legal advice. Rules change — check the source and the embassy before you apply.{' '}
+    <a href="/legal#disclaimer">Read the disclaimer</a>.
+  </span>
+</p>
+<style>
+  .legalnote {
+    display: flex;
+    gap: var(--space-2);
+    align-items: flex-start;
+    font-size: var(--text-sm);
+    color: var(--color-ink-2);
+    max-width: 70ch;
+  }
+  .legalnote :global(svg) {
+    flex-shrink: 0;
+    margin-top: 0.15em;
+  }
+</style>

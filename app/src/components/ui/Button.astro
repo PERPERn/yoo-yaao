@@ -1,0 +1,248 @@
+---
+import Icon, { type IconName } from './Icon.astro';
+
+/**
+ * Button or link styled as a button. Renders <a> when `href` is set, otherwise <button>.
+ * Variants: primary (teal, one per view), accent (gold, for paid upgrade only), secondary, ghost.
+ * Extra attributes (data-*, aria-*, id, onclick targets) pass through.
+ * Loading: pass `loading`, or from a script set aria-busy="true" (+ disabled) on any .btn —
+ * the label stays for screen readers and a spinner covers it, keeping the width stable.
+ */
+interface Props {
+  variant?: 'primary' | 'accent' | 'secondary' | 'ghost';
+  size?: 'sm' | 'md' | 'lg';
+  href?: string;
+  type?: 'button' | 'submit' | 'reset';
+  icon?: IconName;      // leading icon
+  iconRight?: IconName; // trailing icon, e.g. 'arrow-right'
+  block?: boolean;      // full width
+  disabled?: boolean;
+  loading?: boolean;    // spinner + aria-busy; blocks clicks
+  external?: boolean;   // opens new tab with rel=noopener
+  class?: string;
+  [key: string]: unknown;
+}
+
+const {
+  variant = 'primary',
+  size = 'md',
+  href,
+  type = 'button',
+  icon,
+  iconRight,
+  block = false,
+  disabled = false,
+  loading = false,
+  external = false,
+  class: className,
+  ...rest
+} = Astro.props;
+
+const classes = ['btn', `btn--${variant}`, `btn--${size}`, block && 'btn--block', className];
+const iconSize = size === 'sm' ? 16 : size === 'lg' ? 20 : 18;
+---
+
+{
+  href ? (
+    <a
+      href={disabled ? undefined : href}
+      class:list={classes}
+      aria-disabled={disabled || loading ? 'true' : undefined}
+      aria-busy={loading ? 'true' : undefined}
+      target={external ? '_blank' : undefined}
+      rel={external ? 'noopener noreferrer' : undefined}
+      {...rest}
+    >
+      {icon && <Icon name={icon} size={iconSize} />}
+      <span class="btn__label"><slot /></span>
+      {iconRight && <Icon name={iconRight} size={iconSize} class="btn__trail" />}
+      {external && <span class="sr-only">(opens in a new tab)</span>}
+    </a>
+  ) : (
+    <button
+      type={type}
+      class:list={classes}
+      disabled={disabled}
+      aria-disabled={loading ? 'true' : undefined}
+      aria-busy={loading ? 'true' : undefined}
+      {...rest}
+    >
+      {icon && <Icon name={icon} size={iconSize} />}
+      <span class="btn__label"><slot /></span>
+      {iconRight && <Icon name={iconRight} size={iconSize} class="btn__trail" />}
+    </button>
+  )
+}
+
+<style>
+  .btn {
+    --btn-bg: var(--color-brand);
+    --btn-fg: var(--color-on-brand);
+    --btn-bg-hover: var(--color-brand-strong);
+    --btn-border: transparent;
+    --btn-shadow: var(--elev-1);
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: var(--space-2);
+    min-height: var(--tap-min);
+    padding: 0 var(--space-5);
+    border: 1.5px solid var(--btn-border);
+    border-radius: var(--radius-pill);
+    background: var(--btn-bg);
+    color: var(--btn-fg);
+    box-shadow: var(--btn-shadow);
+    font-family: var(--font-body);
+    font-size: var(--text-sm);
+    font-weight: var(--weight-semibold);
+    line-height: 1;
+    text-decoration: none;
+    white-space: nowrap;
+    -webkit-tap-highlight-color: transparent;
+    transition:
+      background-color var(--duration-base) var(--ease-out),
+      color var(--duration-base) var(--ease-out),
+      border-color var(--duration-base) var(--ease-out),
+      box-shadow var(--duration-base) var(--ease-out),
+      transform var(--duration-fast) var(--ease-out);
+  }
+  /* Disabled/busy buttons get no hover or press feedback */
+  .btn:where(:not(:disabled, [aria-disabled='true'])):hover {
+    background: var(--btn-bg-hover);
+    color: var(--btn-fg);
+    text-decoration: none;
+    box-shadow: var(--btn-shadow-hover, var(--elev-2));
+  }
+  /* Lift only with a real pointer: touch fires a sticky :hover on tap */
+  @media (hover: hover) and (pointer: fine) {
+    .btn:where(:not(:disabled, [aria-disabled='true'])):hover {
+      transform: translateY(-1px);
+    }
+  }
+  .btn:where(:not(:disabled, [aria-disabled='true'])):active {
+    transform: translateY(0) scale(0.98);
+    box-shadow: var(--elev-inset);
+    transition-duration: var(--duration-fast);
+  }
+  /* 36px sm buttons still get a 44px hit area */
+  .btn::before {
+    content: '';
+    position: absolute;
+    inset: min(0px, (100% - var(--tap-min)) / 2) 0;
+  }
+  .btn :global(.btn__trail) {
+    transition: transform var(--duration-base) var(--ease-out);
+  }
+  .btn:hover :global(.btn__trail) {
+    transform: translateX(3px);
+  }
+
+  .btn--accent {
+    --btn-bg: var(--color-accent);
+    --btn-fg: var(--color-on-accent);
+    --btn-bg-hover: var(--color-accent-strong);
+  }
+  .btn--secondary {
+    --btn-bg: transparent;
+    --btn-fg: var(--color-ink);
+    --btn-bg-hover: var(--color-surface-2);
+    --btn-border: var(--color-border-strong);
+    --btn-shadow: none;
+    --btn-shadow-hover: var(--elev-1);
+  }
+  .btn--ghost {
+    --btn-bg: transparent;
+    --btn-fg: var(--color-brand);
+    --btn-bg-hover: var(--color-brand-tint);
+    --btn-shadow: none;
+    --btn-shadow-hover: none;
+  }
+
+  .btn--sm {
+    min-height: 36px;
+    padding: 0 var(--space-4);
+    font-size: var(--text-xs);
+  }
+  .btn--lg {
+    min-height: 52px;
+    padding: 0 var(--space-8);
+    font-size: var(--text-base);
+  }
+  .btn--block {
+    display: flex;
+    width: 100%;
+  }
+
+  .btn:disabled,
+  .btn[aria-disabled='true'] {
+    opacity: 0.5;
+    box-shadow: none;
+    cursor: not-allowed;
+  }
+  a.btn[aria-disabled='true'] {
+    pointer-events: none;
+  }
+
+  /* Loading: label stays in the accessibility tree, spinner covers it, width does not change */
+  .btn[aria-busy='true'] {
+    opacity: 1;
+    cursor: progress;
+    pointer-events: none;
+  }
+  .btn[aria-busy='true'] > :not(.sr-only) {
+    opacity: 0;
+  }
+  .btn[aria-busy='true']::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    margin: auto;
+    width: 1.15em;
+    height: 1.15em;
+    border: 2px solid currentColor;
+    border-right-color: transparent;
+    border-radius: 50%;
+    animation: btn-spin 0.7s linear infinite;
+  }
+  @keyframes btn-spin {
+    to {
+      transform: rotate(1turn);
+    }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .btn:hover,
+    .btn:active,
+    .btn:hover :global(.btn__trail) {
+      transform: none !important;
+    }
+    /* Global rule freezes animations; a slow pulse still says "working" without spinning */
+    .btn[aria-busy='true']::after {
+      animation: btn-pulse 1.6s ease-in-out infinite !important;
+      border-right-color: currentColor;
+    }
+    @keyframes btn-pulse {
+      50% {
+        opacity: 0.3;
+      }
+    }
+  }
+
+  /* On a teal section, primary flips to a light button */
+  :global(.section--brand) .btn--primary {
+    --btn-bg: var(--color-on-brand);
+    --btn-fg: var(--color-brand);
+    --btn-bg-hover: var(--color-brand-tint);
+  }
+  :global(.section--brand) .btn--secondary {
+    --btn-fg: var(--color-on-brand);
+    --btn-border: currentColor;
+    --btn-bg-hover: rgb(255 255 255 / 0.12);
+  }
+
+  @media (forced-colors: active) {
+    .btn {
+      border-color: ButtonText;
+    }
+  }
+</style>

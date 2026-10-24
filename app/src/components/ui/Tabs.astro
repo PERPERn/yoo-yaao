@@ -1,0 +1,161 @@
+---
+/**
+ * Accessible tabs (WAI-ARIA tabs pattern, automatic activation).
+ * Keyboard: Left/Right (and Up/Down) move, Home/End jump. Roving tabindex.
+ * Panels come from named slots matching each tab id:
+ *   <Tabs label="Visa details" tabs={[{ id: 'docs', label: 'Documents' }, { id: 'steps', label: 'Steps' }]}>
+ *     <div slot="docs">…</div>
+ *     <div slot="steps">…</div>
+ *   </Tabs>
+ * Fires a `tabchange` CustomEvent ({ detail: { id } }) on the root element.
+ */
+interface Tab {
+  id: string;
+  label: string;
+}
+interface Props {
+  tabs: Tab[];
+  label: string;          // accessible name for the tablist
+  selected?: string;      // initially selected tab id
+  uid?: string;           // prefix when the same tab ids appear twice on a page
+  class?: string;
+  [key: string]: unknown;
+}
+const { tabs, label, selected, uid = 'tabs', class: className, ...rest } = Astro.props;
+const active = selected ?? tabs[0]?.id;
+const panels = await Promise.all(
+  tabs.map(async (t) => ({ ...t, html: Astro.slots.has(t.id) ? await Astro.slots.render(t.id) : '' })),
+);
+---
+
+<div class:list={['tabs', className]} data-tabs {...rest}>
+  <div role="tablist" aria-label={label} class="tabs__list">
+    {
+      panels.map((t) => (
+        <button
+          type="button"
+          role="tab"
+          id={`${uid}-tab-${t.id}`}
+          aria-controls={`${uid}-panel-${t.id}`}
+          aria-selected={t.id === active ? 'true' : 'false'}
+          tabindex={t.id === active ? 0 : -1}
+          data-tab={t.id}
+          class="tabs__tab"
+        >
+          {t.label}
+        </button>
+      ))
+    }
+  </div>
+  {
+    panels.map((t) => (
+      <div
+        role="tabpanel"
+        id={`${uid}-panel-${t.id}`}
+        aria-labelledby={`${uid}-tab-${t.id}`}
+        tabindex="0"
+        hidden={t.id !== active}
+        class="tabs__panel"
+        set:html={t.html}
+      />
+    ))
+  }
+</div>
+
+<script>
+  function initTabs(root: HTMLElement) {
+    const tabs = Array.from(root.querySelectorAll<HTMLButtonElement>(':scope > [role="tablist"] > [role="tab"]'));
+    const select = (tab: HTMLButtonElement, focus = true) => {
+      tabs.forEach((t) => {
+        const on = t === tab;
+        t.setAttribute('aria-selected', String(on));
+        t.tabIndex = on ? 0 : -1;
+        const panel = document.getElementById(t.getAttribute('aria-controls') || '');
+        if (panel) panel.hidden = !on;
+      });
+      if (focus) tab.focus();
+      root.dispatchEvent(new CustomEvent('tabchange', { detail: { id: tab.dataset.tab } }));
+    };
+    tabs.forEach((tab, i) => {
+      tab.addEventListener('click', () => select(tab, false));
+      tab.addEventListener('keydown', (e) => {
+        let next = -1;
+        if (e.key === 'ArrowRight' || e.key === 'ArrowDown') next = (i + 1) % tabs.length;
+        else if (e.key === 'ArrowLeft' || e.key === 'ArrowUp') next = (i - 1 + tabs.length) % tabs.length;
+        else if (e.key === 'Home') next = 0;
+        else if (e.key === 'End') next = tabs.length - 1;
+        if (next >= 0) {
+          e.preventDefault();
+          select(tabs[next]);
+        }
+      });
+    });
+  }
+  document.querySelectorAll<HTMLElement>('[data-tabs]').forEach(initTabs);
+</script>
+
+<style>
+  .tabs__list {
+    display: flex;
+    gap: var(--space-1);
+    padding: var(--space-1);
+    background: var(--color-surface-2);
+    border-radius: var(--radius-pill);
+    box-shadow: var(--elev-inset);
+    width: fit-content;
+    max-width: 100%;
+    overflow-x: auto;
+    scrollbar-width: none;
+  }
+  .tabs__tab {
+    min-height: var(--tap-min);
+    padding: 0 var(--space-5);
+    border: 0;
+    border-radius: var(--radius-pill);
+    background: transparent;
+    color: var(--color-ink-2);
+    font-size: var(--text-sm);
+    font-weight: var(--weight-semibold);
+    white-space: nowrap;
+    transition:
+      background-color var(--duration-base) var(--ease-out),
+      color var(--duration-base) var(--ease-out),
+      box-shadow var(--duration-base) var(--ease-out),
+      transform var(--duration-fast) var(--ease-out);
+  }
+  .tabs__tab:hover:not(:disabled, [aria-selected='true']) {
+    color: var(--color-ink);
+    background: color-mix(in srgb, var(--color-surface) 55%, transparent);
+  }
+  .tabs__tab:active:not(:disabled) {
+    transform: scale(0.96);
+  }
+  .tabs__tab[aria-selected='true'] {
+    background: var(--color-surface);
+    color: var(--color-ink);
+    box-shadow: var(--elev-1);
+  }
+  .tabs__tab:disabled {
+    opacity: 0.5;
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .tabs__tab:active {
+      transform: none;
+    }
+  }
+  .tabs__tab:focus-visible {
+    outline-offset: -2px;
+    border-radius: var(--radius-pill);
+  }
+  .tabs__panel {
+    padding-top: var(--space-6);
+  }
+  .tabs__panel:focus-visible {
+    outline-offset: 4px;
+  }
+  @media (forced-colors: active) {
+    .tabs__tab[aria-selected='true'] {
+      outline: 2px solid Highlight;
+    }
+  }
+</style>

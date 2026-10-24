@@ -1,0 +1,223 @@
+---
+import Icon from './Icon.astro';
+import Button from './Button.astro';
+
+/**
+ * Plan card. `featured` gives the teal surface and a "Most popular"-style ribbon (`ribbon`).
+ * CTA renders as a link (href) or, with `ctaAttrs`, can carry data-* hooks for checkout scripts,
+ * e.g. ctaAttrs={{ 'data-checkout': 'pro_yearly' }}. Extra content goes in the default slot.
+ */
+interface Props {
+  name: string;
+  price: string | number;      // 6 or "Free"
+  currency?: string;           // "$"
+  period?: string;             // "/mo", "/session"
+  description?: string;
+  features?: string[];
+  note?: string;               // "or $39/yr — save 46%"
+  ctaLabel?: string;
+  ctaHref?: string;
+  ctaVariant?: 'primary' | 'accent' | 'secondary';
+  ctaAttrs?: Record<string, string>;
+  featured?: boolean;
+  ribbon?: string;             // "Most popular"
+  segment?: string;            // "For travellers" | "For businesses"
+  class?: string;
+  [key: string]: unknown;
+}
+const {
+  name,
+  price,
+  currency = '$',
+  period,
+  description,
+  features = [],
+  note,
+  ctaLabel,
+  ctaHref,
+  ctaVariant,
+  ctaAttrs = {},
+  featured = false,
+  ribbon,
+  segment,
+  class: className,
+  ...rest
+} = Astro.props;
+const isNumber = typeof price === 'number' || /^\d/.test(String(price));
+const variant = ctaVariant ?? (featured ? 'accent' : 'secondary');
+---
+
+<article class:list={['price', featured && 'price--featured', className]} {...rest}>
+  <header class="price__head">
+    <div class="price__row">
+      <h3 class="price__name">{name}</h3>
+      {ribbon && <span class="price__ribbon">{ribbon}</span>}
+    </div>
+    {segment && <p class="price__segment">{segment}</p>}
+    <p class="price__amount">
+      {isNumber && <span class="price__cur">{currency}</span>}<span class="price__num">{price}</span>{period && <span class="price__period">{period}</span>}
+    </p>
+    {note && <p class="price__note">{note}</p>}
+    {description && <p class="price__desc">{description}</p>}
+  </header>
+  {
+    features.length > 0 && (
+      <ul class="price__features">
+        {features.map((f) => (
+          <li>
+            <Icon name="check" size={18} strokeWidth={2.25} class="price__check" />
+            <span>{f}</span>
+          </li>
+        ))}
+      </ul>
+    )
+  }
+  <slot />
+  {
+    ctaLabel && (
+      <div class="price__cta">
+        <Button href={ctaHref} variant={variant} block size="lg" {...ctaAttrs}>
+          {ctaLabel}
+        </Button>
+      </div>
+    )
+  }
+</article>
+
+<style>
+  .price {
+    position: relative;
+    box-shadow: var(--elev-1);
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-6);
+    padding: clamp(var(--space-6), 3vw, var(--space-8));
+    background: var(--color-surface);
+    border-radius: var(--radius-xl);
+    color: var(--color-ink);
+  }
+  /* Featured: highest elevation, a light sheen across the top and a gold-to-teal gradient rim */
+  .price--featured {
+    background:
+      radial-gradient(120% 70% at 15% 0%, rgb(255 255 255 / 0.14), transparent 60%),
+      var(--color-brand);
+    color: var(--color-on-brand);
+    box-shadow: var(--elev-3);
+  }
+  .price--featured::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    padding: 1.5px;
+    border-radius: inherit;
+    background: linear-gradient(
+      150deg,
+      var(--color-accent),
+      transparent 35% 65%,
+      color-mix(in srgb, var(--color-on-brand) 60%, transparent)
+    );
+    -webkit-mask:
+      linear-gradient(#000 0 0) content-box,
+      linear-gradient(#000 0 0);
+    -webkit-mask-composite: xor;
+    mask-composite: exclude;
+    pointer-events: none;
+  }
+  .price__head {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-2);
+  }
+  .price__row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-3);
+  }
+  .price__name {
+    font-size: var(--text-xl);
+    color: inherit;
+  }
+  .price__ribbon {
+    padding: 0.25em 0.75em;
+    border-radius: var(--radius-pill);
+    background: var(--color-accent);
+    color: var(--color-on-accent);
+    font-size: var(--text-xs);
+    font-weight: var(--weight-semibold);
+    white-space: nowrap;
+  }
+  .price__segment {
+    font-size: var(--text-sm);
+    color: var(--color-ink-2);
+  }
+  .price__amount {
+    display: flex;
+    align-items: baseline;
+    gap: 0.1em;
+    margin-top: var(--space-2);
+    font-family: var(--font-display);
+    font-variant-numeric: tabular-nums;
+  }
+  .price__cur {
+    font-size: var(--text-2xl);
+    font-weight: var(--weight-semibold);
+    align-self: flex-start;
+    margin-top: 0.3em;
+  }
+  .price__num {
+    font-size: var(--text-5xl);
+    font-weight: var(--weight-bold);
+    line-height: 1;
+    letter-spacing: -0.04em;
+  }
+  .price__period {
+    margin-left: 0.25em;
+    font-family: var(--font-body);
+    font-size: var(--text-base);
+    color: var(--color-ink-2);
+  }
+  .price__note {
+    font-size: var(--text-sm);
+    font-weight: var(--weight-medium);
+    color: var(--color-accent-text);
+  }
+  .price__desc {
+    color: var(--color-ink-2);
+  }
+  .price__features {
+    list-style: none;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-3);
+    font-size: var(--text-sm);
+  }
+  .price__features li {
+    display: flex;
+    gap: var(--space-3);
+    align-items: flex-start;
+  }
+  .price :global(.price__check) {
+    color: var(--color-brand);
+    margin-top: 0.15em;
+  }
+  .price__cta {
+    margin-top: auto;
+  }
+  .price--featured :is(.price__segment, .price__period, .price__desc) {
+    color: inherit;
+    opacity: 0.88;
+  }
+  .price--featured .price__note {
+    color: inherit;
+  }
+  .price--featured :global(.price__check) {
+    color: inherit;
+  }
+  @media (forced-colors: active) {
+    .price {
+      border: 1px solid CanvasText;
+    }
+  }
+</style>

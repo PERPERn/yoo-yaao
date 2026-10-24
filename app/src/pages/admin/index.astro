@@ -1,0 +1,1254 @@
+---
+import Admin from '../../layouts/Admin.astro';
+import Icon from '../../components/ui/Icon.astro';
+import { DEMO_FUNNEL, DEMO_REVENUE_SERIES, DEMO_STATUS, DEMO_TRAFFIC } from '../../data/demo-ops';
+
+const monthName = (m: string) =>
+  new Date(`${m}-01T00:00:00Z`).toLocaleString('en-US', { month: 'short', year: 'numeric', timeZone: 'UTC' });
+const fmt = (n: number) => n.toLocaleString('en-US');
+const pct = (a: number, b: number) => `${Math.round(((a - b) / b) * 100)}%`;
+const builtAt = new Date().toISOString(); // static build = last deploy
+const funnelTop = DEMO_FUNNEL[0].count;
+const pageMax = DEMO_TRAFFIC.topPages[0].visits;
+const countryMax = DEMO_TRAFFIC.topCountries[0].visits;
+
+const SECTIONS = [
+  { href: '/admin/applications', label: 'Applications', count: 'applications' },
+  { href: '/admin/leads', label: 'Leads', count: 'leads' },
+  { href: '/admin/listings', label: 'Listings', count: 'listings' },
+  { href: '/admin/users', label: 'Users', count: 'users' },
+];
+---
+
+<Admin title="Overview" lead="What needs the team today, and how the business is doing.">
+  <div class="ov" data-ov aria-busy="true">
+    <nav class="ov-tabs" aria-label="Sections">
+      <ul role="list">
+        {
+          SECTIONS.map((s) => (
+            <li>
+              <a href={s.href}>
+                {s.label}
+                <span class="ov-tabs__n" data-tab={s.count}>
+                  <span class="sr-only">(</span>–<span class="sr-only">)</span>
+                </span>
+              </a>
+            </li>
+          ))
+        }
+        <li>
+          <a href="/revenue">Revenue <Icon name="arrow-up-right" size={14} /></a>
+        </li>
+      </ul>
+    </nav>
+
+    <p class="adm-err" role="alert" data-ov-err hidden>
+      Couldn't load applications, leads or listings. <button type="button" class="ov-link-btn" data-ov-retry>Try again</button>
+    </p>
+
+    <!-- Greeting -->
+    <section class="ov-hello" aria-labelledby="hello-title">
+      <div>
+        <h2 id="hello-title" class="ov-hello__title" data-greeting>Hello</h2>
+        <p class="ov-hello__sum" data-summary>Loading today's queue…</p>
+      </div>
+      <p class="ov-live" data-live>
+        <span class="ov-live__dot" aria-hidden="true"></span>
+        <span data-live-label>Live</span>
+        <time data-clock></time>
+      </p>
+    </section>
+
+    <!-- KPI row -->
+    <ul class="ov-kpis" role="list">
+      <li class="kpi kpi--dark">
+        <p class="kpi__label">Revenue this month <span class="ov-sample">Sample</span></p>
+        <p class="kpi__value" data-kpi="revenue">$0</p>
+        <p class="chip" data-chip="revenue"></p>
+        <div class="kpi__spark" data-spark></div>
+      </li>
+      <li class="kpi kpi--tint">
+        <p class="kpi__label">Pro subscribers <span class="ov-sample" data-pro-sample>Sample</span></p>
+        <p class="kpi__value" data-kpi="pro">0</p>
+        <p class="chip" data-chip="pro"></p>
+      </li>
+      <li class="kpi">
+        <p class="kpi__label">Lead win rate</p>
+        <p class="kpi__value" data-kpi="won">0%</p>
+        <p class="chip" data-chip="won"></p>
+        <p class="kpi__sub" data-kpi-sub="won"></p>
+      </li>
+      <li class="kpi">
+        <p class="kpi__label">Active listings</p>
+        <p class="kpi__value" data-kpi="active">0</p>
+        <p class="chip" data-chip="active"></p>
+        <p class="kpi__sub" data-kpi-sub="active"></p>
+      </li>
+    </ul>
+
+    <div class="ov-grid">
+      <!-- Revenue chart -->
+      <section class="card ov-span" aria-labelledby="rev-title">
+        <header class="card__head">
+          <div>
+            <h2 id="rev-title">Revenue, last 12 months</h2>
+            <p class="card__sub">Net USD per month by segment <span class="ov-sample">Sample</span></p>
+          </div>
+          <ul class="legend" role="list">
+            <li><span class="viz-key" style="background:var(--viz-b2c)"></span>B2C Pro</li>
+            <li><span class="viz-key" style="background:var(--viz-b2b)"></span>B2B listings</li>
+            <li><span class="viz-key" style="background:var(--viz-c2c)"></span>C2C buddy fees</li>
+          </ul>
+        </header>
+        <div class="viz-wrap">
+          <div class="viz-box" tabindex="0" data-rev-chart aria-describedby="rev-help"></div>
+          <div class="viz-tip" data-rev-tip hidden aria-live="polite"></div>
+        </div>
+        <p id="rev-help" class="card__foot">
+          Hover, or focus the chart and use the arrow keys, to read each month. Live payment totals are on <a href="/revenue">the revenue board</a>.
+        </p>
+        <details class="ov-table">
+          <summary>Show as table</summary>
+          <div class="adm-scroll" role="region" aria-label="Revenue by month table" tabindex="0">
+            <table class="adm-table">
+              <caption>Net revenue by month and segment, USD (sample)</caption>
+              <thead>
+                <tr><th scope="col">Month</th><th scope="col" class="num">B2C Pro</th><th scope="col" class="num">B2B listings</th><th scope="col" class="num">C2C fees</th><th scope="col" class="num">Total</th></tr>
+              </thead>
+              <tbody>
+                {
+                  DEMO_REVENUE_SERIES.map((m) => (
+                    <tr>
+                      <th scope="row">{monthName(m.month)}</th>
+                      <td class="num">${fmt(m.b2c)}</td>
+                      <td class="num">${fmt(m.b2b)}</td>
+                      <td class="num">${fmt(m.c2c)}</td>
+                      <td class="num">${fmt(m.b2c + m.b2b + m.c2c)}</td>
+                    </tr>
+                  ))
+                }
+              </tbody>
+            </table>
+          </div>
+        </details>
+      </section>
+
+      <!-- Needs attention -->
+      <section class="card" aria-labelledby="todo-title">
+        <header class="card__head">
+          <h2 id="todo-title">Needs attention</h2>
+        </header>
+        <ul class="todo" role="list" data-todo>
+          <li class="todo__empty">Loading…</li>
+        </ul>
+        <template data-todo-row>
+          <li class="todo__row">
+            <span class="todo__icon" aria-hidden="true"></span>
+            <span class="todo__text"><span class="todo__title" data-t="title"></span><span class="adm-sub" data-t="meta"></span></span>
+            <a class="todo__chip" data-t="action"></a>
+          </li>
+        </template>
+      </section>
+
+      <!-- Money mix -->
+      <section class="card ov-span" aria-labelledby="mix-title">
+        <header class="card__head">
+          <div>
+            <h2 id="mix-title">Where the money comes from</h2>
+            <p class="card__sub" data-mix-sub>This month, net USD <span class="ov-sample">Sample</span></p>
+          </div>
+        </header>
+        <div class="mix" data-mix aria-hidden="true"></div>
+        <ul class="mix-legend" role="list" data-mix-legend></ul>
+      </section>
+
+      <!-- Site status -->
+      <section class="card" aria-labelledby="status-title">
+        <header class="card__head">
+          <h2 id="status-title">Site status</h2>
+        </header>
+        <dl class="status">
+          <div>
+            <dt>Uptime, 30 days <span class="ov-sample">Sample</span></dt>
+            <dd class="tabular">{DEMO_STATUS.uptimePct}%</dd>
+          </div>
+          <div>
+            <dt>Last deploy</dt>
+            <dd><time datetime={builtAt} data-built>{builtAt.slice(0, 10)}</time></dd>
+          </div>
+          <div>
+            <dt>Site API</dt>
+            <dd><span class="dot" data-dot="api" data-tone="wait"></span><span data-st="api">Checking…</span></dd>
+          </div>
+          <div>
+            <dt>Supabase</dt>
+            <dd><span class="dot" data-dot="db" data-tone="wait"></span><span data-st="db">Checking…</span></dd>
+          </div>
+          <div>
+            <dt>Stripe payments</dt>
+            <dd><span class="dot" data-dot="pay" data-tone="wait"></span><span data-st="pay">Checking…</span></dd>
+          </div>
+        </dl>
+      </section>
+
+      <!-- Traffic -->
+      <section class="card ov-span" aria-labelledby="traffic-title">
+        <header class="card__head">
+          <div>
+            <h2 id="traffic-title">Traffic</h2>
+            <p class="card__sub">Last 30 days <span class="ov-sample">Sample</span></p>
+          </div>
+        </header>
+        <dl class="traffic-stats">
+          <div>
+            <dt>Visits</dt>
+            <dd><span class="tstat" data-count-to={DEMO_TRAFFIC.visits}>0</span> <span class="chip" data-dir="up">+{pct(DEMO_TRAFFIC.visits, DEMO_TRAFFIC.visitsPrev)}<span class="sr-only"> vs last month</span></span></dd>
+          </div>
+          <div>
+            <dt>Unique visitors</dt>
+            <dd><span class="tstat" data-count-to={DEMO_TRAFFIC.uniques}>0</span> <span class="chip" data-dir="up">+{pct(DEMO_TRAFFIC.uniques, DEMO_TRAFFIC.uniquesPrev)}<span class="sr-only"> vs last month</span></span></dd>
+          </div>
+        </dl>
+        <p class="card__label" id="daily-title">Visits per day, last 14 days</p>
+        <div class="viz-box viz-box--cols" data-cols aria-labelledby="daily-title"></div>
+        <div class="tops">
+          <div>
+            <h3 class="card__label">Top pages</h3>
+            <ol class="bars" role="list">
+              {
+                DEMO_TRAFFIC.topPages.map((p) => (
+                  <li>
+                    <span class="bars__name">{p.path}</span>
+                    <span class="bars__val tabular">{fmt(p.visits)}</span>
+                    <span class="bars__bar" style={`--w:${(p.visits / pageMax) * 100}%`} aria-hidden="true" />
+                  </li>
+                ))
+              }
+            </ol>
+          </div>
+          <div>
+            <h3 class="card__label">Top countries</h3>
+            <ol class="bars" role="list">
+              {
+                DEMO_TRAFFIC.topCountries.map((c) => (
+                  <li>
+                    <span class="bars__name">{c.country}</span>
+                    <span class="bars__val tabular">{fmt(c.visits)}</span>
+                    <span class="bars__bar" style={`--w:${(c.visits / countryMax) * 100}%`} aria-hidden="true" />
+                  </li>
+                ))
+              }
+            </ol>
+          </div>
+        </div>
+      </section>
+
+      <!-- Funnel -->
+      <section class="card" aria-labelledby="funnel-title">
+        <header class="card__head">
+          <div>
+            <h2 id="funnel-title">Sales funnel</h2>
+            <p class="card__sub">This month <span class="ov-sample">Sample</span></p>
+          </div>
+        </header>
+        <ol class="funnel" role="list">
+          {
+            DEMO_FUNNEL.map((f, i) => (
+              <li>
+                <span class="funnel__step">{f.step}</span>
+                <span class="funnel__n tabular">{fmt(f.count)}</span>
+                <span class="funnel__bar" style={`--w:${Math.max(1, (f.count / funnelTop) * 100)}%`} aria-hidden="true" />
+                {i > 0 && (
+                  <span class="funnel__rate">
+                    {((f.count / DEMO_FUNNEL[i - 1].count) * 100).toFixed(f.count / DEMO_FUNNEL[i - 1].count < 0.1 ? 1 : 0)}% of
+                    the step before
+                  </span>
+                )}
+              </li>
+            ))
+          }
+        </ol>
+      </section>
+    </div>
+  </div>
+</Admin>
+
+<script>
+  import { boot, setCount, type Mode } from '../../components/admin/admin';
+  import { source } from '../../components/admin/data';
+  import { columns, countUp, lineChart, responsive, sparkline, type Series } from '../../components/admin/charts';
+  import { getAccessToken, supabase } from '../../lib/supabase';
+  import {
+    DEMO_KPI_PREV,
+    DEMO_PRO_SUBSCRIBERS,
+    DEMO_REVENUE_SERIES as REV,
+    DEMO_TRAFFIC,
+  } from '../../data/demo-ops';
+  import type { Applications, OpsLead, OpsListing } from '../../lib/ops';
+
+  const $ = <T extends Element = HTMLElement>(s: string) => document.querySelector<T>(s)!;
+  const root = $('[data-ov]');
+  const usd = (n: number) => `$${Math.round(n).toLocaleString('en-US')}`;
+  const int = (n: number) => Math.round(n).toLocaleString('en-US');
+  const monthShort = (m: string) => new Date(`${m}-01T00:00:00Z`).toLocaleString('en-US', { month: 'short', timeZone: 'UTC' });
+  let mode: Mode = 'demo';
+
+  /** Delta chip: signed text + direction; colour only reinforces the words. */
+  function chip(key: string, text: string | null, up = true) {
+    const c = $(`[data-chip="${key}"]`);
+    c.hidden = !text;
+    if (!text) return;
+    c.dataset.dir = up ? 'up' : 'down';
+    c.textContent = text;
+  }
+  const signed = (now: number, prev: number) => {
+    const d = Math.round(((now - prev) / prev) * 100);
+    return `${d >= 0 ? '+' : ''}${d}% vs last month`;
+  };
+
+  // ---------- Greeting + live clock
+  const hour = new Date().getHours();
+  $('[data-greeting]').textContent = hour < 12 ? 'Good morning' : hour < 18 ? 'Good afternoon' : 'Good evening';
+  const clock = $<HTMLTimeElement>('[data-clock]');
+  const tickClock = () => {
+    const d = new Date();
+    clock.dateTime = d.toISOString();
+    clock.textContent = d.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' });
+  };
+  tickClock();
+  setInterval(tickClock, 30_000);
+  $('[data-built]').textContent = new Date($('[data-built]').getAttribute('datetime')!).toLocaleString('en-GB', {
+    day: 'numeric',
+    month: 'short',
+    hour: '2-digit',
+    minute: '2-digit',
+  });
+
+  // ---------- Revenue (sample series; /revenue owns live payment totals)
+  const totals = REV.map((m) => m.b2c + m.b2b + m.c2c);
+  const now = totals.at(-1)!;
+  const prev = totals.at(-2)!;
+  countUp($('[data-kpi="revenue"]'), now, usd);
+  chip('revenue', signed(now, prev), now >= prev);
+  responsive($('[data-spark]'), (a) =>
+    sparkline($('[data-spark]'), totals, `Net revenue trend, ${usd(totals[0])} to ${usd(now)} over 12 months`, a),
+  );
+
+  const series: Series[] = [
+    { key: 'b2c', label: 'B2C Pro', color: 'var(--viz-b2c)', values: REV.map((m) => m.b2c) },
+    { key: 'b2b', label: 'B2B listings', color: 'var(--viz-b2b)', values: REV.map((m) => m.b2b) },
+    { key: 'c2c', label: 'C2C buddy fees', color: 'var(--viz-c2c)', values: REV.map((m) => m.c2c) },
+  ];
+  const revBox = $('[data-rev-chart]');
+  responsive(revBox, (a) =>
+    lineChart(
+      revBox,
+      $('[data-rev-tip]'),
+      series,
+      REV.map((m) => monthShort(m.month)),
+      `Net revenue by segment, last 12 months. Total grew from ${usd(totals[0])} to ${usd(now)} a month; B2C Pro leads, B2B listings close behind, C2C fees smallest.`,
+      a,
+    ),
+  );
+
+  // ---------- Money mix (sample this month, or live all-time totals from /api/revenue)
+  function mix(parts: { label: string; color: string; usd: number }[], sub?: string) {
+    const sum = parts.reduce((a, p) => a + p.usd, 0) || 1;
+    const bar = $('[data-mix]');
+    bar.replaceChildren(
+      ...parts.map((p) => {
+        const s = document.createElement('span');
+        s.style.flexGrow = String(p.usd);
+        s.style.background = p.color;
+        return s;
+      }),
+    );
+    $('[data-mix-legend]').replaceChildren(
+      ...parts.map((p) => {
+        const li = document.createElement('li');
+        const key = document.createElement('span');
+        key.className = 'viz-key';
+        key.style.background = p.color;
+        const name = document.createElement('span');
+        name.className = 'mix-legend__name';
+        name.textContent = p.label;
+        const val = document.createElement('span');
+        val.className = 'mix-legend__val tabular';
+        val.textContent = `${Math.round((p.usd / sum) * 100)}% · ${usd(p.usd)}`;
+        li.append(key, name, val);
+        return li;
+      }),
+    );
+    if (sub) $('[data-mix-sub]').textContent = sub;
+  }
+  const last = REV.at(-1)!;
+  mix([
+    { label: 'B2C Pro subscriptions', color: 'var(--viz-b2c)', usd: last.b2c },
+    { label: 'B2B featured listings', color: 'var(--viz-b2b)', usd: last.b2b },
+    { label: 'C2C buddy fees (platform cut)', color: 'var(--viz-c2c)', usd: last.c2c },
+  ]);
+
+  // ---------- Traffic (sample)
+  root.querySelectorAll<HTMLElement>('[data-count-to]').forEach((n) => countUp(n, Number(n.dataset.countTo), int));
+  const days = DEMO_TRAFFIC.daily.map((_, i, a) => {
+    const d = new Date();
+    d.setDate(d.getDate() - (a.length - 1 - i));
+    return d.toLocaleDateString('en-GB', { day: 'numeric', month: 'short' });
+  });
+  const colBox = $('[data-cols]');
+  responsive(colBox, (a) => columns(colBox, DEMO_TRAFFIC.daily, days, 'Visits per day, last 14 days, rising from about 1,100 to 1,600', a));
+
+  // ---------- Status dots
+  function status(key: string, tone: 'good' | 'warn' | 'bad' | 'off', text: string) {
+    $(`[data-dot="${key}"]`).dataset.tone = tone;
+    $(`[data-st="${key}"]`).textContent = text;
+  }
+  getAccessToken()
+    .catch(() => null)
+    .then((token) => fetch('/api/revenue', { headers: { accept: 'application/json', ...(token ? { authorization: `Bearer ${token}` } : {}) } }))
+    .then(async (r) => {
+      if (!r.ok) throw new Error(String(r.status));
+      status('api', 'good', 'Operational');
+      const data = (await r.json()) as { configured: boolean; bySegment?: Record<'B2C' | 'B2B' | 'C2C', { netUsd: number }> };
+      status('pay', data.configured ? 'good' : 'off', data.configured ? 'Connected' : 'Not configured');
+      if (data.configured && data.bySegment && data.bySegment.B2C.netUsd + data.bySegment.B2B.netUsd + data.bySegment.C2C.netUsd > 0) {
+        mix(
+          [
+            { label: 'B2C Pro subscriptions', color: 'var(--viz-b2c)', usd: data.bySegment.B2C.netUsd },
+            { label: 'B2B featured listings', color: 'var(--viz-b2b)', usd: data.bySegment.B2B.netUsd },
+            { label: 'C2C buddy fees (platform cut)', color: 'var(--viz-c2c)', usd: data.bySegment.C2C.netUsd },
+          ],
+          'All time, net USD, live Stripe test-mode payments',
+        );
+      }
+    })
+    .catch(() => {
+      status('api', 'bad', 'Not responding');
+      status('pay', 'off', 'Unknown');
+    });
+  if (!supabase) status('db', 'off', 'Not configured');
+  else
+    supabase
+      .from('listings')
+      .select('id', { head: true, count: 'exact' })
+      .then(({ error }) => status('db', error ? 'warn' : 'good', error ? 'Degraded' : 'Operational'));
+
+  // ---------- Ops data (live for an admin, sample otherwise)
+  const ago = (iso: string) => {
+    const h = Math.round((Date.now() - new Date(iso).getTime()) / 3_600_000);
+    return h < 1 ? 'just now' : h < 48 ? `${h}h ago` : `${Math.round(h / 24)} days ago`;
+  };
+
+  function todo(apps: Applications, leads: OpsLead[]) {
+    const list = $('[data-todo]');
+    const tpl = $<HTMLTemplateElement>('[data-todo-row]');
+    type Item = { title: string; meta: string; href: string; action: string; label: string; at: string };
+    const items: Item[] = [
+      ...apps.listings
+        .filter((a) => a.status === 'new')
+        .map((a) => ({ title: a.business_name, meta: `Listing application · ${ago(a.created_at)}`, href: '/admin/applications', action: 'Review', label: `Review ${a.business_name}`, at: a.created_at })),
+      ...apps.buddies
+        .filter((a) => a.status === 'new')
+        .map((a) => ({ title: a.full_name, meta: `Local Buddy application · ${ago(a.created_at)}`, href: '/admin/applications', action: 'Review', label: `Review ${a.full_name}`, at: a.created_at })),
+      ...leads
+        .filter((l) => l.status === 'new' && !l.agent_id)
+        .map((l) => ({ title: l.name, meta: `Unassigned lead · ${(l.visa_slug ?? 'visa').toUpperCase()} · ${ago(l.created_at)}`, href: '/admin/leads', action: 'Assign', label: `Assign ${l.name}`, at: l.created_at })),
+    ].sort((a, b) => b.at.localeCompare(a.at));
+    if (!items.length) {
+      const li = document.createElement('li');
+      li.className = 'todo__empty';
+      li.textContent = 'All caught up. New applications and leads show up here.';
+      list.replaceChildren(li);
+      return;
+    }
+    list.replaceChildren(
+      ...items.slice(0, 6).map((it) => {
+        const li = (tpl.content.firstElementChild as HTMLElement).cloneNode(true) as HTMLElement;
+        li.querySelector('[data-t="title"]')!.textContent = it.title;
+        li.querySelector('[data-t="meta"]')!.textContent = it.meta;
+        const a = li.querySelector<HTMLAnchorElement>('[data-t="action"]')!;
+        a.href = it.href;
+        a.textContent = it.action;
+        a.setAttribute('aria-label', it.label);
+        li.dataset.kind = it.action === 'Assign' ? 'lead' : 'app';
+        return li;
+      }),
+    );
+    if (items.length > 6) {
+      const more = document.createElement('li');
+      more.className = 'todo__empty';
+      more.textContent = `+${items.length - 6} more`;
+      list.append(more);
+    }
+  }
+
+  async function run() {
+    root.setAttribute('aria-busy', 'true');
+    $('[data-ov-err]').hidden = true;
+    try {
+      const s = source(mode);
+      const [apps, leads, listings, profiles] = await Promise.all([
+        s.applications(),
+        s.leads(),
+        s.listings(),
+        mode === 'admin' ? s.profiles().catch(() => null) : Promise.resolve(null),
+      ]);
+      render(apps, leads, listings);
+      // Pro subscribers: live count from accounts for an admin (no history yet, so no delta chip).
+      if (profiles) {
+        const pro = profiles.filter((p) => p.plan === 'pro' && (!p.pro_until || new Date(p.pro_until) > new Date())).length;
+        countUp($('[data-kpi="pro"]'), pro, int);
+        chip('pro', null);
+        $('[data-pro-sample]').hidden = true;
+        $('[data-tab="users"]').textContent = String(profiles.length);
+      }
+    } catch {
+      $('[data-ov-err]').hidden = false;
+      $('[data-summary]').textContent = "Couldn't load today's queue.";
+    } finally {
+      root.setAttribute('aria-busy', 'false');
+    }
+  }
+
+  function render(apps: Applications, leads: OpsLead[], listings: OpsListing[]) {
+    const pendingApps = apps.listings.filter((a) => a.status === 'new').length + apps.buddies.filter((a) => a.status === 'new').length;
+    const newLeads = leads.filter((l) => l.status === 'new').length;
+    const won = leads.filter((l) => l.status === 'won').length;
+    const lost = leads.filter((l) => l.status === 'lost').length;
+    const rate = won + lost ? won / (won + lost) : 0;
+    const active = listings.filter((l) => l.active).length;
+    const featured = listings.filter((l) => l.active && l.featured).length;
+    const demo = mode === 'demo';
+
+    const plural = (n: number, one: string, many: string) => `${n} ${n === 1 ? one : many}`;
+    $('[data-summary]').textContent =
+      pendingApps || newLeads
+        ? `${plural(pendingApps, 'application', 'applications')} waiting, ${plural(newLeads, 'new lead', 'new leads')}.`
+        : 'All caught up. Nothing is waiting on you.';
+
+    $('[data-tab="applications"]').textContent = String(pendingApps);
+    $('[data-tab="leads"]').textContent = String(newLeads);
+    $('[data-tab="listings"]').textContent = String(active);
+    setCount('applications', pendingApps);
+    setCount('leads', newLeads);
+
+    countUp($('[data-kpi="won"]'), rate * 100, (n) => `${Math.round(n)}%`);
+    $('[data-kpi-sub="won"]').textContent = `${won} won · ${lost} lost`;
+    const pts = Math.round((rate - DEMO_KPI_PREV.wonRate) * 100);
+    chip('won', demo ? `${pts >= 0 ? '+' : ''}${pts} pts vs last month` : null, pts >= 0);
+
+    countUp($('[data-kpi="active"]'), active, int);
+    $('[data-kpi-sub="active"]').textContent = `${featured} featured (paid) · ${listings.length - active} hidden`;
+    const dl = active - DEMO_KPI_PREV.activeListings;
+    chip('active', demo ? `${dl >= 0 ? '+' : ''}${dl} vs last month` : null, dl >= 0);
+
+    if (demo) {
+      countUp($('[data-kpi="pro"]'), DEMO_PRO_SUBSCRIBERS.now, int);
+      chip('pro', signed(DEMO_PRO_SUBSCRIBERS.now, DEMO_PRO_SUBSCRIBERS.prev), true);
+      $('[data-tab="users"]').textContent = '4';
+    }
+    todo(apps, leads);
+  }
+
+  $('[data-ov-retry]').addEventListener('click', run);
+  boot().then((b) => {
+    mode = b.mode;
+    $('[data-live-label]').textContent = mode === 'admin' ? 'Live' : 'Demo';
+    $('[data-live]').dataset.mode = mode;
+    if (mode !== 'denied') run();
+  });
+</script>
+
+<style>
+  .ov {
+    /* Segment hues, validated with the dataviz checker on white (gold needs visible labels: legend + table). */
+    --viz-b2c: #00918a;
+    --viz-b2b: #e3a33a;
+    --viz-c2c: #c2593a;
+    display: grid;
+    gap: var(--space-5);
+  }
+
+  /* Section tabs */
+  .ov-tabs ul {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-2);
+  }
+  .ov-tabs a {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-2);
+    min-height: 2.5rem;
+    padding: 0 var(--space-3);
+    border-radius: var(--radius-pill);
+    background: var(--color-surface);
+    color: var(--color-ink);
+    font-size: var(--text-sm);
+    font-weight: var(--weight-medium);
+    text-decoration: none;
+    box-shadow: 0 0 0 1px var(--color-border);
+    transition:
+      box-shadow var(--duration-fast) var(--ease-out),
+      transform var(--duration-fast) var(--ease-out);
+  }
+  .ov-tabs a:hover {
+    box-shadow: 0 0 0 1px var(--color-border-strong);
+  }
+  .ov-tabs a:active {
+    transform: scale(0.97);
+  }
+  .ov-tabs a:focus-visible {
+    outline: 2px solid var(--color-focus);
+    outline-offset: 2px;
+  }
+  .ov-tabs__n {
+    min-width: 1.375rem;
+    padding: 0 6px;
+    border-radius: var(--radius-pill);
+    background: var(--color-surface-2);
+    color: var(--color-ink-2);
+    font-size: var(--text-xs);
+    font-weight: var(--weight-semibold);
+    line-height: 1.375rem;
+    text-align: center;
+    font-variant-numeric: tabular-nums;
+  }
+
+  /* Greeting */
+  .ov-hello {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-4);
+    padding: var(--space-5) var(--space-6);
+    border-radius: var(--radius-lg);
+    background: var(--color-surface);
+    box-shadow:
+      0 0 0 1px var(--color-border),
+      var(--elev-1);
+  }
+  .ov-hello__title {
+    margin: 0;
+    font-family: var(--font-display);
+    font-size: var(--text-xl);
+    letter-spacing: -0.01em;
+  }
+  .ov-hello__sum {
+    margin: var(--space-1) 0 0;
+    color: var(--color-ink-2);
+  }
+  .ov-live {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-2);
+    margin: 0;
+    padding: var(--space-1) var(--space-3);
+    border-radius: var(--radius-pill);
+    background: var(--color-success-tint);
+    color: var(--color-success);
+    font-size: var(--text-xs);
+    font-weight: var(--weight-semibold);
+  }
+  .ov-live[data-mode='demo'] {
+    background: var(--color-accent-tint);
+    color: var(--color-accent-text);
+  }
+  .ov-live time {
+    color: var(--color-ink-2);
+    font-variant-numeric: tabular-nums;
+  }
+  .ov-live__dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: currentColor;
+    animation: ov-pulse 2s var(--ease-in-out) infinite;
+  }
+  @keyframes ov-pulse {
+    50% {
+      opacity: 0.35;
+    }
+  }
+
+  .ov-sample {
+    display: inline-block;
+    margin-left: var(--space-1);
+    padding: 0 6px;
+    border-radius: var(--radius-sm);
+    background: var(--color-accent-tint);
+    color: var(--color-accent-text);
+    font-size: 0.6875rem;
+    font-weight: var(--weight-semibold);
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    vertical-align: 1px;
+  }
+
+  /* KPI cards */
+  .ov-kpis {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: grid;
+    gap: var(--space-4);
+    grid-template-columns: 1fr;
+  }
+  @media (min-width: 36rem) {
+    .ov-kpis {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+  }
+  @media (min-width: 80rem) {
+    .ov-kpis {
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+    }
+  }
+  .kpi {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-2);
+    padding: var(--space-5);
+    border-radius: var(--radius-lg);
+    background: var(--color-surface);
+    box-shadow:
+      0 0 0 1px var(--color-border),
+      var(--elev-1);
+  }
+  .kpi p {
+    margin: 0;
+  }
+  .kpi__label {
+    color: var(--color-ink-2);
+    font-size: var(--text-sm);
+    font-weight: var(--weight-medium);
+  }
+  .kpi__value {
+    font-size: var(--text-3xl);
+    font-weight: var(--weight-semibold);
+    line-height: 1.05;
+    letter-spacing: -0.02em;
+  }
+  .kpi__sub {
+    color: var(--color-ink-3);
+    font-size: var(--text-xs);
+  }
+  .kpi--dark {
+    --spark: var(--night-brand);
+    --spark-ring: var(--night-bg);
+    background: var(--night-bg);
+    color: var(--night-ink);
+    box-shadow: var(--elev-2);
+  }
+  .kpi--dark .kpi__label {
+    color: var(--night-ink-2);
+  }
+  .kpi--dark .ov-sample {
+    background: rgb(240 180 76 / 0.16);
+    color: var(--night-accent);
+  }
+  .kpi--dark .chip[data-dir] {
+    background: rgb(92 200 190 / 0.14);
+    color: var(--night-brand);
+  }
+  .kpi__spark {
+    margin-top: auto;
+    min-height: 40px;
+  }
+  .kpi--tint {
+    background: var(--color-brand-tint);
+    box-shadow: 0 0 0 1px color-mix(in srgb, var(--color-brand) 18%, transparent);
+  }
+  .kpi--tint .kpi__label {
+    color: var(--color-brand);
+  }
+  .chip {
+    align-self: flex-start;
+    margin: 0;
+    padding: 2px var(--space-2);
+    border-radius: var(--radius-pill);
+    font-size: var(--text-xs);
+    font-weight: var(--weight-semibold);
+    white-space: nowrap;
+  }
+  .chip[data-dir='up'] {
+    background: var(--color-success-tint);
+    color: var(--color-success);
+  }
+  .chip[data-dir='down'] {
+    background: var(--color-danger-tint);
+    color: var(--color-danger);
+  }
+  .chip[data-dir='up']::before {
+    content: '↑ ';
+  }
+  .chip[data-dir='down']::before {
+    content: '↓ ';
+  }
+
+  /* Grid of cards */
+  .ov-grid {
+    display: grid;
+    gap: var(--space-4);
+    grid-template-columns: minmax(0, 1fr);
+  }
+  @media (min-width: 72rem) {
+    .ov-grid {
+      grid-template-columns: minmax(0, 2fr) minmax(0, 1fr);
+    }
+  }
+  .card {
+    min-width: 0;
+    padding: var(--space-5);
+    border-radius: var(--radius-lg);
+    background: var(--color-surface);
+    box-shadow:
+      0 0 0 1px var(--color-border),
+      var(--elev-1);
+  }
+  .card__head {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: var(--space-3);
+    margin-bottom: var(--space-4);
+  }
+  .card__head h2 {
+    margin: 0;
+    font-size: var(--text-base);
+    font-weight: var(--weight-semibold);
+  }
+  .card__sub {
+    margin: 2px 0 0;
+    color: var(--color-ink-3);
+    font-size: var(--text-xs);
+  }
+  .card__label {
+    margin: var(--space-4) 0 var(--space-2);
+    color: var(--color-ink-2);
+    font-size: var(--text-xs);
+    font-weight: var(--weight-semibold);
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+  }
+  .card__foot {
+    margin: var(--space-3) 0 0;
+    color: var(--color-ink-3);
+    font-size: var(--text-xs);
+  }
+  .card__foot a {
+    color: var(--color-brand);
+  }
+  .legend {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-2) var(--space-4);
+    color: var(--color-ink-2);
+    font-size: var(--text-xs);
+  }
+  .legend li {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .ov-table {
+    margin-top: var(--space-3);
+  }
+  .ov-table summary {
+    display: inline-flex;
+    align-items: center;
+    min-height: var(--tap-min);
+    color: var(--color-brand);
+    font-size: var(--text-sm);
+    font-weight: var(--weight-medium);
+    cursor: pointer;
+  }
+  .ov-table summary:focus-visible {
+    outline: 2px solid var(--color-focus);
+    outline-offset: 2px;
+  }
+
+  /* Needs attention */
+  .todo {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: grid;
+  }
+  .todo__empty {
+    padding: var(--space-4) 0;
+    color: var(--color-ink-2);
+    font-size: var(--text-sm);
+  }
+  .todo__row {
+    display: flex;
+    align-items: center;
+    gap: var(--space-3);
+    padding: var(--space-3) 0;
+    border-top: 1px solid var(--color-border);
+  }
+  .todo__row:first-child {
+    border-top: 0;
+  }
+  .todo__icon {
+    flex: none;
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: var(--color-accent);
+  }
+  .todo__row[data-kind='lead'] .todo__icon {
+    background: var(--color-info);
+  }
+  .todo__text {
+    flex: 1;
+    min-width: 0;
+  }
+  .todo__title {
+    display: block;
+    font-size: var(--text-sm);
+    font-weight: var(--weight-semibold);
+    overflow-wrap: anywhere;
+  }
+  .todo__chip {
+    flex: none;
+    display: inline-flex;
+    align-items: center;
+    min-height: 2.25rem;
+    padding: 0 var(--space-3);
+    border-radius: var(--radius-pill);
+    background: var(--color-brand-tint);
+    color: var(--color-brand);
+    font-size: var(--text-xs);
+    font-weight: var(--weight-semibold);
+    text-decoration: none;
+    transition:
+      background-color var(--duration-fast) var(--ease-out),
+      transform var(--duration-fast) var(--ease-out);
+  }
+  .todo__chip:hover {
+    background: color-mix(in srgb, var(--color-brand) 20%, var(--color-brand-tint));
+  }
+  .todo__chip:active {
+    transform: scale(0.96);
+  }
+  .todo__chip:focus-visible {
+    outline: 2px solid var(--color-focus);
+    outline-offset: 2px;
+  }
+
+  /* Money mix: one 100% bar, 2px surface gaps between segments */
+  .mix {
+    display: flex;
+    gap: 2px;
+    height: 24px;
+  }
+  .mix :global(span) {
+    min-width: 4px;
+  }
+  .mix :global(span:first-child) {
+    border-radius: 4px 0 0 4px;
+  }
+  .mix :global(span:last-child) {
+    border-radius: 0 4px 4px 0;
+  }
+  .mix-legend {
+    list-style: none;
+    margin: var(--space-4) 0 0;
+    padding: 0;
+    display: grid;
+    gap: var(--space-2);
+    font-size: var(--text-sm);
+  }
+  .mix-legend :global(li) {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+  }
+  .mix-legend :global(.mix-legend__val) {
+    margin-left: auto;
+    font-weight: var(--weight-semibold);
+  }
+
+  /* Status */
+  .status {
+    margin: 0;
+    display: grid;
+  }
+  .status div {
+    display: flex;
+    justify-content: space-between;
+    gap: var(--space-3);
+    padding: var(--space-3) 0;
+    border-top: 1px solid var(--color-border);
+    font-size: var(--text-sm);
+  }
+  .status div:first-child {
+    border-top: 0;
+    padding-top: 0;
+  }
+  .status dt {
+    color: var(--color-ink-2);
+  }
+  .status dd {
+    margin: 0;
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-2);
+    font-weight: var(--weight-semibold);
+    text-align: right;
+  }
+  .dot {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    background: var(--color-surface-3);
+  }
+  .dot[data-tone='good'] {
+    background: var(--color-success);
+  }
+  .dot[data-tone='warn'] {
+    background: var(--color-accent);
+  }
+  .dot[data-tone='bad'] {
+    background: var(--color-danger);
+  }
+  .dot[data-tone='off'] {
+    background: transparent;
+    box-shadow: inset 0 0 0 2px var(--color-border-strong);
+  }
+
+  /* Traffic */
+  .traffic-stats {
+    margin: 0;
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-4) var(--space-10);
+  }
+  .traffic-stats dt {
+    color: var(--color-ink-2);
+    font-size: var(--text-sm);
+  }
+  .traffic-stats dd {
+    margin: var(--space-1) 0 0;
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+  }
+  .tstat {
+    font-size: var(--text-2xl);
+    font-weight: var(--weight-semibold);
+  }
+  .tops {
+    display: grid;
+    gap: var(--space-2) var(--space-8);
+  }
+  @media (min-width: 40rem) {
+    .tops {
+      grid-template-columns: 1fr 1fr;
+    }
+  }
+  .bars,
+  .funnel {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: grid;
+    gap: var(--space-3);
+  }
+  .bars li,
+  .funnel li {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: 4px var(--space-3);
+    font-size: var(--text-sm);
+  }
+  .bars__name {
+    overflow-wrap: anywhere;
+  }
+  .bars__val,
+  .funnel__n {
+    font-weight: var(--weight-semibold);
+  }
+  .bars__bar,
+  .funnel__bar {
+    grid-column: 1 / -1;
+    height: 6px;
+    border-radius: 3px;
+    background: var(--color-surface-2);
+    position: relative;
+    overflow: hidden;
+  }
+  .bars__bar::after,
+  .funnel__bar::after {
+    content: '';
+    position: absolute;
+    inset: 0 auto 0 0;
+    width: var(--w);
+    border-radius: 3px;
+    background: var(--viz-b2c);
+    transform-origin: left;
+    animation: ov-grow-x 700ms var(--ease-out) both;
+  }
+  .funnel__bar {
+    height: 12px;
+    border-radius: 4px;
+  }
+  .funnel__rate {
+    grid-column: 1 / -1;
+    color: var(--color-ink-3);
+    font-size: var(--text-xs);
+  }
+  @keyframes ov-grow-x {
+    from {
+      transform: scaleX(0);
+    }
+  }
+
+  .ov[aria-busy='true'] .kpi__value {
+    opacity: 0.5;
+  }
+  .ov-link-btn {
+    min-height: 2rem;
+    padding: 0 var(--space-2);
+    border: 0;
+    background: none;
+    color: inherit;
+    font: inherit;
+    font-weight: var(--weight-semibold);
+    text-decoration: underline;
+    cursor: pointer;
+  }
+  .ov-link-btn:focus-visible {
+    outline: 2px solid var(--color-focus);
+    outline-offset: 2px;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .ov-live__dot,
+    .bars__bar::after,
+    .funnel__bar::after {
+      animation: none;
+    }
+  }
+</style>
+
+<style is:global>
+  /* Chart pieces are created in JS, so these can't be scoped. */
+  .viz-wrap {
+    position: relative;
+  }
+  .viz-box {
+    width: 100%;
+    min-height: 120px;
+    border-radius: var(--radius-sm);
+  }
+  .viz-box--cols {
+    min-height: 96px;
+  }
+  .viz-box:focus-visible {
+    outline: 2px solid var(--color-focus);
+    outline-offset: 4px;
+  }
+  .viz {
+    display: block;
+    overflow: visible;
+  }
+  .viz-grid {
+    stroke: var(--color-border);
+    stroke-width: 1;
+  }
+  .viz-tick {
+    fill: var(--color-ink-3);
+    font-size: 11px;
+    font-family: var(--font-body);
+    font-variant-numeric: tabular-nums;
+  }
+  .viz-line {
+    fill: none;
+    stroke-width: 2;
+    stroke-linejoin: round;
+    stroke-linecap: round;
+  }
+  .viz-dot {
+    stroke: var(--color-surface);
+    stroke-width: 2;
+  }
+  .viz-cross {
+    stroke: var(--color-border-strong);
+    stroke-width: 1;
+  }
+  .viz-col {
+    fill: var(--viz-b2c);
+  }
+  .viz-col:hover {
+    fill: var(--color-brand-strong);
+  }
+  .viz-draw {
+    stroke-dasharray: 1;
+    stroke-dashoffset: 1;
+    animation: viz-draw 900ms var(--ease-out) forwards;
+  }
+  @keyframes viz-draw {
+    to {
+      stroke-dashoffset: 0;
+    }
+  }
+  .viz-grow {
+    transform-box: fill-box;
+    transform-origin: bottom;
+    animation: viz-grow 600ms var(--ease-out) both;
+  }
+  @keyframes viz-grow {
+    from {
+      transform: scaleY(0);
+    }
+  }
+  .viz-key {
+    display: inline-block;
+    flex: none;
+    width: 10px;
+    height: 10px;
+    border-radius: 3px;
+  }
+  .viz-tip {
+    position: absolute;
+    top: 0;
+    z-index: var(--z-raised);
+    min-width: 11rem;
+    padding: var(--space-2) var(--space-3);
+    border-radius: var(--radius-md);
+    background: var(--color-surface);
+    box-shadow:
+      0 0 0 1px var(--color-border),
+      var(--elev-3);
+    font-size: var(--text-xs);
+    pointer-events: none;
+  }
+  .viz-tip p {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin: 2px 0;
+    color: var(--color-ink-2);
+  }
+  .viz-tip .viz-tip__head {
+    color: var(--color-ink);
+    font-weight: var(--weight-semibold);
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .viz-draw,
+    .viz-grow {
+      animation: none;
+      stroke-dashoffset: 0;
+    }
+  }
+</style>

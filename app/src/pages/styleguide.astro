@@ -1,0 +1,458 @@
+---
+import Base from '../layouts/Base.astro';
+import Section from '../components/ui/Section.astro';
+import Button from '../components/ui/Button.astro';
+import Card from '../components/ui/Card.astro';
+import Badge from '../components/ui/Badge.astro';
+import Input from '../components/ui/Input.astro';
+import Select from '../components/ui/Select.astro';
+import Field from '../components/ui/Field.astro';
+import Stat from '../components/ui/Stat.astro';
+import Callout from '../components/ui/Callout.astro';
+import SourceTag from '../components/ui/SourceTag.astro';
+import PriceCard from '../components/ui/PriceCard.astro';
+import Steps from '../components/ui/Steps.astro';
+import Tabs from '../components/ui/Tabs.astro';
+import Avatar from '../components/ui/Avatar.astro';
+import Rating from '../components/ui/Rating.astro';
+import EmptyState from '../components/ui/EmptyState.astro';
+import Icon, { ICONS, type IconName } from '../components/ui/Icon.astro';
+import HeroStage from '../components/ui/HeroStage.astro';
+import Logo from '../components/ui/Logo.astro';
+import Marquee from '../components/ui/Marquee.astro';
+import Accordion from '../components/ui/Accordion.astro';
+import { SITE } from '../config/site';
+
+const colors = [
+  ['bg', 'Page ground'],
+  ['surface', 'Cards, inputs'],
+  ['surface-2', 'Sunken / alt section'],
+  ['surface-3', 'Hover, skeleton'],
+  ['ink', 'Body text'],
+  ['ink-2', 'Secondary text'],
+  ['brand', 'Teal: actions, links'],
+  ['brand-strong', 'Teal hover'],
+  ['brand-tint', 'Teal surface'],
+  ['accent', 'Gold: upgrade, highlights'],
+  ['accent-tint', 'Gold surface'],
+  ['accent-text', 'Gold as text'],
+  ['info', 'Info'],
+  ['success', 'Success / verified'],
+  ['warning', 'Warning'],
+  ['danger', 'Danger / error'],
+  ['inverse-bg', 'Footer / night ground'],
+  ['focus', 'Focus ring'],
+];
+const sizes = ['5xl', '4xl', '3xl', '2xl', 'xl', 'lg', 'base', 'sm', 'xs'];
+const spaces = [1, 2, 3, 4, 6, 8, 12, 16, 24];
+const radii = ['sm', 'md', 'lg', 'xl', 'pill'];
+const iconNames = Object.keys(ICONS) as IconName[];
+---
+
+<Base title="Style guide" description="Design tokens and UI components for QA." noindex>
+  <Section
+    titleLevel={1}
+    eyebrow="Design system"
+    title="Style guide"
+    lead="Every token and component in one place. Frontend agents build from these; QA checks them in light and dark mode."
+  >
+    <div class="cluster">
+      <Logo href={null} />
+      <Logo href={null} markOnly size="lg" />
+    </div>
+  </Section>
+
+  <Section id="color" title="Colour" lead="Two neutrals, teal for action, gold for money, three segment tints, one night scene." tone="tint">
+    <ul class="swatches">
+      {
+        colors.map(([name, use]) => (
+          <li class="swatch">
+            <span class="swatch__chip" style={`background: var(--color-${name})`} />
+            <span class="swatch__name">--color-{name}</span>
+            <span class="swatch__use">{use}</span>
+          </li>
+        ))
+      }
+    </ul>
+  </Section>
+
+  <Section id="type" title="Type" lead="Anuphan for headings and figures, Sarabun for reading. Both drawn in Bangkok by Cadson Demak.">
+    <div class="stack" style="--stack-gap: var(--space-5)">
+      {
+        sizes.map((s) => (
+          <div class="type-row">
+            <code class="type-row__label">--text-{s}</code>
+            <p
+              style={`font-size: var(--text-${s}); font-family: ${['5xl', '4xl', '3xl', '2xl', 'xl'].includes(s) ? 'var(--font-display)' : 'var(--font-body)'}; font-weight: ${['5xl', '4xl', '3xl'].includes(s) ? 700 : 400}; line-height: 1.15; letter-spacing: ${['5xl', '4xl'].includes(s) ? '-0.03em' : 'normal'}`}
+            >
+              Stay longer, legally
+            </p>
+          </div>
+        ))
+      }
+    </div>
+    <div class="split" style="margin-top: var(--space-16)">
+      <div class="prose">
+        <h2>Prose for visa guides</h2>
+        <p>
+          The <strong>Destination Thailand Visa</strong> lets remote workers stay up to 180 days per entry. Apply at the
+          Thai embassy in the country where you live, <a href="#type">not the one on your passport</a>.
+        </p>
+        <h3>Documents</h3>
+        <ul>
+          <li>Passport valid for at least six months</li>
+          <li>Proof of 500,000 THB in savings</li>
+          <li>Employment letter or client contracts</li>
+        </ul>
+        <blockquote>Rules change. Check the embassy page before you book flights.</blockquote>
+        <table>
+          <thead><tr><th>Visa</th><th>Stay per entry</th><th>Fee</th></tr></thead>
+          <tbody>
+            <tr><td>DTV</td><td>180 days</td><td>10,000 THB</td></tr>
+            <tr><td>Visa-exempt</td><td>60 days</td><td>Free</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="stack">
+        <h2 class="display">Find your visa in 2 minutes.</h2>
+        <p class="lead">Lead paragraph: one supporting sentence directly under the headline.</p>
+        <p class="muted small">Muted small text for secondary notes.</p>
+      </div>
+    </div>
+  </Section>
+
+  <Section id="space" title="Space, radius, elevation" tone="tint">
+    <div class="split">
+      <ul class="space-list">
+        {
+          spaces.map((n) => (
+            <li>
+              <code>--space-{n}</code>
+              <span class="space-bar" style={`width: var(--space-${n})`} />
+            </li>
+          ))
+        }
+      </ul>
+      <div class="stack">
+        <div class="cluster">
+          {radii.map((r) => <span class="radius-demo" style={`border-radius: var(--radius-${r})`}>{r}</span>)}
+        </div>
+        <div class="cluster">
+          <span class="radius-demo" style="box-shadow: var(--shadow-raise)">raise</span>
+          <span class="radius-demo" style="box-shadow: var(--shadow-float)">float</span>
+        </div>
+        <p class="small muted">Surfaces separate by tone. Shadows only on things that float (menus, popovers, hovered cards).</p>
+      </div>
+    </div>
+  </Section>
+
+  <Section id="buttons" title="Buttons">
+    <div class="stack" style="--stack-gap: var(--space-6)">
+      <div class="cluster">
+        <Button>Primary</Button>
+        <Button variant="accent" icon="star">Upgrade to Pro</Button>
+        <Button variant="secondary">Secondary</Button>
+        <Button variant="ghost">Ghost</Button>
+        <Button disabled>Disabled</Button>
+      </div>
+      <div class="cluster">
+        <Button size="sm">Small</Button>
+        <Button size="md" iconRight="arrow-right">Medium</Button>
+        <Button size="lg" href="/finder" iconRight="arrow-right">Find my visa</Button>
+        <Button href="https://www.thaievisa.go.th" external variant="secondary" iconRight="arrow-up-right">Thai e-Visa</Button>
+      </div>
+    </div>
+  </Section>
+
+  <Section id="badges" title="Badges, sources, ratings, avatars" tone="tint">
+    <div class="stack" style="--stack-gap: var(--space-6)">
+      <div class="cluster">
+        <Badge variant="verified" />
+        <Badge variant="demo" />
+        <Badge variant="pro" />
+        <Badge variant="paid" />
+        <Badge variant="brand">Remote work</Badge>
+        <Badge variant="info" icon="clock">Updated</Badge>
+        <Badge variant="danger">Overstay risk</Badge>
+        <Badge>Neutral</Badge>
+      </div>
+      <SourceTag
+        source={{ label: 'Royal Thai Embassy, London — DTV', url: 'https://london.thaiembassy.org', tier: 'primary' }}
+        verifiedAt="2026-10-12"
+      />
+      <SourceTag label="Nomad List cost survey" url="https://nomads.com" tier="secondary" verifiedAt="2026-09-30" />
+      <Rating value={4.8} count={32} />
+      <Rating value={3.5} size={20} />
+      <div class="cluster">
+        <Avatar name="Ploy Srisuk" size="sm" />
+        <Avatar name="Ploy Srisuk" verified />
+        <Avatar name="Mark Jensen" size="lg" verified />
+        <Avatar name="Anan K" size="xl" />
+      </div>
+    </div>
+  </Section>
+
+  <Section id="icons" title="Icons">
+    <ul class="icon-grid">
+      {
+        iconNames.map((n) => (
+          <li>
+            <Icon name={n} size={24} />
+            <code>{n}</code>
+          </li>
+        ))
+      }
+    </ul>
+  </Section>
+
+  <Section id="forms" title="Forms" tone="tint">
+    <form class="form-demo" novalidate>
+      <Input name="sg-age" label="Your age" type="number" hint="Some visas have a minimum age (LTR 50+, Retirement 50+)." inputmode="numeric" required />
+      <Select
+        name="sg-nat"
+        label="Nationality"
+        placeholder="Choose a country"
+        options={[{ value: 'GB', label: 'United Kingdom' }, { value: 'US', label: 'United States' }, { value: 'DE', label: 'Germany' }]}
+      />
+      <Input name="sg-email" label="Email" type="email" error="Enter an email like name@example.com" value="name@" />
+      <Input name="sg-note" label="Anything we should know?" multiline optional />
+      <Field id="sg-purpose" label="Main reason for your stay" group>
+        <label class="choice"><input type="radio" name="sg-purpose" value="remote-work" checked /> Remote work</label>
+        <label class="choice"><input type="radio" name="sg-purpose" value="retire" /> Retirement</label>
+      </Field>
+      <label class="choice"><input type="checkbox" name="sg-agree" /> Remind me 14 days before my 90-day report</label>
+    </form>
+  </Section>
+
+  <Section id="feedback" title="Callouts, steps, stats">
+    <div class="split" style="align-items: start">
+      <div class="stack">
+        <Callout title="Rule change">From 15 Jul 2024 the visa-exempt stay is 60 days for 93 countries.</Callout>
+        <Callout tone="warning" title="Overstay fines">500 THB per day, up to 20,000 THB, plus a possible ban.</Callout>
+        <Callout tone="success">Your 90-day report reminder is set.</Callout>
+        <Callout tone="danger" title="Not eligible">The LTR needs $80,000 a year in personal income.</Callout>
+      </div>
+      <div class="stack" style="--stack-gap: var(--space-10)">
+        <Steps
+          items={[
+            { title: 'Check your eligibility', body: 'Answer six questions in the Visa Finder.' },
+            { title: 'Gather documents', body: 'Tick them off in your checklist.' },
+            'Apply on the Thai e-Visa site',
+          ]}
+        />
+        <div class="cluster" style="--cluster-gap: var(--space-10); align-items: flex-start">
+          <Stat value="180" unit="days" label="Per entry on a DTV" />
+          <Stat prefix="฿" value="10,000" label="DTV application fee" />
+          <Stat value="90" unit="days" label="Report interval" size="lg" />
+        </div>
+      </div>
+    </div>
+  </Section>
+
+  <Section id="cards" title="Cards and tabs" tone="tint">
+    <div class="grid" style="--grid-min: 16rem">
+      <Card title="Destination Thailand Visa" href="#cards">
+        <p class="muted">Five years, 180 days per entry. For remote workers and soft-power activities.</p>
+        <div class="cluster"><Badge variant="verified" /><Badge variant="brand">Remote work</Badge></div>
+      </Card>
+      <Card tone="brand" title="Chiang Mai">
+        <p>Slow, green, cheap. Smoke season Mar–Apr.</p>
+        <Fragment slot="footer"><Button variant="ghost" size="sm" href="#cards" iconRight="arrow-right">See city guide</Button></Fragment>
+      </Card>
+      <Card tone="surface" padding="lg">
+        <div class="cluster"><Avatar name="Ploy Srisuk" verified /><div><strong>Ploy S.</strong><br /><Rating value={4.9} count={18} /></div></div>
+        <p class="muted">Helps with bank accounts and condo viewings in Bangkok.</p>
+        <Badge variant="demo" />
+      </Card>
+    </div>
+    <div style="margin-top: var(--space-12)">
+      <Tabs
+        label="DTV details"
+        uid="sg"
+        tabs={[
+          { id: 'docs', label: 'Documents' },
+          { id: 'steps', label: 'How to apply' },
+          { id: 'gotchas', label: 'Watch out' },
+        ]}
+      >
+        <div slot="docs"><p>Passport, bank statement, proof of remote work.</p></div>
+        <div slot="steps"><p>Apply online at the embassy for your country of residence.</p></div>
+        <div slot="gotchas"><p>Do not apply from inside Thailand.</p></div>
+      </Tabs>
+    </div>
+  </Section>
+
+  <Section id="pricing" title="Price cards">
+    <div class="grid" style="--grid-min: 17rem">
+      <PriceCard name="Free" price="0" period="/forever" description="Finder, guides and calculators." features={['Visa Finder', 'All visa guides', '90-day calculator']} ctaLabel="Start free" ctaHref="/finder" />
+      <PriceCard
+        name="Pro"
+        price={6}
+        period="/mo"
+        note="or $39/yr, save 46%"
+        featured
+        ribbon="Most popular"
+        segment="For long-stayers"
+        features={['Saved stays', 'Email reminders', 'Document tracker sync']}
+        ctaLabel="Upgrade to Pro"
+        ctaHref="/pricing"
+        ctaAttrs={{ 'data-checkout': 'pro_monthly' }}
+      />
+      <PriceCard name="Featured listing" price={49} period="/mo" segment="For businesses" features={['Top of city pages', 'Verified badge']} ctaLabel="List your space" ctaHref="/business" />
+    </div>
+  </Section>
+
+  <Section id="empty" title="Empty state and hero stage" tone="tint">
+    <div class="split" style="align-items: start">
+      <EmptyState title="No saved stays yet" description="Run the Visa Finder and save the result to track your deadlines." actionLabel="Find my visa" actionHref="/finder" />
+      <HeroStage ratio="4 / 3" />
+    </div>
+  </Section>
+
+  <Section id="segments" title="Segment panels" lead="B2C lagoon, B2B sand, C2C lotus. Use .seg + .seg--b2c|b2b|c2c.">
+    <div class="grid" style="--grid-min: 16rem">
+      <div class="seg seg--b2c seg-demo"><p class="seg-strong"><strong>Travellers</strong></p><h3>Free or Pro</h3><p>Finder, guides, reminders.</p></div>
+      <div class="seg seg--b2b seg-demo"><p class="seg-strong"><strong>Businesses</strong></p><h3>Featured listing</h3><p>Coworking, coliving, agencies.</p></div>
+      <div class="seg seg--c2c seg-demo"><p class="seg-strong"><strong>Locals</strong></p><h3>Earn as a buddy</h3><p>Platform keeps 20%.</p></div>
+    </div>
+  </Section>
+
+  <Section id="marquee" title="Marquee" tone="tint" lead="CSS-only loop. Pauses on hover, focus and the button; stops and wraps under reduced motion.">
+    <Marquee label="What buddies help with">
+      <span class="marquee-chip marquee-chip--c2c"><strong>Ploy</strong> · Bangkok · Bank account · $35</span>
+      <span class="marquee-chip">Condo viewing</span>
+      <span class="marquee-chip marquee-chip--b2c">90-day report walk-through</span>
+      <span class="marquee-chip marquee-chip--b2b">SIM and eSIM setup</span>
+      <span class="marquee-chip">Chiang Mai orientation</span>
+      <span class="marquee-chip marquee-chip--c2c"><strong>Anan</strong> · Phuket · Scooter licence · $40</span>
+    </Marquee>
+  </Section>
+
+  <Section id="night" tone="night" title="Night: the blueprint scene" lead="The one dark section. Tokens remap locally, so components inside just work." class="blueprint-grid">
+    <div class="cluster" style="--cluster-gap: var(--space-8)">
+      <Stat value="0" label="Missed 90-day reports" size="lg" />
+      <Button>Try the 90-day tool</Button>
+      <Button variant="secondary">Secondary</Button>
+      <Badge variant="verified" />
+      <SourceTag label="Immigration Bureau" url="https://www.immigration.go.th" verifiedAt="2026-10-23" />
+    </div>
+    <div style="margin-top: var(--space-8); max-width: 34rem">
+      <Callout tone="warning" title="Late report">2,000 THB fine.</Callout>
+    </div>
+  </Section>
+
+  <section class="section overflow-clip" aria-labelledby="sweep-title">
+    <div class="container"><h2 id="sweep-title">Sweep and giant type</h2></div>
+    <p class="text-sweep" style="margin-top: var(--space-8)">It's not just a visa.</p>
+    <p class="display-6xl container">Stay longer.</p>
+    <p class="text-giant text-outline text-center" style="margin-top: var(--space-8)">{SITE.name}</p>
+  </section>
+
+  <Section id="faq" title="Accordion" tone="tint" width="narrow">
+    <Accordion
+      exclusive
+      open={0}
+      items={[
+        { question: 'Is this legal advice?', answer: 'No. It is information with official sources. Verify before you apply, or <a href="/experts">ask a licensed agent</a>.' },
+        { question: 'Which visa is best for remote work?', answer: 'Usually the DTV. Run the <a href="/finder">Visa Finder</a> for your case.' },
+        { question: 'Can I cancel Pro?', answer: 'Yes, any time from your account.' },
+      ]}
+    />
+  </Section>
+</Base>
+
+<style>
+  .swatches {
+    list-style: none;
+    padding: 0;
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(11rem, 1fr));
+    gap: var(--space-5);
+  }
+  .swatch {
+    display: grid;
+    gap: var(--space-1);
+  }
+  .swatch__chip {
+    height: 4.5rem;
+    border-radius: var(--radius-md);
+    box-shadow: inset 0 0 0 1px rgb(0 0 0 / 0.08);
+    margin-bottom: var(--space-2);
+  }
+  .swatch__name {
+    font-size: var(--text-xs);
+    font-weight: var(--weight-semibold);
+  }
+  .swatch__use {
+    font-size: var(--text-xs);
+    color: var(--color-ink-2);
+  }
+  .type-row {
+    display: grid;
+    gap: var(--space-2);
+    align-items: baseline;
+  }
+  @media (min-width: 48rem) {
+    .type-row {
+      grid-template-columns: 8rem 1fr;
+    }
+  }
+  .type-row__label,
+  .space-list code,
+  .icon-grid code {
+    font-size: var(--text-xs);
+    color: var(--color-ink-2);
+  }
+  .space-list {
+    list-style: none;
+    padding: 0;
+    display: grid;
+    gap: var(--space-3);
+  }
+  .space-list li {
+    display: grid;
+    grid-template-columns: 7rem 1fr;
+    align-items: center;
+  }
+  .space-bar {
+    height: 12px;
+    border-radius: 3px;
+    background: var(--color-brand);
+  }
+  .radius-demo {
+    display: grid;
+    place-items: center;
+    width: 5.5rem;
+    height: 4rem;
+    background: var(--color-surface);
+    font-size: var(--text-xs);
+    color: var(--color-ink-2);
+  }
+  .icon-grid {
+    list-style: none;
+    padding: 0;
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(8rem, 1fr));
+    gap: var(--space-4);
+  }
+  .icon-grid li {
+    display: flex;
+    align-items: center;
+    gap: var(--space-3);
+    padding: var(--space-3);
+    border-radius: var(--radius-md);
+    background: var(--color-surface-2);
+    color: var(--color-ink);
+  }
+  .seg-demo {
+    display: grid;
+    gap: var(--space-2);
+    padding: var(--space-8);
+    border-radius: var(--radius-2xl);
+  }
+  .form-demo {
+    display: grid;
+    gap: var(--space-6);
+    max-width: 36rem;
+  }
+</style>

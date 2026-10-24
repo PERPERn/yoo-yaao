@@ -1,0 +1,256 @@
+---
+/**
+ * "Yoo Yaao for Business" shell: /business/** and the /partner portal.
+ * Same tokens as Base, but a deep-ink header strip and its own nav/footer, so a business
+ * owner always knows they are outside the traveller site.
+ *
+ *   <Business title="Plans" description="…" noindex?>…</Business>
+ */
+import '../styles/fonts.css';
+import '../styles/global.css';
+import { SITE } from '../config/site';
+import Logo from '../components/ui/Logo.astro';
+import Icon from '../components/ui/Icon.astro';
+
+interface Props {
+  title: string;
+  description?: string;
+  noindex?: boolean;
+}
+const { title, description = `List your business on ${SITE.name} and reach people planning a long stay in Thailand.`, noindex = false } = Astro.props;
+
+const fullTitle = `${title} · ${SITE.name} for Business`;
+const base = Astro.site ?? new URL(SITE.url);
+const canonicalUrl = new URL(Astro.url.pathname, base).href;
+const imageUrl = new URL('/og.png', base).href;
+const path = Astro.url.pathname.replace(/\/$/, '') || '/';
+const NAV = [
+  { href: '/business#why', label: 'Why list with us', match: '' },
+  { href: '/business#plans', label: 'Plans', match: '' },
+  { href: '/business/verify', label: 'How we verify', match: '/business/verify' },
+  { href: '/partner', label: 'Partner sign-in', match: '/partner' },
+];
+const isActive = (m: string) => Boolean(m) && (path === m || path.startsWith(`${m}/`));
+const year = new Date().getFullYear();
+---
+
+<!doctype html>
+<html lang="en" data-theme="light">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <title>{fullTitle}</title>
+    <meta name="description" content={description} />
+    <link rel="canonical" href={canonicalUrl} />
+    {noindex && <meta name="robots" content="noindex, nofollow" />}
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content={`${SITE.name} for Business`} />
+    <meta property="og:title" content={fullTitle} />
+    <meta property="og:description" content={description} />
+    <meta property="og:url" content={canonicalUrl} />
+    <meta property="og:image" content={imageUrl} />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="theme-color" content="#0b1f21" />
+    <link rel="manifest" href="/manifest.webmanifest" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <link rel="icon" href="/favicon.ico" sizes="any" />
+    <link rel="apple-touch-icon" href="/icons/icon-192.png" />
+    <meta name="generator" content={Astro.generator} />
+    <slot name="head" />
+  </head>
+  <body>
+    <a class="skip-link" href="#main">Skip to content</a>
+
+    <header class="biz-head">
+      <div class="container biz-head__bar">
+        <a href="/business" class="biz-brand" aria-label={`${SITE.name} for Business, home`}>
+          <Logo href={null} />
+          <span class="biz-brand__tag">for Business</span>
+        </a>
+        <a href="/" class="biz-back">
+          <span aria-hidden="true">←</span> Back to traveller site
+        </a>
+      </div>
+      <nav class="container biz-nav" aria-label="Business">
+        <ul>
+          {
+            NAV.map((n) => (
+              <li>
+                <a href={n.href} class="biz-nav__link" aria-current={isActive(n.match) ? 'page' : undefined}>
+                  {n.label}
+                </a>
+              </li>
+            ))
+          }
+        </ul>
+      </nav>
+    </header>
+
+    <main id="main" tabindex="-1">
+      <slot />
+    </main>
+
+    <footer class="biz-foot">
+      <div class="container biz-foot__inner">
+        <p class="biz-foot__brand"><Logo href={null} size="sm" /> <span>for Business</span></p>
+        <ul class="biz-foot__links">
+          <li><a href="/business/apply">Apply</a></li>
+          <li><a href="/business/verify">How we verify</a></li>
+          <li><a href="/partner">Partner portal</a></li>
+          <li><a href={`mailto:${SITE.supportEmail}`}>Contact</a></li>
+          <li><a href="/legal">Legal</a></li>
+          <li><a href="/">Traveller site</a></li>
+        </ul>
+        <p class="biz-foot__copy">
+          <Icon name="shield" size={16} /> Every partner is checked before going live. © {year} {SITE.name}.
+        </p>
+      </div>
+    </footer>
+  </body>
+</html>
+
+<style>
+  body {
+    background: var(--color-bg);
+  }
+  main:focus {
+    outline: none;
+  }
+  /* Deep-ink strip: the visual cue that this is the business side. */
+  .biz-head {
+    --color-focus: var(--color-accent);
+    background: var(--color-inverse-bg);
+    color: var(--color-inverse-ink);
+    border-bottom: 3px solid var(--color-accent);
+  }
+  .biz-head__bar {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-2) var(--space-4);
+    min-height: 3.75rem;
+    padding-block: var(--space-2);
+  }
+  .biz-brand {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-2);
+    min-height: var(--tap-min);
+    text-decoration: none;
+  }
+  .biz-brand :global(.logo) {
+    color: var(--color-inverse-ink);
+  }
+  .biz-brand__tag {
+    padding: 0.15rem 0.55rem;
+    border-radius: var(--radius-pill);
+    background: var(--color-accent);
+    color: var(--color-on-accent);
+    font-size: var(--text-xs);
+    font-weight: var(--weight-bold);
+    letter-spacing: 0.02em;
+    white-space: nowrap;
+  }
+  .biz-back {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-1);
+    min-height: var(--tap-min);
+    color: var(--color-inverse-ink-2);
+    font-size: var(--text-sm);
+    text-decoration: none;
+  }
+  .biz-back:hover {
+    color: var(--color-inverse-ink);
+    text-decoration: underline;
+  }
+  .biz-nav ul {
+    display: flex;
+    gap: var(--space-1);
+    margin: 0;
+    padding: 0 0 var(--space-1);
+    list-style: none;
+    overflow-x: auto;
+    scrollbar-width: none;
+  }
+  .biz-nav__link {
+    display: inline-flex;
+    align-items: center;
+    min-height: var(--tap-min);
+    padding: 0 var(--space-3);
+    border-radius: var(--radius-sm);
+    color: var(--color-inverse-ink);
+    font-size: var(--text-sm);
+    font-weight: var(--weight-semibold);
+    text-decoration: none;
+    white-space: nowrap;
+    transition: background-color var(--duration-fast) var(--ease-out);
+  }
+  .biz-nav__link:hover {
+    background: rgb(255 255 255 / 0.08);
+    color: var(--color-inverse-ink);
+    text-decoration: none;
+  }
+  .biz-nav__link:active {
+    background: rgb(255 255 255 / 0.14);
+  }
+  .biz-nav__link:focus-visible {
+    outline-offset: -3px;
+  }
+  .biz-nav__link[aria-current='page'] {
+    color: var(--color-accent);
+    box-shadow: inset 0 -2px 0 var(--color-accent);
+  }
+
+  .biz-foot {
+    margin-top: var(--space-section);
+    background: var(--color-inverse-bg);
+    color: var(--color-inverse-ink-2);
+    padding-block: var(--space-10) calc(var(--space-8) + env(safe-area-inset-bottom));
+    font-size: var(--text-sm);
+    --color-focus: var(--color-accent);
+  }
+  .biz-foot__inner {
+    display: grid;
+    gap: var(--space-5);
+  }
+  .biz-foot__brand {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-2);
+    color: var(--color-inverse-ink);
+    font-weight: var(--weight-semibold);
+  }
+  .biz-foot__brand :global(.logo) {
+    color: var(--color-inverse-ink);
+  }
+  .biz-foot__links {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-1) var(--space-5);
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+  .biz-foot a {
+    display: inline-flex;
+    align-items: center;
+    min-height: 36px;
+    color: var(--color-inverse-ink);
+    text-decoration: none;
+  }
+  .biz-foot a:hover {
+    color: var(--color-accent);
+    text-decoration: underline;
+  }
+  .biz-foot__copy {
+    display: flex;
+    gap: var(--space-2);
+    align-items: center;
+  }
+  .biz-foot__copy :global(svg) {
+    color: var(--color-accent);
+    flex-shrink: 0;
+  }
+</style>

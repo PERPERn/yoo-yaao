@@ -1,0 +1,241 @@
+/*
+  Design tokens. Every component references these, never raw values.
+  Palette: "Teal & Gold on paper" — restrained on purpose:
+    2 neutrals (warm paper, deep-teal ink) · 1 primary (teal) · 1 accent (gold)
+    + 3 segment tints (B2C lagoon, B2B sand, C2C lotus) + 1 dark "night" scene.
+  Status colours (info/success/warning/danger) are functional only.
+  All text pairs meet WCAG AA (ratios inline, against --color-bg unless stated). See docs/design.md.
+*/
+:root {
+  color-scheme: light dark;
+
+  /* ---------- Neutrals ---------- */
+  --color-bg: #f6f3ec;            /* warm paper */
+  --color-surface: #ffffff;       /* cards, inputs */
+  --color-surface-2: #eeeae0;     /* alternate section, sunken */
+  --color-surface-3: #e3ded2;     /* hover on surface-2, skeleton */
+  --color-ink: #10292b;           /* deep-teal ink 13.8:1 */
+  --color-ink-2: #4b5b5a;         /* secondary text 6.4:1 */
+  --color-ink-3: #5d6b6a;         /* placeholder / meta 5.6:1 on white */
+  --color-border: #ddd7ca;        /* subtle separators (non-text) */
+  --color-border-strong: #8d9998; /* input borders, 3:1 non-text */
+
+  /* ---------- Primary: teal ---------- */
+  --color-brand: #0d6461;         /* buttons, links 6.3:1; white on it 7.0:1 */
+  --color-brand-strong: #0a4f4d;  /* hover / pressed */
+  --color-brand-tint: #d6ebe7;    /* teal surface; brand text on it 5.6:1 */
+  --color-on-brand: #ffffff;
+
+  /* ---------- Accent: gold (fills only) ---------- */
+  --color-accent: #e3a33a;        /* ink on it 7.0:1 */
+  --color-accent-strong: #d18f22;
+  --color-accent-tint: #f5e6c8;
+  --color-accent-text: #845a0c;   /* gold as text 6.1:1 on white, 4.9:1 on tint */
+  --color-on-accent: #10292b;
+
+  /* ---------- Segment tints (pricing / audience panels) ---------- */
+  --seg-b2c-bg: #d6ebe7;          /* Travellers: lagoon (= brand tint) */
+  --seg-b2c-strong: #0d6461;      /* text/icon on tint 5.6:1 */
+  --seg-b2b-bg: #f5e6c8;          /* Businesses: sand (= accent tint) */
+  --seg-b2b-strong: #845a0c;      /* 4.9:1 */
+  --seg-c2c-bg: #f7dccf;          /* Locals: lotus */
+  --seg-c2c-strong: #9a3d22;      /* 5.3:1 */
+  --seg-ink: #10292b;             /* body text on any segment tint ≥11.7:1 */
+
+  /* ---------- Status (functional) ---------- */
+  --color-info: #1d5fa8;
+  --color-info-tint: #e7eff9;     /* 5.6:1 */
+  --color-success: #1e7a44;
+  --color-success-tint: #e3f2e8;  /* 4.6:1 */
+  --color-warning: #845a0c;
+  --color-warning-tint: #f5e6c8;  /* 4.9:1 */
+  --color-danger: #b3261e;
+  --color-danger-tint: #fbe9e7;   /* 5.6:1 */
+
+  /* ---------- Night scene + footer (one dark variant) ---------- */
+  --night-bg: #0b1f21;
+  --night-surface: #12302f;
+  --night-ink: #e9efec;           /* 14.6:1 */
+  --night-ink-2: #9db3b0;         /* 7.7:1, 6.4:1 on night-surface */
+  --night-brand: #5cc8be;         /* 8.5:1; night-bg text on it 8.5:1 */
+  --night-accent: #f0b44c;        /* 9.2:1 */
+  --night-line: #2e5553;          /* blueprint grid / outlines (non-text) */
+  --night-line-strong: #5cc8be;   /* blueprint drawing stroke */
+
+  --color-inverse-bg: var(--night-bg);
+  --color-inverse-ink: var(--night-ink);
+  --color-inverse-ink-2: var(--night-ink-2);
+
+  --color-focus: #1d5fa8;         /* blue, distinct from teal buttons */
+  --color-scrim: rgb(11 31 33 / 0.55);
+
+  /* ---------- Typography ---------- */
+  /* Latin face first, Anuphan second so Thai (and ฿) render in a Bangkok-drawn face, not the OS one */
+  --font-display: 'Bricolage Grotesque Variable', 'Anuphan Variable', ui-sans-serif, system-ui, sans-serif;
+  --font-body: 'Public Sans Variable', 'Anuphan Variable', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --font-mono: ui-monospace, 'SF Mono', Menlo, Consolas, monospace;
+
+  /* Fluid type scale (min @ 360px → max @ 1280px) */
+  --text-xs: 0.8125rem;                                   /* 13 meta, badges */
+  --text-sm: 0.9375rem;                                   /* 15 */
+  --text-base: 1.0625rem;                                 /* 17 body */
+  --text-lg: clamp(1.125rem, 1.07rem + 0.25vw, 1.25rem);  /* 18–20 lead */
+  --text-xl: clamp(1.25rem, 1.15rem + 0.45vw, 1.5rem);    /* 20–24 */
+  --text-2xl: clamp(1.5rem, 1.3rem + 0.9vw, 2rem);        /* 24–32 h3 */
+  --text-3xl: clamp(1.875rem, 1.5rem + 1.6vw, 2.75rem);   /* 30–44 h2 */
+  --text-4xl: clamp(2.375rem, 1.7rem + 3vw, 4.25rem);     /* 38–68 h1 */
+  --text-5xl: clamp(2.75rem, 1.8rem + 4.6vw, 5.75rem);    /* 44–92 hero */
+  /* Display scale for scroll-story scenes */
+  --text-6xl: clamp(3.25rem, 1rem + 9vw, 9rem);           /* 52–144 scene headline */
+  --text-sweep: clamp(4.5rem, 14vw, 16rem);               /* sweep type behind the 3D object */
+  --text-giant: clamp(5rem, 16vw, 20rem);                 /* finale outlined wordmark */
+
+  --leading-tight: 1.04;
+  --leading-snug: 1.18;
+  --leading-normal: 1.6;
+  --leading-display: 0.9;
+  --tracking-display: -0.022em;  /* h1, .display */
+  --tracking-heading: -0.015em;  /* h2 */
+  --tracking-giant: -0.025em;    /* scene type; Bricolage's opsz cut is already tight at 100px+ */
+  --measure: 68ch;               /* running text */
+
+  --weight-regular: 400;
+  --weight-medium: 500;
+  --weight-semibold: 600;
+  --weight-bold: 700;
+
+  /* ---------- Spacing (4px base) ---------- */
+  --space-1: 0.25rem;
+  --space-2: 0.5rem;
+  --space-3: 0.75rem;
+  --space-4: 1rem;
+  --space-5: 1.25rem;
+  --space-6: 1.5rem;
+  --space-8: 2rem;
+  --space-10: 2.5rem;
+  --space-12: 3rem;
+  --space-16: 4rem;
+  --space-20: 5rem;
+  --space-24: 6rem;
+  --space-section: clamp(4rem, 2.5rem + 6vw, 8rem);
+  --gutter: clamp(1rem, 0.5rem + 2vw, 2rem);
+  --container: 76rem;
+  --container-narrow: 46rem;
+
+  /* ---------- Radius ---------- */
+  --radius-sm: 6px;
+  --radius-md: 10px;
+  --radius-lg: 16px;
+  --radius-xl: 24px;
+  --radius-2xl: 32px;  /* segment panels, posters */
+  --radius-pill: 999px;
+
+  /* ---------- Elevation ingredients (the scale itself is below, outside :root) ---------- */
+  --shadow-none: none;
+  --shadow-rgb: 16 41 43;                   /* ink-tinted shadow */
+  --shadow-k: 1;                            /* alpha multiplier; dark scopes raise it */
+  --highlight: rgb(255 255 255 / 0.45);     /* 1px top inner highlight */
+  --header-glass: color-mix(in srgb, var(--color-bg) 78%, transparent);
+  --shadow-card-stack: 0 18px 40px -20px rgb(16 41 43 / 0.35); /* fanned scroll cards (they float) */
+
+  /* ---------- Motion ---------- */
+  --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
+  --ease-in-out: cubic-bezier(0.65, 0, 0.35, 1);
+  --duration-fast: 150ms;   /* press feedback, colour */
+  --duration-base: 200ms;   /* hover lift, shadow, small reveals */
+  --duration-slow: 320ms;
+  --duration-reveal: 700ms;
+  --reveal-distance: 24px;
+  --marquee-duration: 40s;
+
+  /* ---------- Layers ---------- */
+  --z-base: 0;
+  --z-raised: 10;
+  --z-stage: 20;     /* pinned 3D canvas inside the story */
+  --z-header: 100;
+  --z-overlay: 200;
+  --z-modal: 300;
+  --z-toast: 400;
+
+  --header-h: 4.25rem;
+  --tap-min: 44px;
+}
+
+/* ---------- OS dark mode: the whole site takes the night palette ---------- */
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme='light']) {
+    --color-bg: #0b1f21;
+    --color-surface: #12302f;
+    --color-surface-2: #10292a;
+    --color-surface-3: #1a3a39;
+    --color-ink: #e9efec;
+    --color-ink-2: #9db3b0;
+    --color-ink-3: #86a09c;
+    --color-border: #23423f;
+    --color-border-strong: #5a7976;
+
+    --color-brand: #5cc8be;
+    --color-brand-strong: #84d8cf;
+    --color-brand-tint: #133a38;
+    --color-on-brand: #0b1f21;
+
+    --color-accent: #f0b44c;
+    --color-accent-strong: #f5c573;
+    --color-accent-tint: #33290f;
+    --color-accent-text: #f0b44c;
+    --color-on-accent: #10292b;
+
+    --seg-b2c-bg: #133a38;
+    --seg-b2c-strong: #5cc8be;
+    --seg-b2b-bg: #33290f;
+    --seg-b2b-strong: #f0b44c;
+    --seg-c2c-bg: #3a2019;
+    --seg-c2c-strong: #f2a68c;
+    --seg-ink: #e9efec;
+
+    --color-info: #7db4f0;
+    --color-info-tint: #15263a;
+    --color-success: #6fd08f;
+    --color-success-tint: #143022;
+    --color-warning: #f0b44c;
+    --color-warning-tint: #33290f;
+    --color-danger: #f2a49c;
+    --color-danger-tint: #3a1a17;
+
+    --night-bg: #061416;
+    --night-surface: #0d2527;
+    --color-inverse-bg: #061416;
+
+    --color-focus: #7db4f0;
+    --color-scrim: rgb(0 0 0 / 0.65);
+    --shadow-rgb: 0 0 0;
+    --shadow-k: 2.4;
+    --highlight: rgb(255 255 255 / 0.07);
+    --header-glass: color-mix(in srgb, var(--color-bg) 74%, transparent);
+    --shadow-card-stack: 0 18px 40px -20px rgb(0 0 0 / 0.7);
+  }
+}
+
+/* ---------- Elevation scale ----------
+   Declared on every scope that redefines the ingredients, so var() resolves per scope (night scene too).
+   elev-1 rest (surfaces, filled buttons) · elev-2 hover / open · elev-3 floating (menus, featured, header)
+   elev-inset sunken (inputs, tab track). Every level carries the 1px top highlight. */
+:root,
+.section--night,
+.theme-night {
+  --elev-1:
+    inset 0 1px 0 var(--highlight),
+    0 1px 2px rgb(var(--shadow-rgb) / calc(0.08 * var(--shadow-k))),
+    0 3px 8px -3px rgb(var(--shadow-rgb) / calc(0.1 * var(--shadow-k)));
+  --elev-2:
+    inset 0 1px 0 var(--highlight),
+    0 2px 4px rgb(var(--shadow-rgb) / calc(0.07 * var(--shadow-k))),
+    0 12px 28px -10px rgb(var(--shadow-rgb) / calc(0.24 * var(--shadow-k)));
+  --elev-3:
+    inset 0 1px 0 var(--highlight),
+    0 4px 10px rgb(var(--shadow-rgb) / calc(0.08 * var(--shadow-k))),
+    0 28px 56px -20px rgb(var(--shadow-rgb) / calc(0.34 * var(--shadow-k)));
+  --elev-inset: inset 0 1px 2px rgb(var(--shadow-rgb) / calc(0.1 * var(--shadow-k)));
+  --shadow-raise: var(--elev-2);
+  --shadow-float: var(--elev-3);
+}

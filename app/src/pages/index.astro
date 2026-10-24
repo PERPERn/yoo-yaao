@@ -1,0 +1,64 @@
+---
+import Base from '../layouts/Base.astro';
+import { SITE } from '../config/site';
+import SceneHero from '../components/home/SceneHero.astro';
+import SceneSweep from '../components/home/SceneSweep.astro';
+import SceneProblem from '../components/home/SceneProblem.astro';
+import SceneVisas from '../components/home/SceneVisas.astro';
+import SceneBlueprint from '../components/home/SceneBlueprint.astro';
+import SceneCities from '../components/home/SceneCities.astro';
+import SceneBuddies from '../components/home/SceneBuddies.astro';
+import SceneDemo from '../components/home/SceneDemo.astro';
+import SceneTrust from '../components/home/SceneTrust.astro';
+import ScenePlans from '../components/home/ScenePlans.astro';
+import SceneFaq from '../components/home/SceneFaq.astro';
+import SceneFinale from '../components/home/SceneFinale.astro';
+---
+
+<Base title={SITE.name} description={SITE.description}>
+  <link slot="head" rel="preload" href="/models/hero-fallback.webp" as="image" type="image/webp" />
+  <div class="home">
+    <SceneHero />
+    <SceneSweep />
+    <SceneProblem />
+    <SceneVisas />
+    <SceneBlueprint />
+    <SceneCities />
+    <SceneBuddies />
+    <SceneDemo />
+    <SceneTrust />
+    <ScenePlans />
+    <SceneFaq />
+    <SceneFinale />
+  </div>
+</Base>
+
+<style is:global>
+  /* One WebGL canvas for the whole story: once hero3d is ready in story mode (>=640px, motion OK),
+     the hero stage becomes a fixed, transparent, click-through layer above the scenes. */
+  html .hero-stage[data-story='on'] {
+    position: fixed;
+    inset: 0;
+    width: 100%;
+    height: 100svh;
+    aspect-ratio: auto;
+    border-radius: 0;
+    background: transparent;
+    pointer-events: none;
+    z-index: var(--z-stage);
+  }
+  html .hero-stage[data-story='on'] :is(.hero3d-poster, .hero-stage__fallback) {
+    display: none;
+  }
+  /* The scene snap tweens the scroll itself; CSS smooth scrolling would fight every frame. */
+  html.home-story {
+    scroll-behavior: auto;
+  }
+  .home {
+    overflow-x: clip;
+  }
+</style>
+
+<script>
+  import '../scripts/home-scroll';
+</script>

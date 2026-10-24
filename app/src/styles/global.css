@@ -1,0 +1,600 @@
+/* Global base: reset, typography, focus, layout utilities, prose. Imported once by layouts/Base.astro. */
+@import './tokens.css';
+
+/* ---------- Reset ---------- */
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+* {
+  margin: 0;
+}
+html {
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+  scroll-padding-top: calc(var(--header-h) + var(--space-4));
+}
+@media (prefers-reduced-motion: no-preference) {
+  html {
+    scroll-behavior: smooth;
+  }
+}
+body {
+  min-height: 100dvh;
+  display: flex;
+  flex-direction: column;
+  background: var(--color-bg);
+  color: var(--color-ink);
+  font-family: var(--font-body);
+  font-size: var(--text-base);
+  line-height: var(--leading-normal);
+  font-kerning: normal;
+  font-optical-sizing: auto;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+}
+main {
+  flex: 1 0 auto;
+  overflow-x: clip; /* side-entering reveals start off-screen; clip keeps sticky working (hidden would not) */
+}
+img,
+picture,
+video,
+canvas,
+svg {
+  display: block;
+  max-width: 100%;
+}
+img,
+video {
+  height: auto;
+}
+input,
+button,
+textarea,
+select {
+  font: inherit;
+  color: inherit;
+}
+button {
+  cursor: pointer;
+}
+:disabled {
+  cursor: not-allowed;
+}
+p,
+li,
+dd,
+figcaption {
+  text-wrap: pretty;
+  overflow-wrap: break-word;
+}
+table {
+  border-collapse: collapse;
+}
+[hidden] {
+  display: none !important;
+}
+
+/* ---------- Headings ---------- */
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+  font-family: var(--font-display);
+  font-weight: var(--weight-semibold);
+  line-height: var(--leading-snug);
+  letter-spacing: -0.012em;
+  text-wrap: balance;
+  color: var(--color-ink);
+}
+h1 {
+  font-size: var(--text-4xl);
+  line-height: var(--leading-tight);
+  letter-spacing: var(--tracking-display);
+  font-weight: var(--weight-bold);
+}
+h2 {
+  font-size: var(--text-3xl);
+  line-height: 1.08;
+  letter-spacing: var(--tracking-heading);
+}
+h3 {
+  font-size: var(--text-2xl);
+}
+h4 {
+  font-size: var(--text-xl);
+  letter-spacing: -0.005em;
+}
+h5,
+h6 {
+  font-size: var(--text-lg);
+}
+
+/* ---------- Links ---------- */
+a {
+  color: var(--color-brand);
+  text-decoration-thickness: 1px;
+  text-underline-offset: 0.18em;
+  transition: color var(--duration-fast) var(--ease-out);
+}
+a:hover {
+  color: var(--color-brand-strong);
+  text-decoration-thickness: 2px;
+}
+
+/* ---------- Focus ---------- */
+:focus {
+  outline: none;
+}
+:focus-visible {
+  outline: 3px solid var(--color-focus);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+::selection {
+  background: var(--color-accent);
+  color: var(--color-on-accent);
+}
+
+/* ---------- Data / numbers ----------
+   Figures that sit in columns or change in place (tables, KPIs, prices, counters) never jiggle. */
+.tabular,
+time,
+data,
+output,
+table,
+:where([data-count-to], .stat__value, .price__amount, .price__num) {
+  font-variant-numeric: tabular-nums;
+}
+
+/* Running text keeps a readable measure; cards and columns are narrower anyway. */
+:where(main) :where(p, li, dd, blockquote) {
+  max-inline-size: var(--measure);
+}
+:where(.text-center) :where(p) {
+  margin-inline: auto;
+}
+
+/* ---------- Layout utilities ---------- */
+.container {
+  width: 100%;
+  max-width: calc(var(--container) + var(--gutter) * 2);
+  margin-inline: auto;
+  padding-inline: var(--gutter);
+}
+.container-narrow {
+  width: 100%;
+  max-width: calc(var(--container-narrow) + var(--gutter) * 2);
+  margin-inline: auto;
+  padding-inline: var(--gutter);
+}
+.section {
+  padding-block: var(--space-section);
+}
+.section--tint {
+  background: var(--color-surface-2);
+}
+.section--brand {
+  background: var(--color-brand);
+  color: var(--color-on-brand);
+}
+.section--brand :is(h1, h2, h3, h4, p) {
+  color: inherit;
+}
+/* Blue focus ring is ~1.5:1 on teal; on-brand keeps it ≥7:1 */
+.section--brand {
+  --color-focus: var(--color-on-brand);
+}
+
+/* Vertical rhythm: children separated by --stack-gap */
+.stack {
+  display: flex;
+  flex-direction: column;
+  gap: var(--stack-gap, var(--space-4));
+}
+/* Inline wrap row */
+.cluster {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--cluster-gap, var(--space-3));
+}
+/* Responsive auto grid; set --grid-min to change the column minimum */
+.grid {
+  display: grid;
+  gap: var(--grid-gap, var(--space-6));
+  grid-template-columns: repeat(auto-fill, minmax(min(var(--grid-min, 18rem), 100%), 1fr));
+}
+.split {
+  display: grid;
+  gap: var(--space-10);
+  align-items: center;
+}
+@media (min-width: 60rem) {
+  .split {
+    grid-template-columns: 1fr 1fr;
+    gap: var(--space-16);
+  }
+}
+
+/* ---------- Text utilities ---------- */
+.lead {
+  font-size: var(--text-lg);
+  line-height: 1.55;
+  color: var(--color-ink-2);
+  max-width: 60ch;
+}
+.muted {
+  color: var(--color-ink-2);
+}
+.small {
+  font-size: var(--text-sm);
+}
+.display {
+  font-family: var(--font-display);
+  font-size: var(--text-5xl);
+  font-weight: var(--weight-bold);
+  line-height: 0.98;
+  letter-spacing: var(--tracking-display);
+  text-wrap: balance;
+}
+.text-center {
+  text-align: center;
+}
+
+/* Visually hidden, still announced */
+.sr-only {
+  position: absolute !important;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* Skip link */
+.skip-link {
+  position: absolute;
+  left: var(--space-4);
+  top: var(--space-3);
+  z-index: var(--z-toast);
+  padding: var(--space-3) var(--space-5);
+  background: var(--color-ink);
+  color: var(--color-bg);
+  border-radius: var(--radius-pill);
+  font-weight: var(--weight-semibold);
+  text-decoration: none;
+  transform: translateY(-200%);
+}
+.skip-link:focus-visible {
+  transform: none;
+  color: var(--color-bg);
+}
+
+/* ---------- Prose (visa guides, legal, about) ---------- */
+.prose {
+  max-width: var(--measure);
+  color: var(--color-ink);
+  font-size: var(--text-base);
+  line-height: 1.65;
+}
+.prose > * + * {
+  margin-top: var(--space-4);
+}
+.prose :is(h2, h3, h4) {
+  margin-top: var(--space-10);
+  scroll-margin-top: calc(var(--header-h) + var(--space-4));
+}
+.prose h2 {
+  font-size: var(--text-2xl);
+}
+.prose h3 {
+  font-size: var(--text-xl);
+}
+.prose h4 {
+  font-size: var(--text-lg);
+}
+.prose :is(h2, h3, h4) + * {
+  margin-top: var(--space-3);
+}
+.prose :is(ul, ol) {
+  padding-left: 1.4em;
+}
+.prose li + li {
+  margin-top: var(--space-2);
+}
+.prose li::marker {
+  color: var(--color-brand);
+}
+.prose strong {
+  font-weight: var(--weight-semibold);
+}
+.prose blockquote {
+  padding: var(--space-4) var(--space-5);
+  background: var(--color-surface-2);
+  border-radius: var(--radius-md);
+  color: var(--color-ink-2);
+}
+.prose code {
+  font-family: var(--font-mono);
+  font-size: 0.9em;
+  padding: 0.1em 0.35em;
+  background: var(--color-surface-2);
+  border-radius: var(--radius-sm);
+}
+.prose table {
+  width: 100%;
+  font-size: var(--text-sm);
+  font-variant-numeric: tabular-nums;
+}
+.prose :is(th, td) {
+  text-align: left;
+  padding: var(--space-3);
+  border-bottom: 1px solid var(--color-border);
+  vertical-align: top;
+}
+.prose th {
+  font-weight: var(--weight-semibold);
+  background: var(--color-surface-2);
+}
+.prose hr {
+  border: 0;
+  height: var(--space-2);
+  margin-block: var(--space-10);
+}
+.prose a {
+  font-weight: var(--weight-medium);
+}
+
+/* ---------- Motion safety ---------- */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* ---------- Form controls (used by ui/Input + ui/Select; usable on raw elements via .control) ---------- */
+.control {
+  width: 100%;
+  min-height: var(--tap-min);
+  padding: var(--space-2) var(--space-4);
+  background: var(--color-surface);
+  color: var(--color-ink);
+  border: 1.5px solid var(--color-border-strong);
+  border-radius: var(--radius-md);
+  box-shadow: var(--elev-inset);
+  font-size: var(--text-base); /* 16px+ prevents iOS zoom */
+  line-height: 1.4;
+  transition:
+    border-color var(--duration-base) var(--ease-out),
+    background-color var(--duration-base) var(--ease-out);
+}
+.control::placeholder {
+  color: var(--color-ink-3);
+  opacity: 1;
+}
+.control:hover:where(:not(:disabled)) {
+  border-color: var(--color-ink-2);
+}
+/* Text fields take focus from mouse too, so ring on :focus; solid 2px ring = visible on paper and night */
+.control:focus,
+.control:focus-visible {
+  outline: 2px solid var(--color-focus);
+  outline-offset: 2px;
+  border-color: var(--color-focus);
+  border-radius: var(--radius-md);
+}
+.control[aria-invalid='true'] {
+  border-color: var(--color-danger);
+}
+.control[aria-invalid='true']:focus {
+  outline-color: var(--color-danger);
+}
+.control:disabled {
+  background: var(--color-surface-2);
+  color: var(--color-ink-2);
+  border-style: dashed;
+  box-shadow: none;
+  opacity: 0.7;
+}
+textarea.control {
+  min-height: 7.5rem;
+  resize: vertical;
+}
+select.control {
+  appearance: none;
+  padding-right: var(--space-10);
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%234a5852' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M6 9.5l6 6 6-6'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right var(--space-3) center;
+  background-size: 18px;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme='light']) select.control {
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23a7b4ae' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M6 9.5l6 6 6-6'/%3E%3C/svg%3E");
+  }
+}
+input[type='checkbox'],
+input[type='radio'] {
+  width: 1.25rem;
+  height: 1.25rem;
+  accent-color: var(--color-brand);
+}
+.choice {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-3);
+  min-height: var(--tap-min);
+  padding-block: var(--space-2);
+  cursor: pointer;
+}
+.choice input {
+  margin-top: 0.15em;
+  flex-shrink: 0;
+}
+.choice:has(input:disabled) {
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+/* =====================================================================
+   Scroll-story support (docs/home-scroll.md)
+   ===================================================================== */
+
+/* ---------- Night: the ONE dark scene (blueprint) ----------
+   Remaps the semantic tokens locally, so every ui/ component inside it just works. */
+.section--night,
+.theme-night {
+  --color-bg: var(--night-bg);
+  --color-surface: var(--night-surface);
+  --color-surface-2: #0f2a2b;
+  --color-surface-3: #1a3a39;
+  --color-ink: var(--night-ink);
+  --color-ink-2: var(--night-ink-2);
+  --color-ink-3: #86a09c;
+  --color-border: var(--night-line);
+  --color-border-strong: #5a7976;
+  --color-brand: var(--night-brand);
+  --color-brand-strong: #84d8cf;
+  --color-brand-tint: #133a38;
+  --color-on-brand: var(--night-bg);
+  --color-accent: var(--night-accent);
+  --color-accent-tint: #33290f;
+  --color-accent-text: var(--night-accent);
+  --color-info: #7db4f0;
+  --color-info-tint: #15263a;
+  --color-success: #6fd08f;
+  --color-success-tint: #143022;
+  --color-warning: var(--night-accent);
+  --color-warning-tint: #33290f;
+  --color-danger: #f2a49c;
+  --color-danger-tint: #3a1a17;
+  --color-focus: #7db4f0;
+  --shadow-rgb: 0 0 0;
+  --shadow-k: 2.4;
+  --highlight: rgb(255 255 255 / 0.07);
+  background: var(--color-bg);
+  color: var(--color-ink);
+  color-scheme: dark;
+}
+/* Blueprint paper: a quiet measuring grid. Only for the night/blueprint scene. */
+.blueprint-grid {
+  background-image:
+    linear-gradient(var(--night-line) 1px, transparent 1px),
+    linear-gradient(90deg, var(--night-line) 1px, transparent 1px);
+  background-size: 48px 48px;
+  background-position: center;
+}
+
+/* ---------- Segment panels (B2C / B2B / C2C) ---------- */
+.seg {
+  --seg-bg: var(--color-surface-2);
+  --seg-strong: var(--color-brand);
+  background: var(--seg-bg);
+  color: var(--seg-ink);
+}
+.seg--b2c {
+  --seg-bg: var(--seg-b2c-bg);
+  --seg-strong: var(--seg-b2c-strong);
+}
+.seg--b2b {
+  --seg-bg: var(--seg-b2b-bg);
+  --seg-strong: var(--seg-b2b-strong);
+}
+.seg--c2c {
+  --seg-bg: var(--seg-c2c-bg);
+  --seg-strong: var(--seg-c2c-strong);
+}
+.seg :is(h2, h3, h4) {
+  color: var(--seg-ink);
+}
+.seg-strong {
+  color: var(--seg-strong);
+}
+
+/* ---------- Display type for scenes ---------- */
+.display-6xl,
+.text-sweep,
+.text-giant {
+  font-family: var(--font-display);
+  font-weight: var(--weight-bold);
+  line-height: var(--leading-display);
+  letter-spacing: var(--tracking-giant);
+  text-wrap: balance;
+}
+.display-6xl {
+  font-size: var(--text-6xl);
+}
+/* Sweep text: one long line that GSAP translates on x behind the 3D object */
+.text-sweep {
+  font-size: var(--text-sweep);
+  white-space: nowrap;
+  text-wrap: nowrap;
+}
+.text-giant {
+  font-size: var(--text-giant);
+  line-height: 0.82;
+  white-space: nowrap;
+}
+/* Outlined text (finale wordmark). Fill stays transparent; stroke colour = currentColor. */
+.text-outline {
+  color: var(--color-ink);
+  -webkit-text-fill-color: transparent;
+  -webkit-text-stroke: var(--outline-width, max(1.5px, 0.012em)) currentColor;
+  paint-order: stroke fill;
+}
+.text-outline--brand {
+  color: var(--color-brand);
+}
+/* Fallback where text-stroke is unsupported: solid text */
+@supports not (-webkit-text-stroke: 1px black) {
+  .text-outline {
+    -webkit-text-fill-color: currentColor;
+  }
+}
+/* Clip wide sweep / giant type so it never causes horizontal scroll */
+.overflow-clip {
+  overflow: hidden;
+  overflow: clip;
+}
+
+/* Marquee chips (use inside ui/Marquee) */
+.marquee-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  min-height: 44px;
+  padding: 0 var(--space-5);
+  border-radius: var(--radius-pill);
+  background: var(--color-surface);
+  color: var(--color-ink);
+  font-size: var(--text-sm);
+  font-weight: var(--weight-medium);
+  white-space: nowrap;
+}
+.marquee-chip--b2c {
+  background: var(--seg-b2c-bg);
+}
+.marquee-chip--b2b {
+  background: var(--seg-b2b-bg);
+}
+.marquee-chip--c2c {
+  background: var(--seg-c2c-bg);
+}
+.marquee-chip strong {
+  font-weight: var(--weight-semibold);
+}

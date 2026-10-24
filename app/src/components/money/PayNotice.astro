@@ -1,0 +1,40 @@
+---
+/**
+ * The three things that can stop a checkout, as hidden callouts. client.ts `showPayNotice()`
+ * reveals the right one. Payments not being configured is a calm info state, not an error.
+ */
+import Callout from '../ui/Callout.astro';
+import Button from '../ui/Button.astro';
+interface Props { class?: string }
+---
+
+<div class:list={['pay-notice', Astro.props.class]}>
+  <Callout tone="info" title="Payments are in test setup" live hidden data-pay-notice="not_configured">
+    Checkout isn't switched on yet: Stripe test keys are still being added. Nothing was charged.
+    Everything else works, and you can watch the <a href="/revenue">revenue dashboard</a> fill up once it is live.
+    <span class="pay-notice__demo">
+      <Button href="/checkout/status?demo=1" variant="secondary" size="sm" iconRight="arrow-right" data-demo-pay hidden>
+        Try a demo payment (no real charge)
+      </Button>
+    </span>
+  </Callout>
+  <Callout tone="warning" title="You're offline" live hidden data-pay-notice="offline">
+    Connect to the internet to pay. Guides and tools still work offline.
+  </Callout>
+  <Callout tone="danger" title="Couldn't start payment" live hidden data-pay-notice="error">
+    Something went wrong on our side. Try again — your info is still here.
+  </Callout>
+</div>
+
+<style>
+  .pay-notice__demo {
+    display: block;
+    margin-top: var(--space-3);
+  }
+  .pay-notice__demo:has(> [hidden]) {
+    display: none;
+  }
+  .pay-notice:not(:has(> :not([hidden]))) {
+    display: none;
+  }
+</style>

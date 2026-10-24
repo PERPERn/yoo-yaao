@@ -1,0 +1,69 @@
+---
+/**
+ * Inline result of a "Save this stay" press (ux-flow §5.2 / §5.4). Hidden until save-stay.ts fills it.
+ * Free users see what was saved locally + a Go Pro link; Pro users see a success line.
+ */
+import Icon from '../ui/Icon.astro';
+import { getProduct } from '../../data/products';
+interface Props { class?: string; [key: string]: unknown }
+const { class: className, ...rest } = Astro.props;
+const price = getProduct('pro_monthly')?.priceUsd;
+---
+<div class:list={['prohint', className]} data-pro-hint hidden role="status" {...rest}>
+  <span class="prohint__icon" data-hint-icon><Icon name="lock" size={18} /></span>
+  <div>
+    <p class="prohint__text" data-hint-text>Saved on this device.</p>
+    <p class="prohint__actions">
+      <a href="/pricing" data-hint-link class="prohint__link">Go Pro — ${price}/mo</a>
+      <a href="/account" data-hint-login class="prohint__login">Log in</a>
+    </p>
+  </div>
+</div>
+<style>
+  .prohint {
+    display: flex;
+    gap: var(--space-3);
+    align-items: flex-start;
+    padding: var(--space-4) var(--space-5);
+    border-radius: var(--radius-md);
+    background: var(--color-accent-tint);
+    color: var(--color-ink);
+  }
+  .prohint[data-state='ok'] {
+    background: var(--color-success-tint);
+  }
+  .prohint__icon {
+    display: grid;
+    place-items: center;
+    flex-shrink: 0;
+    width: 2rem;
+    height: 2rem;
+    border-radius: var(--radius-pill);
+    background: var(--color-accent);
+    color: var(--color-on-accent);
+  }
+  .prohint[data-state='ok'] .prohint__icon {
+    background: var(--color-success);
+    color: var(--color-on-brand);
+  }
+  .prohint__text {
+    font-size: var(--text-sm);
+    text-wrap: pretty;
+  }
+  .prohint__actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-1) var(--space-5);
+    margin-top: var(--space-1);
+  }
+  .prohint__actions a {
+    display: inline-flex;
+    align-items: center;
+    min-height: var(--tap-min);
+    font-weight: var(--weight-semibold);
+    font-size: var(--text-sm);
+  }
+  .prohint__link {
+    color: var(--color-accent-text);
+  }
+</style>

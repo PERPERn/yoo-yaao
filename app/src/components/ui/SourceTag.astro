@@ -1,0 +1,83 @@
+---
+import Icon from './Icon.astro';
+import type { Source } from '../../types/contracts';
+
+/**
+ * Shows where a fact comes from and when it was last checked:
+ *   [shield] Royal Thai Embassy, London — DTV  ·  Verified 12 Oct 2026
+ * Pass a `source` object from data (contracts.Source) or `label` + `url`.
+ * `verifiedAt` is an ISO date. Secondary sources are labelled as such.
+ */
+interface Props {
+  source?: Source;
+  label?: string;
+  url?: string;
+  tier?: Source['tier'];
+  verifiedAt?: string;
+  compact?: boolean; // hide the "Source:" prefix
+  class?: string;
+  [key: string]: unknown;
+}
+const { source, label, url, tier, verifiedAt, compact = false, class: className, ...rest } = Astro.props;
+const l = source?.label ?? label ?? 'Source';
+const u = source?.url ?? url;
+const t = source?.tier ?? tier ?? 'primary';
+let dateText: string | undefined;
+if (verifiedAt) {
+  const d = new Date(verifiedAt);
+  if (!Number.isNaN(d.getTime())) {
+    dateText = d.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric', timeZone: 'UTC' });
+  }
+}
+---
+
+<p class:list={['source', className]} {...rest}>
+  <Icon name="shield" size={16} class="source__icon" />
+  <span class="source__text">
+    {!compact && <span class="source__prefix">{t === 'secondary' ? 'Secondary source: ' : 'Source: '}</span>}
+    {
+      u ? (
+        <a href={u} target="_blank" rel="noopener noreferrer" class="source__link">
+          {l}<span class="sr-only"> (opens in a new tab)</span>
+        </a>
+      ) : (
+        <span>{l}</span>
+      )
+    }
+    {
+      dateText && (
+        <span class="source__date">
+          <span aria-hidden="true"> · </span>Verified <time datetime={verifiedAt}>{dateText}</time>
+        </span>
+      )
+    }
+  </span>
+</p>
+
+<style>
+  .source {
+    display: inline-flex;
+    align-items: flex-start;
+    gap: var(--space-2);
+    font-size: var(--text-xs);
+    line-height: 1.5;
+    color: var(--color-ink-2);
+  }
+  .source :global(.source__icon) {
+    color: var(--color-success);
+    margin-top: 0.1em;
+  }
+  .source__link {
+    color: var(--color-ink);
+    font-weight: var(--weight-medium);
+    text-decoration-color: var(--color-border-strong);
+  }
+  .source__link:hover {
+    color: var(--color-brand);
+    text-decoration-color: currentColor;
+  }
+  /* the date never splits, but "Verified" may drop to its own line in narrow table columns */
+  .source__date time {
+    white-space: nowrap;
+  }
+</style>

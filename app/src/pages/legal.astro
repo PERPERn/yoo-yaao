@@ -1,0 +1,156 @@
+---
+import Base from '../layouts/Base.astro';
+import PageHeader from '../components/core/PageHeader.astro';
+import { SITE } from '../config/site';
+import { getProduct, PLATFORM_FEE_RATE } from '../data/products';
+import { VERIFIED_ON } from '../data/visas';
+import { fmtDateISO } from '../components/core/format';
+
+const monthly = getProduct('pro_monthly');
+const yearly = getProduct('pro_yearly');
+const featured = getProduct('listing_featured');
+const fee = Math.round(PLATFORM_FEE_RATE * 100);
+const toc = [
+  { id: 'disclaimer', label: 'Disclaimer' },
+  { id: 'affiliate', label: 'Affiliate disclosure' },
+  { id: 'privacy', label: 'Privacy (PDPA and GDPR)' },
+  { id: 'terms', label: 'Terms' },
+  { id: 'cookies', label: 'Cookies and storage' },
+];
+---
+
+<Base title="Legal & privacy" description={`${SITE.name}'s disclaimer, affiliate disclosure, privacy notice (Thai PDPA and EU GDPR) and terms for Pro, Local Buddies and partners.`}>
+  <PageHeader
+    title="Legal & privacy"
+    lead="Plain-language terms. Read the disclaimer first: it explains what this site is and isn't."
+    crumbs={[{ label: 'Legal' }]}
+  />
+
+  <div class="container-narrow legal">
+    <nav class="toc" aria-label="On this page">
+      <p class="toc__title">On this page</p>
+      <ul>
+        {toc.map((t) => <li><a href={`#${t.id}`}>{t.label}</a></li>)}
+      </ul>
+    </nav>
+
+    <article class="prose">
+      <section id="disclaimer" aria-labelledby="disclaimer-h">
+        <h2 id="disclaimer-h">Disclaimer: not legal advice</h2>
+        <p>
+          {SITE.name} gives general information about Thai visas and long stays. It is not legal, immigration or tax advice, and it is not a substitute for advice from a lawyer, a licensed visa agent, or the Thai embassy or immigration office that handles your case.
+        </p>
+        <p>
+          Thai rules change often, and embassies apply them differently. We check every fact against official sources and show the date we checked it, but we can't guarantee that a rule hasn't changed since. Always confirm with the Thai embassy or immigration office before you apply, pay or travel.
+        </p>
+        <p>
+          <strong>We don't file visas.</strong> We never submit applications, fill in immigration forms on your behalf, or hold your documents. Local Buddies give practical help only. Licensed agents you contact through <a href="/experts">Get expert help</a> are independent businesses responsible for their own advice.
+        </p>
+        <p>Tools such as the 90-day calculator and the stay counter work from the dates you enter. Check every result against your passport stamps and receipts.</p>
+      </section>
+
+      <section id="affiliate" aria-labelledby="affiliate-h">
+        <h2 id="affiliate-h">Affiliate disclosure</h2>
+        <p>
+          Some links to insurance, eSIM and other services are affiliate links. If you buy through one, we may earn a commission at no extra cost to you. Every affiliate link is marked <strong>"Paid link"</strong> right next to it, and paid links never change our visa facts or the order of Visa Finder results.
+        </p>
+        <p>
+          Spaces marked <strong>"Featured"</strong> on city pages are partners who pay for top placement (from ${featured?.priceUsd} a month). Licensed agents may pay us a referral fee for requests you choose to send them.
+        </p>
+      </section>
+
+      <section id="privacy" aria-labelledby="privacy-h">
+        <h2 id="privacy-h">Privacy (Thai PDPA and EU GDPR)</h2>
+        <h3>What works without an account</h3>
+        <p>
+          The Visa Finder, the guides and all Stay Tools work without an account. Your answers, dates and checklist ticks stay in your browser's storage on your device. We don't receive them.
+        </p>
+        <h3>What we store when you sign up</h3>
+        <ul>
+          <li>Your email address, to send login links and reminders.</li>
+          <li>Your plan (Free or Pro) and when it renews.</li>
+          <li>If you're on Pro: the stays you save (visa type, entry, expiry and report dates, city, notes) and your checklist ticks.</li>
+          <li>Requests you send through forms (expert help, buddy bookings, partner applications), so we can pass them on.</li>
+        </ul>
+        <p>
+          Account data is held by our database provider, Supabase, in its Singapore region. Payments are processed by Stripe; we never see or store your card number.
+        </p>
+        <h3>Why we use it (legal basis)</h3>
+        <p>
+          To provide the service you asked for (contract), to send reminders you turned on (consent, which you can withdraw at any time), and to keep records the law requires for payments (legal obligation). We don't sell your data and we don't use it for advertising.
+        </p>
+        <h3>Your rights</h3>
+        <p>
+          Under Thailand's Personal Data Protection Act (PDPA) and, where it applies, the EU GDPR, you can ask to see, correct, export or delete your data, and you can object to how we use it. Use "Delete my data" in your account, or email <a href={`mailto:${SITE.supportEmail}`}>{SITE.supportEmail}</a>. We reply within 30 days. You can also complain to Thailand's Personal Data Protection Committee or your local data protection authority.
+        </p>
+        <h3>How long we keep it</h3>
+        <p>Until you delete your account, except payment records, which we keep for as long as tax law requires.</p>
+      </section>
+
+      <section id="terms" aria-labelledby="terms-h">
+        <h2 id="terms-h">Terms</h2>
+        <h3>Pro</h3>
+        <p>
+          Pro costs ${monthly?.priceUsd} a month or ${yearly?.priceUsd} a year and renews automatically until you cancel. Cancel any time from your account; you keep Pro until the end of the period you paid for. Reminders are a help, not a guarantee: you remain responsible for meeting every deadline.
+        </p>
+        <h3>Local Buddies</h3>
+        <p>
+          Buddy sessions are paid in advance. Free cancellation up to 24 hours before the session. Full refund if your buddy cancels. Buddies keep {100 - fee}% of the price and we keep {fee}% to cover payments and support. Buddies give practical help only and never file visas or give legal or tax advice.
+        </p>
+        <h3>Partners</h3>
+        <p>
+          Featured listings are billed monthly and can be cancelled any time from your invoice email. We review every listing, and verify every agency's licence, before it goes live, and we may remove a listing that misleads visitors.
+        </p>
+        <h3>Using this site</h3>
+        <p>Don't misuse the forms, scrape the site at volume, or submit someone else's personal data without their permission.</p>
+      </section>
+
+      <section id="cookies" aria-labelledby="cookies-h">
+        <h2 id="cookies-h">Cookies and storage</h2>
+        <p>
+          We don't use advertising or tracking cookies. We use your browser's local storage to keep your tool inputs and checklist on your device, and, when you log in, to keep you signed in. Clearing your browser data removes them.
+        </p>
+      </section>
+
+      <p class="updated">Last updated {fmtDateISO(VERIFIED_ON)}. Questions: <a href={`mailto:${SITE.supportEmail}`}>{SITE.supportEmail}</a></p>
+    </article>
+  </div>
+</Base>
+
+<style>
+  .legal {
+    padding-bottom: var(--space-section);
+  }
+  .toc {
+    margin-bottom: var(--space-10);
+    padding: var(--space-5) var(--space-6);
+    border-radius: var(--radius-lg);
+    background: var(--color-surface-2);
+  }
+  .toc__title {
+    font-weight: var(--weight-semibold);
+    margin-bottom: var(--space-2);
+  }
+  .toc ul {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    display: grid;
+  }
+  .toc a {
+    display: inline-flex;
+    align-items: center;
+    min-height: var(--tap-min);
+  }
+  .prose section {
+    scroll-margin-top: calc(var(--header-h) + var(--space-4));
+  }
+  .prose section + section {
+    margin-top: var(--space-12);
+  }
+  .updated {
+    margin-top: var(--space-12);
+    font-size: var(--text-xs);
+    color: var(--color-ink-2);
+  }
+</style>

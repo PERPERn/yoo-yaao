@@ -1,0 +1,78 @@
+---
+/**
+ * Star rating (display only). Announced as "Rated 4.8 out of 5 from 32 reviews".
+ * Partial stars are drawn with a clipped overlay. Hide the number with showValue={false}.
+ */
+interface Props {
+  value: number;          // 0–5
+  count?: number;
+  showValue?: boolean;
+  size?: number;          // star px
+  class?: string;
+  [key: string]: unknown;
+}
+const { value, count, showValue = true, size = 16, class: className, ...rest } = Astro.props;
+const v = Math.max(0, Math.min(5, value));
+const label = `Rated ${v.toFixed(1)} out of 5${count != null ? ` from ${count} review${count === 1 ? '' : 's'}` : ''}`;
+const star =
+  'M12 2.75l2.83 5.73 6.32.92-4.57 4.46 1.08 6.29L12 17.18l-5.66 2.97 1.08-6.29L2.85 9.4l6.32-.92L12 2.75z';
+---
+
+<span class:list={['rating', className]} role="img" aria-label={label} {...rest}>
+  <span class="rating__stars" style={`--pct:${(v / 5) * 100}%; --star:${size}px`} aria-hidden="true">
+    <span class="rating__row rating__row--bg">
+      {Array.from({ length: 5 }, () => <svg viewBox="0 0 24 24" width={size} height={size}><path d={star} /></svg>)}
+    </span>
+    <span class="rating__row rating__row--fg">
+      {Array.from({ length: 5 }, () => <svg viewBox="0 0 24 24" width={size} height={size}><path d={star} /></svg>)}
+    </span>
+  </span>
+  {
+    showValue && (
+      <span class="rating__text" aria-hidden="true">
+        <strong>{v.toFixed(1)}</strong>
+        {count != null && <span class="rating__count">({count})</span>}
+      </span>
+    )
+  }
+</span>
+
+<style>
+  .rating {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-2);
+    font-size: var(--text-sm);
+    font-variant-numeric: tabular-nums;
+  }
+  .rating__stars {
+    position: relative;
+    display: inline-block;
+    line-height: 0;
+  }
+  .rating__row {
+    display: inline-flex;
+    gap: 2px;
+  }
+  .rating__row--bg {
+    fill: var(--color-surface-3);
+  }
+  .rating__row--fg {
+    position: absolute;
+    inset: 0;
+    fill: var(--color-accent);
+    clip-path: inset(0 calc(100% - var(--pct)) 0 0);
+  }
+  .rating__text strong {
+    font-weight: var(--weight-semibold);
+  }
+  .rating__count {
+    margin-left: 0.25em;
+    color: var(--color-ink-2);
+  }
+  @media (forced-colors: active) {
+    .rating__row--fg {
+      fill: CanvasText;
+    }
+  }
+</style>

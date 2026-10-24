@@ -1,0 +1,286 @@
+---
+import Button from '../ui/Button.astro';
+import SourceTag from '../ui/SourceTag.astro';
+import { cities, cityPhotos } from '../../data/cities';
+import { THAI_CITY_NAMES } from '../core/format';
+
+const picks = ['bangkok', 'chiang-mai', 'phuket']
+  .map((s) => cities.find((c) => c.slug === s))
+  .filter((c): c is (typeof cities)[number] => Boolean(c));
+const usd = (n: number) => `$${new Intl.NumberFormat('en-US').format(n)}`;
+// Tourism facts, from research/2026-10-23-market-money-making-tourism-site.md (sources cited inline).
+const why = [
+  { num: '32,974,321', what: 'foreign visitors came to Thailand in 2025', src: 'Ministry of Tourism and Sports, via Khaosod English, Dec 2025' },
+  { num: '฿1.53 trillion', what: 'spent by those visitors in 2025, about US$49 billion', src: 'Khaosod English; Skift, Jan 2026' },
+  { num: '202 million', what: 'trips Thai people took in their own country in 2025', src: 'Ministry figures, via The Nation' },
+  { num: '36.7 million', what: 'arrivals the Tourism Authority of Thailand is aiming for in 2026', src: 'TAT, via Pattaya Mail' },
+];
+---
+
+<section class="scene scene--cities overflow-clip" data-scene="cities" aria-labelledby="cities-title">
+  <div class="container cities__head" data-reveal>
+    <div class="stack">
+      <h2 id="cities-title" class="display-6xl cities__title">Live like a local.</h2>
+      <p class="lead">Real monthly costs for one person, from published sources.</p>
+    </div>
+    <div><Button href="/cities" variant="secondary" iconRight="arrow-right">Explore cities</Button></div>
+    <div class="why">
+      <h3 id="why-title" class="why__title">Why Thailand</h3>
+      <dl class="why__list">
+        {
+          why.map((f) => (
+            <div class="why__item">
+              <dt class="why__num tabular">{f.num}</dt>
+              <dd class="why__what">{f.what}</dd>
+              <dd class="why__src">{f.src}</dd>
+            </div>
+          ))
+        }
+      </dl>
+    </div>
+  </div>
+
+  <div class="posters" data-posters tabindex="0" aria-label="City posters, scroll sideways">
+    <ul class="posters__track" role="list" data-posters-track>
+      {
+        picks.map((c, i) => (
+          <li class:list={['poster', `poster--${i}`]}>
+            <a class="poster__link" href={`/cities/${c.slug}`}>
+              <img
+                class="poster__img"
+                src={cityPhotos[c.slug].src}
+                alt={cityPhotos[c.slug].alt}
+                width={cityPhotos[c.slug].width}
+                height={cityPhotos[c.slug].height}
+                loading="lazy"
+                decoding="async"
+              />
+              <span class="poster__head">
+                <span class="poster__name">{c.name}</span>
+                <span class="poster__thai" lang="th" aria-hidden="true">{THAI_CITY_NAMES[c.slug]}</span>
+              </span>
+              <span class="poster__foot">
+                <span class="poster__cost tabular">
+                  {usd(c.costOfLivingUsdMonth.budget)}–{usd(c.costOfLivingUsdMonth.comfortable)}
+                  <small>/ month</small>
+                </span>
+                <dl class="poster__facts">
+                  <div>
+                    <dt>1-bed rent</dt>
+                    <dd class="tabular">{usd(c.rentUsdMonth.oneBed)}</dd>
+                  </div>
+                  <div>
+                    <dt>Home internet</dt>
+                    <dd class="tabular">{c.internetMbps} Mbps</dd>
+                  </div>
+                  <div>
+                    <dt>Best months</dt>
+                    <dd>{c.bestMonths[0].slice(0, 3)}–{c.bestMonths[c.bestMonths.length - 1].slice(0, 3)}</dd>
+                  </div>
+                </dl>
+              </span>
+            </a>
+            <SourceTag source={c.sources[0]} verifiedAt={c.verifiedAt} compact class="poster__src" />
+            <p class="poster__credit">
+              Photo: <a href={cityPhotos[c.slug].sourceUrl} target="_blank" rel="noopener noreferrer">{cityPhotos[c.slug].author}<span class="sr-only"> on Wikimedia Commons (opens in a new tab)</span></a>, <a href={cityPhotos[c.slug].licenceUrl} target="_blank" rel="noopener noreferrer license">{cityPhotos[c.slug].licence}</a>
+            </p>
+          </li>
+        ))
+      }
+    </ul>
+  </div>
+</section>
+
+<style>
+  .scene--cities {
+    padding-block: var(--space-section);
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    gap: var(--space-10);
+  }
+  .cities__head {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: var(--space-6);
+  }
+  @media (min-width: 64rem) {
+    .cities__head {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) minmax(0, 1.25fr);
+      grid-template-rows: auto 1fr;
+      column-gap: var(--space-12);
+    }
+    .why {
+      grid-column: 2;
+      grid-row: 1 / span 2;
+    }
+  }
+  .why {
+    display: grid;
+    gap: var(--space-4);
+    padding: var(--space-6);
+    border-radius: var(--radius-xl);
+    background: var(--color-surface);
+    width: 100%;
+  }
+  .why__title {
+    font-size: var(--text-xl);
+  }
+  .why__list {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(13rem, 1fr));
+    gap: var(--space-5) var(--space-6);
+    margin: 0;
+  }
+  .why__num {
+    font-family: var(--font-display);
+    font-weight: var(--weight-bold);
+    font-size: var(--text-2xl);
+    line-height: 1.1;
+    letter-spacing: -0.01em;
+  }
+  .why__item dd {
+    margin: 0;
+  }
+  .why__what {
+    margin-top: var(--space-1) !important;
+    font-size: var(--text-sm);
+  }
+  .why__src {
+    margin-top: var(--space-1) !important;
+    font-size: var(--text-xs);
+    color: var(--color-ink-2);
+  }
+  .cities__title {
+    font-size: var(--text-5xl);
+  }
+  .posters {
+    position: relative; /* contains .sr-only text inside the sideways track */
+    overflow-x: auto;
+    scroll-snap-type: x mandatory;
+    padding-inline: var(--gutter);
+    scrollbar-width: thin;
+  }
+  .posters:focus-visible {
+    outline: 3px solid var(--color-focus);
+    outline-offset: 4px;
+  }
+  .posters__track {
+    list-style: none;
+    margin: 0;
+    padding: 0 0 var(--space-4);
+    display: flex;
+    gap: var(--space-6);
+    width: max-content;
+  }
+  .poster {
+    scroll-snap-align: start;
+    width: min(26rem, 82vw);
+    display: grid;
+    gap: var(--space-2);
+    align-content: start;
+  }
+  .poster__link {
+    position: relative;
+    isolation: isolate;
+    overflow: hidden;
+    display: grid;
+    align-content: space-between;
+    gap: var(--space-8);
+    min-height: 26rem;
+    padding: var(--space-8);
+    border-radius: var(--radius-2xl);
+    background: #0d1f21;
+    color: #fff;
+    text-decoration: none;
+  }
+  .poster__img {
+    position: absolute;
+    inset: 0;
+    z-index: -2;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    transition: transform var(--duration-slow, 600ms) var(--ease-out);
+  }
+  /* Dark scrim top and bottom keeps the white text AA on any part of the photo. */
+  .poster__link::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    z-index: -1;
+    background: linear-gradient(180deg, rgb(6 16 18 / 0.78) 0%, rgb(6 16 18 / 0.2) 38%, rgb(6 16 18 / 0.35) 55%, rgb(6 16 18 / 0.9) 100%);
+  }
+  .poster__link:hover .poster__img {
+    transform: scale(1.04);
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .poster__link:hover .poster__img {
+      transform: none;
+    }
+  }
+  .poster__link:focus-visible {
+    outline: 3px solid var(--color-focus);
+    outline-offset: 3px;
+  }
+  .poster__head,
+  .poster__foot {
+    display: grid;
+    gap: var(--space-4);
+    text-shadow: 0 1px 2px rgb(0 0 0 / 0.4);
+  }
+  .poster__thai {
+    font-family: var(--font-display);
+    font-weight: var(--weight-semibold);
+    font-size: var(--text-2xl);
+    line-height: 1.3;
+    opacity: 0.9;
+  }
+  .poster__credit {
+    font-size: var(--text-xs);
+    color: var(--color-ink-2);
+  }
+  .poster__credit a {
+    color: inherit;
+  }
+  .poster__link:hover {
+    box-shadow: var(--shadow-raise);
+  }
+  .poster__name {
+    font-family: var(--font-display);
+    font-weight: var(--weight-bold);
+    font-size: var(--text-5xl);
+    line-height: var(--leading-display);
+    letter-spacing: var(--tracking-display);
+  }
+  .poster__cost {
+    font-family: var(--font-display);
+    font-weight: var(--weight-bold);
+    font-size: var(--text-3xl);
+  }
+  .poster__cost small {
+    font-size: var(--text-base);
+    font-weight: var(--weight-regular);
+  }
+  .poster__facts {
+    display: grid;
+    grid-template-columns: repeat(3, auto);
+    gap: var(--space-4);
+    margin: 0;
+  }
+  .poster__facts dt {
+    font-size: var(--text-xs);
+    color: rgb(255 255 255 / 0.85);
+  }
+  .poster__facts dd {
+    margin: 0;
+    font-weight: var(--weight-semibold);
+  }
+  /* Story mode keeps the native sideways scroll-snap row (no pin): wider posters on desktop. */
+  @media (min-width: 40rem) {
+    :global(html.home-story) .poster {
+      width: min(34rem, 62vw);
+    }
+  }
+</style>

@@ -1,0 +1,204 @@
+---
+/**
+ * Interactive document checklist (saved in localStorage; Pro syncs via toggleChecklistItem).
+ * Behaviour lives in checklist-client.ts; this file is markup + style only.
+ */
+import Icon from '../ui/Icon.astro';
+
+interface Props {
+  slug: string;
+  documents: string[];
+  withNotes?: boolean;
+  doneHref?: string;      // "Next: book your embassy appointment" link
+  class?: string;
+  [key: string]: unknown;
+}
+const { slug, documents, withNotes = false, doneHref, class: className, ...rest } = Astro.props;
+const uid = `chk-${slug}`;
+---
+
+<div class:list={['chk', className]} data-checklist={slug} {...rest}>
+  <div class="chk__head">
+    <p class="chk__count">
+      <span class="tabular" data-check-count>0</span> of <span class="tabular" data-check-total>{documents.length}</span> ready
+    </p>
+    <p class="chk__status" data-sync-status aria-live="polite">Saved on this device</p>
+  </div>
+  <div
+    class="chk__track"
+    role="progressbar"
+    aria-label="Documents ready"
+    aria-valuemin="0"
+    aria-valuemax={documents.length}
+    aria-valuenow="0"
+    data-check-progress
+  >
+    <span class="chk__fill" data-check-bar></span>
+  </div>
+
+  <ul class="chk__list">
+    {
+      documents.map((doc, i) => (
+        <li class="chk__row" data-check-row>
+          <label class="chk__label" for={`${uid}-${i}`}>
+            <input type="checkbox" id={`${uid}-${i}`} value={doc} data-check-item />
+            <span class="chk__box" aria-hidden="true"><Icon name="check" size={16} strokeWidth={2.5} /></span>
+            <span class="chk__text">{doc}</span>
+          </label>
+          {withNotes && (
+            <input
+              type="text"
+              class="control chk__note"
+              data-check-note
+              data-item={doc}
+              maxlength="200"
+              aria-label={`Note for: ${doc}`}
+              placeholder="Add a note (optional)"
+            />
+          )}
+        </li>
+      ))
+    }
+  </ul>
+
+  <p class="chk__done" data-check-done hidden role="status">
+    <Icon name="check" size={20} />
+    <span>
+      All documents ready. Next: book your embassy appointment.
+      {doneHref && <a href={doneHref}>See the application steps</a>}
+    </span>
+  </p>
+</div>
+
+<style>
+  .chk {
+    display: grid;
+    gap: var(--space-4);
+  }
+  .chk__head {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    align-items: baseline;
+    gap: var(--space-2) var(--space-6);
+  }
+  .chk__count {
+    font-family: var(--font-display);
+    font-size: var(--text-xl);
+    font-weight: var(--weight-semibold);
+  }
+  .chk__status {
+    font-size: var(--text-sm);
+    color: var(--color-ink-2);
+  }
+  .chk__track {
+    height: 0.5rem;
+    border-radius: var(--radius-pill);
+    background: var(--color-surface-3);
+    overflow: hidden;
+  }
+  .chk__fill {
+    display: block;
+    height: 100%;
+    background: var(--color-brand);
+    transform: scaleX(0);
+    transform-origin: left;
+    transition: transform var(--duration-slow) var(--ease-out);
+  }
+  .chk__list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    display: grid;
+    gap: var(--space-2);
+  }
+  .chk__row {
+    border-radius: var(--radius-md);
+    background: var(--color-surface);
+    transition: background-color var(--duration-base) var(--ease-out);
+  }
+  .chk__row[data-done] {
+    background: var(--color-brand-tint);
+  }
+  .chk__label {
+    position: relative;
+    display: flex;
+    gap: var(--space-3);
+    align-items: flex-start;
+    min-height: 3rem;
+    padding: var(--space-3) var(--space-4);
+    cursor: pointer;
+  }
+  .chk__label input {
+    position: absolute;
+    opacity: 0;
+    width: 1px;
+    height: 1px;
+  }
+  .chk__box {
+    display: grid;
+    place-items: center;
+    flex-shrink: 0;
+    width: 1.5rem;
+    height: 1.5rem;
+    margin-top: 0.05em;
+    border-radius: var(--radius-sm);
+    border: 1.5px solid var(--color-border-strong);
+    background: var(--color-surface);
+    color: transparent;
+    transition:
+      background-color var(--duration-fast) var(--ease-out),
+      border-color var(--duration-fast) var(--ease-out);
+  }
+  .chk__label input:checked + .chk__box {
+    background: var(--color-brand);
+    border-color: var(--color-brand);
+    color: var(--color-on-brand);
+  }
+  .chk__label input:focus-visible + .chk__box {
+    outline: 3px solid var(--color-focus);
+    outline-offset: 2px;
+  }
+  .chk__label:active .chk__box {
+    transform: scale(0.94);
+  }
+  .chk__text {
+    line-height: var(--leading-normal);
+    text-wrap: pretty;
+  }
+  .chk__row[data-done] .chk__text {
+    color: var(--color-ink-2);
+  }
+  .chk__note {
+    margin: 0 var(--space-4) var(--space-3) calc(var(--space-4) + 1.5rem + var(--space-3));
+    width: auto;
+    font-size: var(--text-sm);
+    min-height: 2.75rem;
+  }
+  @media (max-width: 30rem) {
+    .chk__note {
+      margin-left: var(--space-4);
+    }
+  }
+  .chk__done {
+    display: flex;
+    gap: var(--space-3);
+    align-items: flex-start;
+    padding: var(--space-4) var(--space-5);
+    border-radius: var(--radius-md);
+    background: var(--color-success-tint);
+    color: var(--color-ink);
+  }
+  .chk__done :global(svg) {
+    color: var(--color-success);
+    flex-shrink: 0;
+  }
+  .chk__done a {
+    margin-left: var(--space-1);
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .chk__fill {
+      transition: none;
+    }
+  }
+</style>

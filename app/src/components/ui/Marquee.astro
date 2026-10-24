@@ -1,0 +1,162 @@
+---
+/**
+ * CSS-only infinite marquee (brain.fm-style chip rows).
+ * The slot content is rendered twice; the copy is aria-hidden and inert, so screen readers and
+ * keyboards meet each item once. Pauses on hover and keyboard focus, and has a visible
+ * pause/play button (WCAG 2.2.2). Under prefers-reduced-motion it stops and wraps into rows.
+ *
+ *   <Marquee label="Things our buddies help with" speed={45}>
+ *     <MarqueeChip>Open a bank account</MarqueeChip> …   (or any inline elements / Badges)
+ *   </Marquee>
+ *
+ * Utility class for chips: .marquee-chip (pill on surface). Use .marquee-chip--b2c|b2b|c2c for segment tints.
+ */
+interface Props {
+  label: string;                 // accessible name of the region
+  speed?: number;                // seconds per loop (default token 40s)
+  direction?: 'left' | 'right';
+  gap?: string;                  // CSS length, default var(--space-3)
+  pauseButton?: boolean;         // show the pause/play control (default true)
+  fade?: boolean;                // soften the edges with a mask (default true)
+  class?: string;
+  [key: string]: unknown;
+}
+const {
+  label,
+  speed,
+  direction = 'left',
+  gap = 'var(--space-3)',
+  pauseButton = true,
+  fade = true,
+  class: className,
+  ...rest
+} = Astro.props;
+const html = await Astro.slots.render('default');
+const style = [speed ? `--marquee-duration:${speed}s` : '', `--marquee-gap:${gap}`].filter(Boolean).join(';');
+---
+
+<section
+  class:list={['marquee', `marquee--${direction}`, fade && 'marquee--fade', className]}
+  aria-label={label}
+  style={style}
+  data-marquee
+  {...rest}
+>
+  <div class="marquee__viewport">
+    <div class="marquee__track">
+      <div class="marquee__group" set:html={html} />
+      <div class="marquee__group marquee__copy" aria-hidden="true" inert set:html={html} />
+    </div>
+  </div>
+  {
+    pauseButton && (
+      <button type="button" class="marquee__toggle" aria-pressed="false" data-marquee-toggle>
+        <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true" class="marquee__ic-pause">
+          <path d="M8 5v14M16 5v14" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" />
+        </svg>
+        <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true" class="marquee__ic-play">
+          <path d="M7 5l12 7-12 7z" fill="currentColor" />
+        </svg>
+        <span class="sr-only">Pause scrolling</span>
+      </button>
+    )
+  }
+</section>
+
+<script>
+  document.querySelectorAll<HTMLButtonElement>('[data-marquee-toggle]').forEach((btn) => {
+    btn.addEventListener('click', () => {
+      const root = btn.closest<HTMLElement>('[data-marquee]');
+      const paused = btn.getAttribute('aria-pressed') !== 'true';
+      btn.setAttribute('aria-pressed', String(paused));
+      root?.toggleAttribute('data-paused', paused);
+      const sr = btn.querySelector('.sr-only');
+      if (sr) sr.textContent = paused ? 'Play scrolling' : 'Pause scrolling';
+    });
+  });
+</script>
+
+<style>
+  .marquee {
+    position: relative;
+    display: flex;
+    align-items: center;
+    gap: var(--space-3);
+    max-width: 100%;
+  }
+  .marquee__viewport {
+    flex: 1;
+    min-width: 0;
+    overflow: hidden;
+  }
+  .marquee--fade .marquee__viewport {
+    -webkit-mask-image: linear-gradient(90deg, transparent, #000 6%, #000 94%, transparent);
+    mask-image: linear-gradient(90deg, transparent, #000 6%, #000 94%, transparent);
+  }
+  .marquee__track {
+    display: flex;
+    width: max-content;
+    animation: marquee var(--marquee-duration, 40s) linear infinite;
+  }
+  .marquee--right .marquee__track {
+    animation-direction: reverse;
+  }
+  .marquee__group {
+    display: flex;
+    align-items: center;
+    gap: var(--marquee-gap);
+    padding-right: var(--marquee-gap);
+    flex-shrink: 0;
+  }
+  .marquee:hover .marquee__track,
+  .marquee:focus-within .marquee__track,
+  .marquee[data-paused] .marquee__track {
+    animation-play-state: paused;
+  }
+  @keyframes marquee {
+    to {
+      transform: translate3d(-50%, 0, 0);
+    }
+  }
+
+  .marquee__toggle {
+    display: inline-grid;
+    place-items: center;
+    flex-shrink: 0;
+    width: 36px;
+    height: 36px;
+    border: 0;
+    border-radius: var(--radius-pill);
+    background: var(--color-surface-2);
+    color: var(--color-ink);
+  }
+  .marquee__toggle:hover {
+    background: var(--color-surface-3);
+  }
+  .marquee__ic-play,
+  .marquee__toggle[aria-pressed='true'] .marquee__ic-pause {
+    display: none;
+  }
+  .marquee__toggle[aria-pressed='true'] .marquee__ic-play {
+    display: block;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .marquee__track {
+      animation: none;
+      width: auto;
+    }
+    .marquee__group {
+      flex-wrap: wrap;
+      padding-right: 0;
+    }
+    .marquee__copy,
+    .marquee__toggle {
+      display: none;
+    }
+    .marquee--fade .marquee__viewport {
+      -webkit-mask-image: none;
+      mask-image: none;
+    }
+  }
+</style>

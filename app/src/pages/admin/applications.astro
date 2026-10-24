@@ -1,0 +1,340 @@
+---
+import Admin from '../../layouts/Admin.astro';
+import Panel from '../../components/admin/Panel.astro';
+import ReviewRow from '../../components/admin/ReviewRow.astro';
+import Button from '../../components/ui/Button.astro';
+---
+
+<Admin
+  title="Applications"
+  lead="Businesses asking for a listing and locals asking to become Local Buddies. Verify who they are before you approve: approving makes them a partner."
+>
+  <p class="adm-err" role="alert" data-err hidden></p>
+  <div class="apps">
+    <Panel
+      id="listing-apps"
+      title="Listing applications"
+      caption="Listing applications, newest first. Open Review to verify, then approve or reject."
+      cols={['Business', 'Type', 'Received', 'Verification', 'Status', { label: 'Review', sr: true }]}
+    >
+      <div slot="tools" class="adm-filters">
+        <label class="adm-filters__label" for="f-listing">Show</label>
+        <select id="f-listing" class="control" data-filter="listing">
+          <option value="new">Waiting</option>
+          <option value="all">All</option>
+        </select>
+      </div>
+      <Fragment slot="row">
+        <tr>
+          <th scope="row"><span data-f="name"></span><span class="adm-sub" data-f="who"></span></th>
+          <td><span data-f="kind"></span><span class="adm-sub" data-f="city"></span></td>
+          <td class="nowrap" data-f="date"></td>
+          <td><span class="adm-stamp" data-f="verif"></span></td>
+          <td><span class="adm-stamp" data-f="status"></span></td>
+          <td><Button size="sm" variant="secondary" iconRight="chevron-down" class="rv-toggle" data-toggle aria-expanded="false">Review</Button></td>
+        </tr>
+        <ReviewRow colspan={6} />
+      </Fragment>
+    </Panel>
+
+    <Panel
+      id="buddy-apps"
+      title="Local Buddy applications"
+      caption="Local Buddy applications, newest first. Buddies may offer practical help only, never visa filing or legal advice."
+      cols={['Applicant', 'City', { label: 'Price', num: true }, 'Received', 'Verification', 'Status', { label: 'Review', sr: true }]}
+    >
+      <div slot="tools" class="adm-filters">
+        <label class="adm-filters__label" for="f-buddy">Show</label>
+        <select id="f-buddy" class="control" data-filter="buddy">
+          <option value="new">Waiting</option>
+          <option value="all">All</option>
+        </select>
+      </div>
+      <Fragment slot="row">
+        <tr>
+          <th scope="row"><span data-f="name"></span><span class="adm-sub" data-f="who"></span></th>
+          <td><span data-f="city"></span><span class="adm-sub" data-f="langs"></span></td>
+          <td class="num" data-f="price"></td>
+          <td class="nowrap" data-f="date"></td>
+          <td><span class="adm-stamp" data-f="verif"></span></td>
+          <td><span class="adm-stamp" data-f="status"></span></td>
+          <td><Button size="sm" variant="secondary" iconRight="chevron-down" class="rv-toggle" data-toggle aria-expanded="false">Review</Button></td>
+        </tr>
+        <ReviewRow colspan={7} />
+      </Fragment>
+    </Panel>
+  </div>
+</Admin>
+
+<script>
+  import { announce, boot, fmtDate, put, renderRows, setState, stamp, type Mode } from '../../components/admin/admin';
+  import { source, syncCounts } from '../../components/admin/data';
+  import type { Applications, ApplicationType, BuddyApplication, ListingApplication } from '../../lib/ops';
+
+  type App = ListingApplication | BuddyApplication;
+  const CITY: Record<string, string> = { bangkok: 'Bangkok', 'chiang-mai': 'Chiang Mai', phuket: 'Phuket' };
+  const STATUS: Record<string, [string, 'new' | 'good' | 'bad' | 'info']> = {
+    new: ['Waiting', 'new'],
+    approved: ['Approved', 'good'],
+    rejected: ['Rejected', 'bad'],
+    paid: ['Paid', 'info'],
+  };
+  const panels = {
+    listing: document.querySelector<HTMLElement>('[data-panel="listing-apps"]')!,
+    buddy: document.querySelector<HTMLElement>('[data-panel="buddy-apps"]')!,
+  };
+  const err = document.querySelector<HTMLElement>('[data-err]')!;
+  let mode: Mode = 'demo';
+  let data: Applications | null = null;
+  const show = (type: ApplicationType) => document.querySelector<HTMLSelectElement>(`[data-filter="${type}"]`)!.value;
+
+  /** Agencies need a licence check on top of identity (same rule as the DB trigger). */
+  const needsLicence = (type: ApplicationType, a: App) => type === 'listing' && (a as ListingApplication).kind === 'agency';
+
+  /** Chip for what is SAVED on the row (Unverified / Partly verified / Verified). */
+  function verification(type: ApplicationType, a: App): [string, 'new' | 'good' | 'neutral'] {
+    const lic = needsLicence(type, a);
+    const done = Number(a.verified_identity) + (lic ? Number(a.verified_license) : 0);
+    return done === (lic ? 2 : 1) ? ['Verified', 'good'] : done > 0 ? ['Partly verified', 'new'] : ['Unverified', 'neutral'];
+  }
+
+  function wire(tr: HTMLTableRowElement, type: ApplicationType, a: App, name: string) {
+    const drawer = tr.nextElementSibling as HTMLTableRowElement;
+    const q = <T extends HTMLElement>(s: string) => drawer.querySelector<T>(s)!;
+    const uid = `${type}-${a.id}`;
+    const toggle = tr.querySelector<HTMLButtonElement>('[data-toggle]')!;
+    const id = q<HTMLInputElement>('[data-chk="identity"]');
+    const lic = q<HTMLInputElement>('[data-chk="license"]');
+    const note = q<HTMLTextAreaElement>('[data-note]');
+    const noteErr = q('[data-note-err]');
+    const why = q('[data-why]');
+    const save = q<HTMLButtonElement>('[data-save]');
+    const reject = q<HTMLButtonElement>('[data-reject]');
+    const approve = q<HTMLButtonElement>('[data-approve]');
+    const licence = needsLicence(type, a);
+
+    // Per-row ids (the markup is a cloned template)
+    drawer.id = `rv-${uid}`;
+    toggle.setAttribute('aria-controls', drawer.id);
+    toggle.setAttribute('aria-label', `Review ${name}`);
+    note.id = `note-${uid}`;
+    q('[data-note-label]').setAttribute('for', note.id);
+    q('[data-note-hint]').id = `note-hint-${uid}`;
+    noteErr.id = `note-err-${uid}`;
+    why.id = `why-${uid}`;
+    approve.setAttribute('aria-describedby', why.id);
+
+    // Facts (textContent only: everything here was typed by the applicant)
+    put(drawer, 'message', 'message' in a ? a.message : a.bio);
+    put(drawer, 'email', a.email);
+    const url = 'url' in a ? a.url : null;
+    const site = q<HTMLAnchorElement>('[data-f="site"]');
+    if (url && /^https?:\/\//i.test(url)) {
+      site.href = url; // scheme checked, so never a javascript: link
+      site.textContent = url.replace(/^https?:\/\//i, '');
+    } else q('[data-site-wrap]').hidden = true;
+    put(drawer, 'license_no', a.license_no);
+    q('[data-lic-no-wrap]').hidden = !a.license_no && !licence;
+    q('[data-lic-wrap]').hidden = !licence;
+    q('[data-lic-hint]').textContent = a.license_no
+      ? `Look up ${a.license_no} with the Department of Tourism or DBD and confirm it belongs to ${name}.`
+      : 'No licence number given. Ask the applicant for it before ticking this.';
+
+    id.checked = a.verified_identity;
+    lic.checked = a.verified_license;
+    note.value = a.review_note ?? '';
+
+    /** Approve reads the boxes as ticked now; the chip shows what is saved. */
+    const missing = () => [!id.checked && 'Identity checked', licence && !lic.checked && 'Licence checked'].filter(Boolean) as string[];
+    function sync() {
+      stamp(tr, 'status', ...STATUS[a.status]);
+      stamp(tr, 'verif', ...verification(type, a));
+      const m = missing();
+      const done = a.status === 'approved' || a.status === 'paid';
+      // aria-disabled (not disabled) keeps Approve focusable, so the reason stays reachable by keyboard.
+      approve.setAttribute('aria-disabled', String(m.length > 0 || done));
+      approve.title = done ? '' : m.length ? `Tick ${m.join(' and ')} first` : '';
+      why.textContent = done
+        ? `${STATUS[a.status][0]}${a.reviewed_at ? ` on ${fmtDate(a.reviewed_at)}` : ''}.`
+        : m.length
+          ? `Tick ${m.join(' and ')} to approve.`
+          : a.status === 'rejected'
+            ? 'Rejected. You can still approve if they sent what was missing.'
+            : 'Ready to approve.';
+      reject.disabled = a.status === 'rejected' || a.status === 'paid';
+      put(drawer, 'reviewed', a.reviewed_at ? fmtDate(a.reviewed_at) : 'Not yet');
+    }
+
+    const patch = () => ({
+      verified_identity: id.checked,
+      ...(licence ? { verified_license: lic.checked } : {}),
+      review_note: note.value.trim() || null,
+    });
+    const dirty = () =>
+      id.checked !== a.verified_identity ||
+      (licence && lic.checked !== a.verified_license) ||
+      (note.value.trim() || null) !== a.review_note;
+    const saveReview = async () => {
+      const p = patch();
+      await source(mode).review(type, a.id, p);
+      Object.assign(a, p, { reviewed_at: new Date().toISOString() });
+    };
+
+    function noteError(on: boolean) {
+      noteErr.hidden = !on;
+      note.setAttribute('aria-invalid', String(on));
+      note.setAttribute('aria-describedby', on ? `${noteErr.id} note-hint-${uid}` : `note-hint-${uid}`);
+    }
+    noteError(false);
+
+    /** Runs a write with the drawer locked; on failure keeps what was typed and says why. */
+    async function act(btn: HTMLButtonElement, work: () => Promise<unknown>, ok: () => string) {
+      const ctrls = [id, lic, note, save, reject, approve];
+      ctrls.forEach((c) => (c.disabled = true));
+      btn.setAttribute('aria-busy', 'true');
+      try {
+        await work();
+        err.hidden = true;
+        announce(ok());
+      } catch (e) {
+        err.textContent = /verif/i.test(String((e as Error)?.message))
+          ? `${name} isn't verified in the database yet. Save the review, then approve.`
+          : `Couldn't save the review for ${name}. Check your connection and try again.`;
+        err.hidden = false;
+        announce(err.textContent);
+      } finally {
+        btn.removeAttribute('aria-busy');
+        [id, lic, note, save, approve].forEach((c) => (c.disabled = false));
+        sync();
+        (btn.disabled ? toggle : btn).focus();
+      }
+    }
+
+    toggle.addEventListener('click', () => {
+      const open = toggle.getAttribute('aria-expanded') !== 'true';
+      toggle.setAttribute('aria-expanded', String(open));
+      drawer.hidden = !open;
+      if (open) id.focus();
+    });
+    [id, lic].forEach((c) => c.addEventListener('change', sync));
+    note.addEventListener('input', () => note.value.trim() && noteError(false));
+
+    save.addEventListener('click', () => {
+      if (!dirty()) return announce('Nothing new to save.');
+      act(save, saveReview, () => `Review saved for ${name}.`);
+    });
+
+    reject.addEventListener('click', () => {
+      if (!note.value.trim()) {
+        noteError(true);
+        note.focus();
+        return;
+      }
+      act(
+        reject,
+        async () => {
+          await source(mode).reject(type, a.id, patch());
+          Object.assign(a, patch(), { status: 'rejected', reviewed_at: new Date().toISOString() });
+          syncCounts(mode);
+        },
+        () => `${name} rejected.`,
+      );
+    });
+
+    let approveMsg = '';
+    approve.addEventListener('click', () => {
+      if (approve.getAttribute('aria-disabled') === 'true') {
+        (!id.checked ? id : licence && !lic.checked ? lic : approve).focus();
+        announce(why.textContent ?? '');
+        return;
+      }
+      act(
+        approve,
+        async () => {
+          if (dirty()) await saveReview(); // the DB checks the saved flags, so save first
+          const res = await source(mode).approve(type, a.id);
+          a.status = 'approved';
+          approveMsg =
+            res && res.profiles_updated === 0
+              ? `${name} approved. They become a partner the first time they sign in with ${res.email}.`
+              : `${name} approved and given partner access.`;
+          syncCounts(mode);
+        },
+        () => approveMsg,
+      );
+    });
+
+    sync();
+  }
+
+  function render() {
+    if (!data) return;
+    renderRows(
+      panels.listing,
+      data.listings.filter((a) => show('listing') === 'all' || a.status === 'new'),
+      (tr, a) => {
+        put(tr, 'name', a.business_name);
+        put(tr, 'who', [a.contact_name, a.email].filter(Boolean).join(' · '));
+        put(tr, 'kind', a.kind);
+        put(tr, 'city', a.city ? CITY[a.city] : 'Any city');
+        put(tr, 'date', fmtDate(a.created_at));
+        wire(tr, 'listing', a, a.business_name);
+      },
+      show('listing') === 'new' ? 'No listing applications waiting.' : 'No listing applications yet.',
+    );
+    renderRows(
+      panels.buddy,
+      data.buddies.filter((a) => show('buddy') === 'all' || a.status === 'new'),
+      (tr, a) => {
+        put(tr, 'name', a.full_name);
+        put(tr, 'who', a.email);
+        put(tr, 'city', CITY[a.city] ?? a.city);
+        put(tr, 'langs', a.languages.join(', '));
+        put(tr, 'price', a.price_usd == null ? null : `$${a.price_usd}`);
+        put(tr, 'date', fmtDate(a.created_at));
+        wire(tr, 'buddy', a, a.full_name);
+      },
+      show('buddy') === 'new' ? 'No Local Buddy applications waiting.' : 'No Local Buddy applications yet.',
+    );
+  }
+
+  async function load() {
+    Object.values(panels).forEach((p) => setState(p, 'loading'));
+    try {
+      data = await source(mode).applications();
+      render();
+    } catch {
+      Object.values(panels).forEach((p) => setState(p, 'error', "Couldn't load applications."));
+    }
+  }
+
+  document.querySelectorAll('[data-filter]').forEach((s) => s.addEventListener('change', render));
+  document.querySelectorAll('[data-retry]').forEach((b) => b.addEventListener('click', load));
+  boot().then((b) => {
+    mode = b.mode;
+    if (mode === 'denied') return;
+    syncCounts(mode);
+    load();
+  });
+</script>
+
+<style>
+  .apps {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    gap: var(--space-6);
+  }
+  .nowrap {
+    white-space: nowrap;
+  }
+  .apps :global(.rv-toggle .btn__trail) {
+    transition: transform var(--duration-base) var(--ease-out);
+  }
+  .apps :global(.rv-toggle[aria-expanded='true'] .btn__trail) {
+    transform: rotate(180deg);
+  }
+  .apps :global(tr:has(+ .rv-row:not([hidden])) > *) {
+    border-bottom-color: transparent;
+    background: var(--color-bg);
+  }
+</style>

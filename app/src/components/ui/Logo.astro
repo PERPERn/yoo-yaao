@@ -1,0 +1,70 @@
+---
+import { SITE } from '../../config/site';
+
+/**
+ * Wordmark: mark (gold sun rising behind a sala roof, on teal) + SITE.name.
+ * Never hardcode the name; it comes from config/site.ts.
+ */
+interface Props {
+  href?: string | null;   // null renders without a link
+  size?: 'sm' | 'md' | 'lg';
+  markOnly?: boolean;
+  class?: string;
+  [key: string]: unknown;
+}
+const { href = '/', size = 'md', markOnly = false, class: className, ...rest } = Astro.props;
+const Tag = href ? 'a' : 'span';
+---
+
+<Tag
+  href={href ?? undefined}
+  class:list={['logo', `logo--${size}`, className]}
+  aria-label={href ? `${SITE.name}, home` : undefined}
+  {...rest}
+>
+  <svg class="logo__mark" viewBox="0 0 32 32" aria-hidden="true" focusable="false">
+    <rect width="32" height="32" rx="9" fill="var(--color-brand)" />
+    <circle cx="16" cy="14" r="6" fill="var(--color-accent)" />
+    <path
+      d="M4 18.6l1.6 2.2L16 13.2l10.4 7.6 1.6-2.2M9 25h14"
+      fill="none"
+      stroke="var(--color-on-brand)"
+      stroke-width="2.4"
+      stroke-linecap="round"
+      stroke-linejoin="round"></path>
+  </svg>
+  {!markOnly && <span class="logo__word">{SITE.name}</span>}
+</Tag>
+
+<style>
+  .logo {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.55em;
+    color: var(--color-ink);
+    text-decoration: none;
+    font-family: var(--font-display);
+    font-weight: var(--weight-bold);
+    letter-spacing: -0.02em;
+    line-height: 1;
+    white-space: nowrap;
+  }
+  .logo:hover {
+    color: var(--color-ink);
+    text-decoration: none;
+  }
+  .logo__mark {
+    width: 1.75em;
+    height: 1.75em;
+    flex-shrink: 0;
+  }
+  .logo--sm {
+    font-size: 1rem;
+  }
+  .logo--md {
+    font-size: 1.25rem;
+  }
+  .logo--lg {
+    font-size: clamp(2rem, 1rem + 5vw, 4.5rem);
+  }
+</style>

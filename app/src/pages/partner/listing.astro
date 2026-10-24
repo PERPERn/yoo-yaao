@@ -1,0 +1,221 @@
+---
+import PartnerShell from '../../components/partner/PartnerShell.astro';
+import Input from '../../components/ui/Input.astro';
+import Field from '../../components/ui/Field.astro';
+import Button from '../../components/ui/Button.astro';
+import Callout from '../../components/ui/Callout.astro';
+import EmptyState from '../../components/ui/EmptyState.astro';
+import { SITE } from '../../config/site';
+
+const DESC_MAX = 600;
+---
+
+<PartnerShell
+  title="Listing · Partner portal"
+  heading="Your listing"
+  lede="What nomads read on your city page. Keep it short and specific: who you help, and what it costs."
+  current="listing"
+>
+  <div data-ls-none hidden>
+    <EmptyState
+      icon="briefcase"
+      title="No listing yet"
+      description="Your listing is created when we approve your application. You can edit it here after that."
+      actionLabel="See application status"
+      actionHref="/partner"
+      titleLevel={2}
+    />
+  </div>
+
+  <div class="pp-grid" data-ls-body>
+    <section class="pp-panel" aria-labelledby="ls-form-title">
+      <h2 id="ls-form-title" class="pp-h2">Edit details</h2>
+      <div data-ls-pick hidden>
+        <Field id="ls-which" label="Listing to edit"><select id="ls-which" class="control"></select></Field>
+      </div>
+      <form class="pp-form" data-ls-form novalidate data-max={DESC_MAX}>
+        <div>
+          <Input
+            name="description"
+            id="ls-desc"
+            label="Description"
+            multiline
+            rows={6}
+            maxlength={DESC_MAX + 200}
+            hint="Plain text. Line breaks are kept."
+          />
+          <p class="pp-count" data-ls-count aria-hidden="true"></p>
+        </div>
+        <Input
+          name="priceFrom"
+          id="ls-price"
+          label="Price from"
+          optional
+          maxlength="60"
+          placeholder="e.g. 18,000 THB or $450"
+          hint="Shown as “from …”. Include the currency."
+        />
+        <Input
+          name="url"
+          id="ls-url"
+          type="url"
+          label="Website"
+          optional
+          inputmode="url"
+          autocomplete="url"
+          placeholder="https://"
+        />
+        <div data-ls-ok hidden><Callout tone="success" live title="Saved"><span data-ls-ok-text></span></Callout></div>
+        <div data-ls-err hidden><Callout tone="danger" live title="Couldn't save"><span data-ls-err-text></span></Callout></div>
+        <div class="cluster">
+          <Button type="submit" data-ls-save disabled>Save changes</Button>
+          <Button variant="ghost" data-ls-reset disabled>Discard</Button>
+          <span class="pp-small pp-muted" data-ls-dirty aria-live="polite"></span>
+        </div>
+      </form>
+    </section>
+
+    <aside class="stack" style="--stack-gap: var(--space-6)">
+      <section class="pp-panel" aria-labelledby="ls-prev">
+        <h2 id="ls-prev" class="pp-h2">Preview</h2>
+        <div class="pp-listing">
+          <p class="pp-listing__name" data-p-name></p>
+          <p class="pp-listing__meta" data-p-meta></p>
+          <p class="pp-listing__desc" data-p-desc></p>
+          <a class="pp-listing__url" data-p-url rel="noopener" target="_blank"></a>
+        </div>
+      </section>
+      <section class="pp-panel pp-locked" aria-labelledby="ls-lock">
+        <h2 id="ls-lock" class="pp-label">Set by our team</h2>
+        <p>Name, type and city are checked against your licence, so only we can change them.</p>
+        <a href={`mailto:${SITE.supportEmail}?subject=${encodeURIComponent('Change my listing details')}`}>Ask for a change</a>
+      </section>
+    </aside>
+  </div>
+</PartnerShell>
+
+<script>
+  import { boot, saveListing, cityName, kindName, type PartnerData, type OpsListing as Listing } from '../../components/partner/portal';
+  import { setBusy, setFieldError } from '../../components/money/client';
+
+  const $ = <T extends HTMLElement = HTMLElement>(s: string) => document.querySelector<T>(s)!;
+  const form = $<HTMLFormElement>('[data-ls-form]');
+  const desc = $<HTMLTextAreaElement>('#ls-desc');
+  const price = $<HTMLInputElement>('#ls-price');
+  const url = $<HTMLInputElement>('#ls-url');
+  const save = $<HTMLButtonElement>('[data-ls-save]');
+  const reset = $<HTMLButtonElement>('[data-ls-reset]');
+  const MAX = Number(form.dataset.max);
+  let listing: Listing | null = null;
+
+  const values = () => ({ description: desc.value.trim(), priceFrom: price.value.trim(), url: url.value.trim() });
+  const dirty = () => {
+    if (!listing) return false;
+    const v = values();
+    return v.description !== (listing.description ?? '') || v.priceFrom !== (listing.price_from ?? '') || v.url !== (listing.url ?? '');
+  };
+
+  function preview() {
+    if (!listing) return;
+    const v = values();
+    $('[data-p-name]').textContent = listing.name;
+    $('[data-p-meta]').textContent = [kindName(listing.kind), cityName(listing.city), v.priceFrom && `from ${v.priceFrom}`]
+      .filter(Boolean)
+      .join(' · ');
+    $('[data-p-desc]').textContent = v.description || 'No description yet.';
+    const a = $<HTMLAnchorElement>('[data-p-url]');
+    const okUrl = /^https?:\/\/[^\s.]+\.[^\s]+$/i.test(v.url);
+    a.hidden = !okUrl;
+    if (okUrl) {
+      a.href = v.url;
+      a.textContent = v.url.replace(/^https?:\/\//, '').replace(/\/$/, '');
+    }
+    const count = $('[data-ls-count]');
+    count.textContent = `${v.description.length} / ${MAX}`;
+    count.toggleAttribute('data-over', v.description.length > MAX);
+    const d = dirty();
+    save.disabled = !d;
+    reset.disabled = !d;
+    $('[data-ls-dirty]').textContent = d ? 'Unsaved changes' : 'No changes to save';
+  }
+
+  function validate() {
+    const v = values();
+    const e: Record<string, string> = {
+      'ls-desc': v.description.length > MAX ? `Keep it under ${MAX} characters (now ${v.description.length}).` : '',
+      'ls-price': v.priceFrom.length > 60 ? 'Keep the price short, under 60 characters.' : '',
+      'ls-url': v.url && !/^https?:\/\/[^\s.]+\.[^\s]+$/i.test(v.url) ? 'Enter the full address, starting with https://' : '',
+    };
+    for (const [id, m] of Object.entries(e)) setFieldError(form, id, m);
+    const first = Object.keys(e).find((k) => e[k]);
+    if (first) $(`#${first}`).focus();
+    return !first;
+  }
+
+  function fill(l: Listing) {
+    desc.value = l.description ?? '';
+    price.value = l.price_from ?? '';
+    url.value = l.url ?? '';
+    for (const id of ['ls-desc', 'ls-price', 'ls-url']) setFieldError(form, id, '');
+    preview();
+  }
+
+  form.addEventListener('input', () => {
+    $('[data-ls-ok]').hidden = true;
+    preview();
+  });
+  reset.addEventListener('click', () => listing && fill(listing));
+  form.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    if (!listing || !dirty()) return;
+    $('[data-ls-ok]').hidden = true;
+    $('[data-ls-err]').hidden = true;
+    if (!validate()) return;
+    const restore = setBusy(save, 'Saving…');
+    reset.disabled = true;
+    try {
+      const v = values();
+      const demo = await saveListing(listing.id, {
+        description: v.description || null,
+        price_from: v.priceFrom || null,
+        url: v.url || null,
+      });
+      Object.assign(listing, { description: v.description || null, price_from: v.priceFrom || null, url: v.url || null });
+      restore();
+      $('[data-ls-ok-text]').textContent = demo
+        ? 'Updated in this tab only (demo). Sign in to save for real.'
+        : 'Your listing is updated. It shows on your city page right away.';
+      $('[data-ls-ok]').hidden = false;
+      preview();
+    } catch (err) {
+      restore();
+      preview();
+      $('[data-ls-err-text]').textContent = err instanceof Error ? err.message : 'Check your connection and try again.';
+      $('[data-ls-err]').hidden = false;
+    }
+  });
+  window.addEventListener('beforeunload', (e) => {
+    if (dirty()) e.preventDefault();
+  });
+
+  const pick = $<HTMLSelectElement>('#ls-which');
+  let all: Listing[] = [];
+  pick.addEventListener('change', () => {
+    if (dirty() && !confirm('Discard your unsaved changes?')) return void (pick.value = listing!.id);
+    listing = all.find((l) => l.id === pick.value) ?? null;
+    if (listing) fill(listing);
+    $('[data-ls-ok]').hidden = true;
+    $('[data-ls-err]').hidden = true;
+  });
+
+  boot((d: PartnerData) => {
+    all = d.listings;
+    const wanted = new URLSearchParams(location.search).get('id');
+    listing = all.find((l) => l.id === wanted) ?? all[0] ?? null;
+    $('[data-ls-none]').hidden = Boolean(listing);
+    $('[data-ls-body]').hidden = !listing;
+    $('[data-ls-pick]').hidden = all.length < 2;
+    pick.replaceChildren(...all.map((l) => new Option(l.name, l.id, false, l.id === listing?.id)));
+    if (listing) fill(listing);
+  });
+</script>

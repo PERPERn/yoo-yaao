@@ -1,0 +1,651 @@
+---
+/**
+ * Admin app shell (/admin/*). Same fonts, tokens and global CSS as Base, but a sidebar layout,
+ * no marketing header/footer, and always noindex. Pages are static; data loads in each page's
+ * client <script> via components/admin/admin.ts → boot(), which sets the mode on <main>:
+ *   data-mode="demo"   → gold "Demo view — sample data" banner, local-only changes
+ *   data-mode="admin"  → live data (RLS is the real guard)
+ *   data-mode="denied" → "Not authorised" panel, page content hidden
+ *
+ *   <Admin title="Leads" lead="…"><Fragment slot="actions">…</Fragment>…</Admin>
+ */
+import '../styles/fonts.css';
+import '../styles/global.css';
+import { SITE } from '../config/site';
+import Logo from '../components/ui/Logo.astro';
+import Icon, { type IconName } from '../components/ui/Icon.astro';
+import Button from '../components/ui/Button.astro';
+
+interface Props {
+  title: string;
+  lead?: string;
+}
+const { title, lead } = Astro.props;
+
+const NAV: { href: string; label: string; icon: IconName; count?: string }[] = [
+  { href: '/admin', label: 'Overview', icon: 'globe' },
+  { href: '/admin/applications', label: 'Applications', icon: 'passport', count: 'applications' },
+  { href: '/admin/leads', label: 'Leads', icon: 'briefcase', count: 'leads' },
+  { href: '/admin/listings', label: 'Listings', icon: 'star' },
+  { href: '/admin/users', label: 'Users', icon: 'users' },
+];
+const path = Astro.url.pathname.replace(/\/$/, '') || '/';
+---
+
+<!doctype html>
+<html lang="en" data-theme="light">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <title>{`${title} · Admin · ${SITE.name}`}</title>
+    <meta name="robots" content="noindex, nofollow" />
+    <meta name="referrer" content="no-referrer" />
+    <meta name="color-scheme" content="light" />
+    <meta name="theme-color" content="#f6f3ec" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <link rel="icon" href="/favicon.ico" sizes="any" />
+  </head>
+  <body>
+    <a class="skip-link" href="#main">Skip to content</a>
+
+    <div class="adm">
+      <header class="adm-bar">
+        <Logo href="/admin" size="sm" />
+        <span class="adm-tag">Admin</span>
+        <button type="button" class="adm-menu" aria-expanded="false" aria-controls="adm-side" data-adm-menu>
+          <Icon name="menu" size={20} />
+          <span data-adm-menu-label>Menu</span>
+        </button>
+      </header>
+
+      <aside class="adm-side" id="adm-side" data-adm-side>
+        <div class="adm-side__brand">
+          <Logo href="/admin" size="sm" />
+          <span class="adm-tag">Admin</span>
+        </div>
+        <nav aria-label="Admin">
+          <ul class="adm-nav">
+            {
+              NAV.map((n) => (
+                <li>
+                  <a href={n.href} class="adm-nav__link" aria-current={path === n.href ? 'page' : undefined}>
+                    <Icon name={n.icon} size={18} />
+                    <span>{n.label}</span>
+                    {n.count && (
+                      <span class="adm-count tabular" data-count={n.count} hidden>
+                        <span data-count-n />
+                        <span class="sr-only"> waiting</span>
+                      </span>
+                    )}
+                  </a>
+                </li>
+              ))
+            }
+            <li>
+              <a href="/revenue" class="adm-nav__link">
+                <Icon name="wallet" size={18} />
+                <span>Revenue</span>
+                <Icon name="arrow-up-right" size={14} class="adm-nav__out" />
+              </a>
+            </li>
+          </ul>
+        </nav>
+        <div class="adm-side__foot">
+          <p class="adm-who small" data-who aria-live="polite">Checking access…</p>
+          <a href="/" class="adm-back small">Back to site</a>
+        </div>
+      </aside>
+
+      <main id="main" class="adm-main" tabindex="-1" aria-busy="true" data-adm-main>
+        <div class="adm-demo" role="status" data-demo-banner hidden>
+          <p class="adm-demo__title"><Icon name="info" size={18} /> Demo view — sample data</p>
+          <p class="adm-demo__text">
+            <span data-demo-reason>You're not signed in as an admin.</span> Changes stay in this tab and nothing is saved.{' '}
+            <a href="/account?next=/admin">Log in</a>
+          </p>
+        </div>
+
+        <section class="adm-denied" data-denied hidden aria-labelledby="denied-title">
+          <span class="adm-denied__icon"><Icon name="lock" size={28} /></span>
+          <h1 id="denied-title">Not authorised</h1>
+          <p class="muted">
+            This account (<span data-denied-email></span>) doesn't have admin access. If you think it should, ask the team
+            to set your role.
+          </p>
+          <div class="cluster">
+            <Button href="/account" variant="secondary">Go to my account</Button>
+            <Button href="/" variant="ghost">Back to site</Button>
+          </div>
+        </section>
+
+        <div class="adm-content" data-content>
+          <header class="adm-head">
+            <div>
+              <h1 class="adm-head__title">{title}</h1>
+              {lead && <p class="adm-head__lead">{lead}</p>}
+            </div>
+            {Astro.slots.has('actions') && <div class="adm-head__actions"><slot name="actions" /></div>}
+          </header>
+          <slot />
+        </div>
+      </main>
+    </div>
+
+    <div class="sr-only" aria-live="polite" data-announce></div>
+
+    <script>
+      // Mobile sidebar disclosure. No imports: page scripts own data + mode (components/admin/admin.ts).
+      const btn = document.querySelector<HTMLButtonElement>('[data-adm-menu]');
+      const side = document.querySelector<HTMLElement>('[data-adm-side]');
+      const label = document.querySelector<HTMLElement>('[data-adm-menu-label]');
+      const setOpen = (open: boolean, focusBack = false) => {
+        if (!btn || !side) return;
+        btn.setAttribute('aria-expanded', String(open));
+        side.toggleAttribute('data-open', open);
+        if (label) label.textContent = open ? 'Close' : 'Menu';
+        if (open) side.querySelector<HTMLElement>('a[aria-current], a')?.focus();
+        else if (focusBack) btn.focus();
+      };
+      btn?.addEventListener('click', () => setOpen(btn.getAttribute('aria-expanded') !== 'true'));
+      document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape' && btn?.getAttribute('aria-expanded') === 'true') setOpen(false, true);
+      });
+      matchMedia('(min-width: 56rem)').addEventListener('change', (e) => e.matches && setOpen(false));
+    </script>
+  </body>
+</html>
+
+<style>
+  .adm {
+    --side-w: 15rem;
+    min-height: 100dvh;
+  }
+  @media (min-width: 56rem) {
+    .adm {
+      display: grid;
+      grid-template-columns: var(--side-w) minmax(0, 1fr);
+    }
+  }
+
+  .adm-tag {
+    padding: 2px var(--space-2);
+    border-radius: var(--radius-sm);
+    background: var(--color-surface-2);
+    color: var(--color-ink-2);
+    font-size: var(--text-xs);
+    font-weight: var(--weight-semibold);
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+  }
+
+  /* Mobile top bar */
+  .adm-bar {
+    position: sticky;
+    top: 0;
+    z-index: var(--z-header);
+    display: flex;
+    align-items: center;
+    gap: var(--space-3);
+    min-height: 3.5rem;
+    padding: env(safe-area-inset-top) var(--space-4) 0;
+    background: var(--color-bg);
+    border-bottom: 1px solid var(--color-border);
+  }
+  .adm-menu {
+    margin-left: auto;
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-2);
+    min-height: var(--tap-min);
+    padding: 0 var(--space-3);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    background: var(--color-surface);
+    color: var(--color-ink);
+    font: inherit;
+    font-size: var(--text-sm);
+    font-weight: var(--weight-medium);
+    cursor: pointer;
+    transition:
+      background-color var(--duration-fast) var(--ease-out),
+      transform var(--duration-fast) var(--ease-out);
+  }
+  .adm-menu:hover {
+    background: var(--color-surface-2);
+  }
+  .adm-menu:active {
+    transform: scale(0.97);
+  }
+  @media (min-width: 56rem) {
+    .adm-bar {
+      display: none;
+    }
+  }
+
+  /* Sidebar: same paper as the canvas, a hairline separates it */
+  .adm-side {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-6);
+    padding: var(--space-4);
+    background: var(--color-bg);
+    border-bottom: 1px solid var(--color-border);
+  }
+  .adm-side:not([data-open]) {
+    display: none;
+  }
+  .adm-side__brand {
+    display: none;
+  }
+  @media (min-width: 56rem) {
+    .adm-side,
+    .adm-side:not([data-open]) {
+      display: flex;
+      position: sticky;
+      top: 0;
+      height: 100dvh;
+      overflow-y: auto;
+      padding: var(--space-5) var(--space-4);
+      border-bottom: 0;
+      border-right: 1px solid var(--color-border);
+    }
+    .adm-side__brand {
+      display: flex;
+      align-items: center;
+      gap: var(--space-2);
+      padding-inline: var(--space-2);
+    }
+  }
+  .adm-nav {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    display: grid;
+    gap: 2px;
+  }
+  .adm-nav__link {
+    display: flex;
+    align-items: center;
+    gap: var(--space-3);
+    min-height: var(--tap-min);
+    padding: 0 var(--space-3);
+    border-radius: var(--radius-md);
+    color: var(--color-ink-2);
+    font-size: var(--text-sm);
+    font-weight: var(--weight-medium);
+    text-decoration: none;
+    transition:
+      background-color var(--duration-fast) var(--ease-out),
+      color var(--duration-fast) var(--ease-out);
+  }
+  .adm-nav__link:hover {
+    background: var(--color-surface-2);
+    color: var(--color-ink);
+  }
+  .adm-nav__link:focus-visible {
+    outline: 2px solid var(--color-focus);
+    outline-offset: 2px;
+  }
+  .adm-nav__link[aria-current='page'] {
+    background: var(--color-surface);
+    color: var(--color-ink);
+    font-weight: var(--weight-semibold);
+    box-shadow: var(--elev-1);
+  }
+  .adm-nav__link[aria-current='page'] :global(svg) {
+    color: var(--color-brand);
+  }
+  :global(.adm-nav__out) {
+    margin-left: auto;
+    color: var(--color-ink-3);
+  }
+  /* Queue count: gold pill, the one accent in the sidebar */
+  .adm-count {
+    margin-left: auto;
+    min-width: 1.5rem;
+    padding: 0 var(--space-2);
+    border-radius: var(--radius-pill);
+    background: var(--color-accent);
+    color: var(--color-on-accent);
+    font-size: var(--text-xs);
+    font-weight: var(--weight-bold);
+    line-height: 1.5rem;
+    text-align: center;
+  }
+  .adm-side__foot {
+    margin-top: auto;
+    display: grid;
+    gap: var(--space-2);
+    padding: var(--space-3);
+    border-top: 1px solid var(--color-border);
+  }
+  .adm-who {
+    margin: 0;
+    color: var(--color-ink-2);
+    overflow-wrap: anywhere;
+  }
+  .adm-back {
+    color: var(--color-brand);
+  }
+
+  /* Main */
+  .adm-main {
+    min-width: 0;
+    padding: 0 var(--space-4) var(--space-12);
+  }
+  .adm-main:focus {
+    outline: none;
+  }
+  @media (min-width: 56rem) {
+    .adm-main {
+      padding: 0 var(--space-8) var(--space-16);
+    }
+  }
+  .adm-main[data-mode='denied'] [data-content] {
+    display: none;
+  }
+
+  /* Demo banner: solid gold band, sticks while scrolling so it is never out of sight */
+  .adm-demo {
+    position: sticky;
+    top: 3.5rem;
+    z-index: var(--z-raised);
+    margin: 0 calc(-1 * var(--space-4));
+    padding: var(--space-3) var(--space-4);
+    background: var(--color-accent);
+    color: var(--color-on-accent);
+    box-shadow: var(--elev-1);
+  }
+  @media (min-width: 56rem) {
+    .adm-demo {
+      top: 0;
+      margin: 0 calc(-1 * var(--space-8));
+      padding: var(--space-3) var(--space-8);
+    }
+  }
+  .adm-demo__title {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+    margin: 0;
+    font-weight: var(--weight-bold);
+    letter-spacing: 0.02em;
+  }
+  .adm-demo__text {
+    margin: var(--space-1) 0 0;
+    font-size: var(--text-sm);
+  }
+  .adm-demo__text a {
+    color: inherit;
+    font-weight: var(--weight-semibold);
+  }
+
+  .adm-head {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-end;
+    justify-content: space-between;
+    gap: var(--space-4);
+    padding: var(--space-8) 0 var(--space-6);
+  }
+  .adm-head__title {
+    margin: 0;
+    font-family: var(--font-display);
+    font-size: var(--text-2xl);
+    letter-spacing: -0.015em;
+    line-height: var(--leading-snug);
+  }
+  .adm-head__lead {
+    margin: var(--space-1) 0 0;
+    max-width: 60ch;
+    color: var(--color-ink-2);
+    text-wrap: pretty;
+  }
+
+  .adm-denied {
+    max-width: 34rem;
+    margin: var(--space-16) auto;
+    display: grid;
+    justify-items: start;
+    gap: var(--space-4);
+  }
+  .adm-denied h1 {
+    margin: 0;
+    font-family: var(--font-display);
+    font-size: var(--text-2xl);
+  }
+  .adm-denied p {
+    margin: 0;
+  }
+  .adm-denied__icon {
+    display: grid;
+    place-items: center;
+    width: 3.5rem;
+    height: 3.5rem;
+    border-radius: var(--radius-lg);
+    background: var(--color-danger-tint);
+    color: var(--color-danger);
+  }
+</style>
+
+<style is:global>
+  /* Shared admin pieces used by client-rendered rows (scoped styles don't reach cloned nodes). */
+  .adm-panel {
+    background: var(--color-surface);
+    border-radius: var(--radius-lg);
+    box-shadow:
+      0 0 0 1px var(--color-border),
+      var(--elev-1);
+  }
+  .adm-panel__head {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-3);
+    padding: var(--space-4) var(--space-5);
+    border-bottom: 1px solid var(--color-border);
+  }
+  .adm-panel__head h2 {
+    margin: 0;
+    font-size: var(--text-base);
+    font-weight: var(--weight-semibold);
+  }
+  /* Table scroller: the table scrolls inside its panel, never the page */
+  .adm-panel {
+    min-width: 0;
+  }
+  /* position: relative keeps .sr-only text inside the scroller (it would otherwise widen the page) */
+  .adm-scroll {
+    position: relative;
+    overflow-x: auto;
+    overscroll-behavior-x: contain;
+  }
+  .adm-scroll:focus-visible {
+    outline: 2px solid var(--color-focus);
+    outline-offset: -2px;
+  }
+  .adm-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: var(--text-sm);
+  }
+  .adm-table caption {
+    padding: var(--space-4) var(--space-5) var(--space-2);
+    text-align: left;
+    color: var(--color-ink-2);
+    font-size: var(--text-xs);
+  }
+  .adm-table th,
+  .adm-table td {
+    padding: var(--space-3) var(--space-4);
+    text-align: left;
+    vertical-align: middle;
+    border-bottom: 1px solid var(--color-border);
+  }
+  .adm-table th:first-child,
+  .adm-table td:first-child {
+    padding-left: var(--space-5);
+  }
+  .adm-table thead th {
+    color: var(--color-ink-2);
+    font-size: var(--text-xs);
+    font-weight: var(--weight-semibold);
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    white-space: nowrap;
+  }
+  .adm-table tbody tr:last-child > * {
+    border-bottom: 0;
+  }
+  .adm-table tbody tr:hover {
+    background: color-mix(in srgb, var(--color-surface-2) 45%, transparent);
+  }
+  .adm-table tbody th {
+    font-weight: var(--weight-semibold);
+  }
+  .adm-table .num {
+    text-align: right;
+    font-variant-numeric: tabular-nums;
+  }
+  .adm-sub {
+    display: block;
+    color: var(--color-ink-3);
+    font-size: var(--text-xs);
+    font-weight: var(--weight-regular);
+    overflow-wrap: anywhere;
+  }
+  .adm-row-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-2);
+  }
+  .adm-table .control {
+    width: auto;
+    min-width: 9rem;
+    font-size: var(--text-sm);
+  }
+  /* Status stamp: tinted pill, the word carries the meaning (never colour alone) */
+  .adm-stamp {
+    display: inline-block;
+    padding: 2px var(--space-2);
+    border-radius: var(--radius-sm);
+    font-size: var(--text-xs);
+    font-weight: var(--weight-semibold);
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    white-space: nowrap;
+    background: var(--color-surface-2);
+    color: var(--color-ink-2);
+  }
+  .adm-stamp[data-tone='new'] {
+    background: var(--color-accent-tint);
+    color: var(--color-accent-text);
+  }
+  .adm-stamp[data-tone='good'] {
+    background: var(--color-success-tint);
+    color: var(--color-success);
+  }
+  .adm-stamp[data-tone='bad'] {
+    background: var(--color-danger-tint);
+    color: var(--color-danger);
+  }
+  .adm-stamp[data-tone='info'] {
+    background: var(--color-info-tint);
+    color: var(--color-info);
+  }
+  .adm-state {
+    padding: var(--space-10) var(--space-5);
+    text-align: center;
+    color: var(--color-ink-2);
+  }
+  .adm-state[data-state='error'] {
+    color: var(--color-danger);
+  }
+  .adm-skel {
+    display: block;
+    height: 0.9rem;
+    border-radius: var(--radius-sm);
+    background: var(--color-surface-2);
+    animation: adm-pulse 1.2s var(--ease-in-out) infinite alternate;
+  }
+  @keyframes adm-pulse {
+    to {
+      opacity: 0.45;
+    }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .adm-skel {
+      animation: none;
+    }
+  }
+  .adm-filters {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--space-2);
+  }
+  .adm-filters__label {
+    color: var(--color-ink-2);
+    font-size: var(--text-sm);
+  }
+  .adm-err {
+    margin: 0 0 var(--space-4);
+    padding: var(--space-3) var(--space-4);
+    border-radius: var(--radius-md);
+    background: var(--color-danger-tint);
+    color: var(--color-danger);
+  }
+  .adm-filters .control {
+    width: auto;
+    font-size: var(--text-sm);
+    min-height: 2.5rem;
+  }
+  .adm-switch {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-2);
+    min-height: var(--tap-min);
+    cursor: pointer;
+  }
+  .adm-switch input {
+    width: 1.25rem;
+    height: 1.25rem;
+    cursor: inherit;
+  }
+  .adm-switch input:focus-visible {
+    outline: 2px solid var(--color-focus);
+    outline-offset: 2px;
+  }
+  .adm-switch:has(input:disabled) {
+    cursor: not-allowed;
+    opacity: 0.6;
+  }
+  .adm-dialog {
+    width: min(28rem, calc(100vw - 2 * var(--space-4)));
+    padding: var(--space-6);
+    border: 0;
+    border-radius: var(--radius-lg);
+    background: var(--color-surface);
+    color: var(--color-ink);
+    box-shadow: var(--elev-3);
+  }
+  .adm-dialog::backdrop {
+    background: var(--color-scrim);
+  }
+  .adm-dialog h2 {
+    margin: 0 0 var(--space-2);
+    font-size: var(--text-lg);
+  }
+  .adm-dialog p {
+    margin: 0 0 var(--space-5);
+    color: var(--color-ink-2);
+  }
+  .adm-dialog__actions {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+    gap: var(--space-2);
+  }
+</style>

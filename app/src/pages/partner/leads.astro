@@ -1,0 +1,170 @@
+---
+import PartnerShell from '../../components/partner/PartnerShell.astro';
+import EmptyState from '../../components/ui/EmptyState.astro';
+import Button from '../../components/ui/Button.astro';
+
+const filters = [
+  { id: 'all', label: 'All' },
+  { id: 'new', label: 'New' },
+  { id: 'sent', label: 'Replied' },
+  { id: 'won', label: 'Won' },
+  { id: 'lost', label: 'Lost' },
+];
+---
+
+<PartnerShell
+  title="Leads · Partner portal"
+  heading="Leads"
+  lede="Nomads our team has matched to you. Reply by email, then mark each one so we know how it went."
+  current="leads"
+>
+  <div class="stack" style="--stack-gap: var(--space-5)">
+    <div class="pp-filter" role="group" aria-label="Filter leads by status">
+      {
+        filters.map((f) => (
+          <button type="button" class="pp-chip" data-filter={f.id} aria-pressed={f.id === 'all' ? 'true' : 'false'}>
+            {f.label} <span class="pp-chip__n" data-filter-n={f.id} />
+          </button>
+        ))
+      }
+    </div>
+    <p class="sr-only" aria-live="polite" data-leads-live></p>
+    <ul class="pp-leads" data-leads></ul>
+    <div data-leads-empty hidden>
+      <EmptyState
+        icon="users"
+        title="No leads here"
+        description="When a nomad asks for help with a visa in your city, our team assigns them to you and they show up here."
+        actionLabel="Check your listing"
+        actionHref="/partner/listing"
+        titleLevel={2}
+      />
+    </div>
+  </div>
+
+  <template data-lead-tpl>
+    <li class="pp-lead">
+      <div class="pp-lead__top">
+        <h2 class="pp-lead__name" data-name></h2>
+        <span class="pp-pill" data-pill></span>
+      </div>
+      <p class="pp-lead__facts" data-facts></p>
+      <p class="pp-lead__msg" data-msg></p>
+      <div class="pp-lead__actions">
+        <a class="pp-lead__email" data-email></a>
+        <Button size="sm" variant="ghost" href="/partner/messages" data-chat>Open chat</Button>
+        <div class="cluster" style="--cluster-gap: var(--space-2)" role="group" data-actions>
+          <Button size="sm" data-to="sent">Mark replied</Button>
+          <Button size="sm" variant="secondary" data-to="won">Won</Button>
+          <Button size="sm" variant="secondary" data-to="lost">Lost</Button>
+        </div>
+      </div>
+      <p class="pp-lead__note" data-note role="alert" hidden></p>
+    </li>
+  </template>
+</PartnerShell>
+
+<script>
+  import { boot, setLeadStatus, statusLabel, fmtDate, cityName, visaName, type PartnerData, type OpsLead as Lead, type PartnerLeadStatus as LeadStatus } from '../../components/partner/portal';
+
+  const list = document.querySelector<HTMLUListElement>('[data-leads]')!;
+  const empty = document.querySelector<HTMLElement>('[data-leads-empty]')!;
+  const live = document.querySelector<HTMLElement>('[data-leads-live]')!;
+  const tpl = document.querySelector<HTMLTemplateElement>('[data-lead-tpl]')!;
+  const chips = [...document.querySelectorAll<HTMLButtonElement>('[data-filter]')];
+
+  const FILTERS = ['all', 'new', 'sent', 'won', 'lost'];
+  const q = new URLSearchParams(location.search).get('status');
+  let filter = q && FILTERS.includes(q) ? q : 'all';
+  let leads: Lead[] = [];
+
+  // Which status changes make sense from each status (a closed lead can still be flipped won <-> lost).
+  const NEXT: Record<string, LeadStatus[]> = { new: ['sent', 'won', 'lost'], sent: ['won', 'lost'], won: ['lost'], lost: ['won'] };
+
+  function card(l: Lead) {
+    const li = tpl.content.firstElementChild!.cloneNode(true) as HTMLLIElement;
+    const $ = (s: string) => li.querySelector<HTMLElement>(s)!;
+    li.dataset.s = l.status;
+    $('[data-name]').textContent = l.name;
+    const pill = $('[data-pill]');
+    pill.dataset.s = l.status;
+    pill.textContent = statusLabel(l.status);
+    $('[data-facts]').textContent = [visaName(l.visa_slug), cityName(l.city), l.nationality, fmtDate(l.created_at)]
+      .filter(Boolean)
+      .join(' · ');
+    const msg = $('[data-msg]');
+    msg.hidden = !l.message;
+    msg.textContent = l.message ?? '';
+    const mail = $('[data-email]') as HTMLAnchorElement;
+    mail.href = `mailto:${encodeURIComponent(l.email)}?subject=${encodeURIComponent('Your visa enquiry on Yoo Yaao')}`;
+    mail.textContent = l.email;
+    const chat = $('[data-chat]') as HTMLAnchorElement;
+    chat.href = `/partner/messages?lead=${encodeURIComponent(l.id)}`;
+    chat.setAttribute('aria-label', `Open chat with ${l.name}`);
+    const group = $('[data-actions]');
+    group.setAttribute('aria-label', `Update status for ${l.name}`);
+    group.querySelectorAll<HTMLButtonElement>('[data-to]').forEach((b) => {
+      const to = b.dataset.to as LeadStatus;
+      if (!(NEXT[l.status] ?? []).includes(to)) return b.remove();
+      b.setAttribute('aria-label', `Mark ${l.name} as ${statusLabel(to).toLowerCase()}`);
+      b.addEventListener('click', () => update(l, to, b, li));
+    });
+    return li;
+  }
+
+  async function update(l: Lead, to: LeadStatus, b: HTMLButtonElement, li: HTMLElement) {
+    const note = li.querySelector<HTMLElement>('[data-note]')!;
+    note.hidden = true;
+    li.querySelectorAll<HTMLButtonElement>('[data-actions] button').forEach((x) => (x.disabled = true));
+    b.setAttribute('aria-busy', 'true');
+    try {
+      await setLeadStatus(l.id, to);
+      l.status = to;
+      live.textContent = `${l.name} marked ${statusLabel(to).toLowerCase()}.`;
+      draw([...list.children].indexOf(li));
+    } catch (e) {
+      b.removeAttribute('aria-busy');
+      li.querySelectorAll<HTMLButtonElement>('[data-actions] button').forEach((x) => (x.disabled = false));
+      note.textContent = `Couldn't save: ${e instanceof Error ? e.message : 'try again'}.`;
+      note.hidden = false;
+    }
+  }
+
+  function draw(focusAt?: number) {
+    for (const c of chips) {
+      const id = c.dataset.filter!;
+      c.setAttribute('aria-pressed', String(id === filter));
+      c.querySelector('[data-filter-n]')!.textContent = String(id === 'all' ? leads.length : leads.filter((l) => l.status === id).length);
+    }
+    const shown = leads.filter((l) => filter === 'all' || l.status === filter);
+    list.replaceChildren(...shown.map(card));
+    empty.hidden = shown.length > 0;
+    const n = document.querySelector<HTMLElement>('[data-p-newcount]');
+    const fresh = leads.filter((l) => l.status === 'new').length;
+    if (n) {
+      n.hidden = !fresh;
+      n.textContent = String(fresh);
+    }
+    // Keep keyboard users in place after a status change re-renders the list (the card may have left this filter).
+    if (focusAt !== undefined) {
+      const card = list.children[Math.min(focusAt, list.children.length - 1)];
+      (card?.querySelector<HTMLElement>('[data-actions] button') ?? chips.find((c) => c.dataset.filter === filter))?.focus();
+    }
+  }
+
+  chips.forEach((c) =>
+    c.addEventListener('click', () => {
+      filter = c.dataset.filter!;
+      const url = new URL(location.href);
+      if (filter === 'all') url.searchParams.delete('status');
+      else url.searchParams.set('status', filter);
+      history.replaceState(null, '', url);
+      draw();
+    }),
+  );
+
+  boot((d: PartnerData) => {
+    leads = d.leads.filter((l) => l.status !== 'spam');
+    draw();
+  });
+</script>

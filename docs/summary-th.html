@@ -1,0 +1,137 @@
+<!doctype html>
+<html lang="th">
+<head>
+<meta charset="utf-8">
+<title>สรุปโปรเจกต์ — Make Me Money</title>
+<style>
+  @page { size: A4; margin: 16mm 15mm; }
+  :root { --ink:#14211D; --muted:#4A5852; --jade:#0E6B53; --gold:#F2A93B; --paper:#F6F5F1; --line:#E4E3DC; }
+  * { box-sizing: border-box; }
+  body { font-family: "Sukhumvit Set", "Thonburi", sans-serif; color: var(--ink); font-size: 11.5pt; line-height: 1.6; margin: 0; }
+  h1 { font-size: 24pt; margin: 0 0 4px; color: var(--jade); line-height: 1.25; }
+  h2 { font-size: 15pt; margin: 22px 0 8px; padding-bottom: 4px; border-bottom: 2px solid var(--jade); }
+  h3 { font-size: 12pt; margin: 14px 0 4px; color: var(--jade); }
+  p { margin: 4px 0 8px; }
+  .sub { color: var(--muted); font-size: 11pt; }
+  .cover { background: var(--paper); border-left: 6px solid var(--gold); padding: 16px 18px; margin-bottom: 14px; }
+  table { width: 100%; border-collapse: collapse; margin: 6px 0 10px; font-size: 10.5pt; }
+  th, td { border: 1px solid var(--line); padding: 5px 7px; text-align: left; vertical-align: top; }
+  th { background: var(--paper); }
+  ul { margin: 4px 0 8px; padding-left: 20px; }
+  li { margin: 2px 0; }
+  .tag { display:inline-block; background: var(--jade); color:#fff; border-radius: 99px; padding: 0 9px; font-size: 9.5pt; }
+  .gold { background: var(--gold); color: var(--ink); }
+  .note { font-size: 9.5pt; color: var(--muted); }
+  .grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; }
+  .box { border: 1px solid var(--line); border-radius: 8px; padding: 8px 10px; }
+  .pb { page-break-before: always; }
+</style>
+</head>
+<body>
+
+<div class="cover">
+  <h1>Yoo Yaao (อยู่ยาว) — ชื่อชั่วคราว</h1>
+  <div class="sub">แอปช่วยชาวต่างชาติเลือกวีซ่าไทยให้ถูก และอยู่ไทยได้นานอย่างถูกกฎหมาย</div>
+  <p style="margin-top:8px">All for One University · สาย Software Development · โจทย์ <b>Make Me Money</b> · ส่งผลงาน 25 ต.ค. 2569 เวลา 12:00–13:30 · นำเสนอ 19:00 น.</p>
+  <p class="note">สรุป ณ 23 ต.ค. 2569 · ตัวเลขที่ระบุว่า "model" เป็นการประมาณจากโมเดล ไม่ใช่การพยากรณ์</p>
+</div>
+
+<h2>1. ไอเดียใน 1 ย่อหน้า</h2>
+<p>เว็บแอป (PWA ติดตั้งบนมือถือได้) ภาษาอังกฤษ สำหรับ digital nomad และชาวต่างชาติที่อยากอยู่ไทยหลายเดือน ผู้ใช้กรอกสัญชาติ ประเทศที่อาศัย อายุ รายได้ และระยะเวลาที่อยากอยู่ แอปจะจัดอันดับวีซ่าที่เหมาะสม (DTV, LTR, Privilege, Visa-exempt, Retirement) พร้อมเหตุผล checklist เอกสาร และลิงก์แหล่งทางการที่ระบุวันที่ตรวจล่าสุดทุกข้อ เมื่อเข้าไทยแล้วมีเครื่องมือเตือนรายงานตัว 90 วัน นับวันวีซ่าหมด และนับ 180 วันเพื่อดูสถานะภาษี มีข้อมูลเมือง (กรุงเทพ เชียงใหม่ ภูเก็ต) และตลาด <b>Local Buddies</b> ที่ให้คนท้องถิ่นรับจ้างช่วยเรื่องจริงในชีวิตประจำวัน</p>
+
+<h3>ข้อจำกัด 3 ข้อ</h3>
+<ul>
+  <li><b>เวลา:</b> มีเวลาราว 2 วัน จึงทำเฉพาะประเทศไทยก่อน (วีซ่า 5 แบบ + 3 เมือง) ส่วนประเทศอื่นใน SEA ไว้เฟสถัดไป</li>
+  <li><b>งบ:</b> ราว 0–66 USD/เดือน ใช้ Supabase, Vercel และข้อมูลเปิด ไม่ใช้ API ราคาแพง</li>
+  <li><b>ข้อมูลและกฎหมาย:</b> กฎวีซ่าเปลี่ยนบ่อย จึงต้องตรวจกับแหล่งทางการเป็นรอบๆ และแอปให้ "ข้อมูล" เท่านั้น ไม่ยื่นวีซ่าแทนผู้ใช้ (เป็นงานที่มีกฎหมายควบคุม) ใช้วิธีส่งต่อให้เอเจนต์ที่มีใบอนุญาต</li>
+</ul>
+
+<h2>2. กลุ่มเป้าหมายและปัญหา</h2>
+<table>
+  <tr><th>ใคร</th><th>ปัญหาที่เจอ</th></tr>
+  <tr><td><b>Digital nomad / remote worker</b> ชาวตะวันตก ชาวอินเดีย (โต +16–18% ในปี 2025) ผู้ถือ DTV</td>
+      <td>1) ไม่รู้ว่าวีซ่าตัวไหนเหมาะกับตัวเอง (เงื่อนไขขึ้นกับสัญชาติและประเทศที่ยื่น)<br>2) ข้อมูลกระจัดกระจาย บล็อกขัดกันเอง กฎเปลี่ยนบ่อย เช่น ฟรีวีซ่าลดจาก 60 เหลือ 30 วัน มีผล 15 ก.ย. 2569<br>3) ใช้ชีวิตหลังเข้าไทยยาก: ธนาคารไม่ให้ผู้ถือ DTV เปิดบัญชี ลืมรายงานตัว 90 วัน/TM30 และสับสนเรื่องภาษี 180 วัน</td></tr>
+  <tr><td><b>ผู้เกี่ยวข้อง:</b> ททท. / ตม.</td><td>อยากได้นักท่องเที่ยวระยะยาวที่ใช้จ่ายสูงและทำตามกฎหมาย</td></tr>
+</table>
+
+<h2>3. เทียบคู่แข่ง</h2>
+<table>
+  <tr><th>คู่แข่ง</th><th>ข้อดี</th><th>ข้อเสีย</th><th>เราต่างอย่างไร</th></tr>
+  <tr><td>Nomad List (nomads.com)</td><td>ข้อมูลเมืองทั่วโลก community ใหญ่</td><td>ข้อมูลวีซ่า SEA เป็นโน้ตที่ผู้ใช้เขียนกันเองและไม่อัปเดต ไม่เจาะไทย</td><td>เจาะไทย ทุกกฎมีแหล่งทางการและวันที่ เทียบวีซ่าตามสัญชาติ</td></tr>
+  <tr><td>iVisa</td><td>ยื่น e-visa ระยะสั้นสะดวก</td><td>ไม่ครอบคลุมวีซ่าระยะยาว และค่าบริการไม่โปร่งใส</td><td>เน้น long-stay ใช้ฟรีเป็นหลัก และมีระบบเตือนหลังเข้าไทย</td></tr>
+  <tr><td>SafetyWing "Nomad Border Pass"</td><td>มีคนดูแลให้ครบ ครอบคลุมไทย</td><td>แพงมาก 400–600 USD/เดือน</td><td>เครื่องมือ self-serve ราคาถูกกว่าราว 50 เท่า</td></tr>
+</table>
+
+<h2>4. Solution และจุดเด่น (Unique Value)</h2>
+<div class="grid">
+  <div class="box"><b>Visa Finder</b><br>ตอบ 6 ข้อ ได้อันดับวีซ่าพร้อมเหตุผลภายใน 1 นาที</div>
+  <div class="box"><b>Visa Guides</b><br>เอกสาร ขั้นตอน ข้อควรระวัง ทุกข้อมีแหล่งทางการและวันที่ตรวจ</div>
+  <div class="box"><b>Stay Tools</b><br>เตือน 90 วัน (.ics) · นับวันวีซ่าหมด · 180 วันภาษี · checklist</div>
+  <div class="box"><b>Cities</b><br>ค่าครองชีพ ค่าเช่า coworking ของ 3 เมือง</div>
+  <div class="box"><b>Local Buddies</b><br>จองคนท้องถิ่นช่วยดูห้อง เปิดบัญชี ปฐมนิเทศเมือง</div>
+  <div class="box"><b>Pro + Partners</b><br>จ่ายเงินจริงผ่าน Stripe · แดชบอร์ดรายได้</div>
+</div>
+<p><b>จุดเด่น:</b> (1) <b>ความสด:</b> AI และบล็อกมักตอบด้วยกฎเก่า เรามีลิงก์ทางการและวันที่ทุกข้อ (2) <b>ยังไม่มีใครทำเครื่องมือแบบมีโครงสร้างสำหรับ nomad + วีซ่าใน SEA</b> (3) <b>เป็นกลาง:</b> เอเจนต์กลายเป็นลูกค้า B2B แทนที่จะเป็นคู่แข่ง (4) <b>ส่งเสริมการท่องเที่ยว:</b> ช่วยให้นักท่องเที่ยวอยู่นานขึ้นและใช้จ่ายในไทยมากขึ้น</p>
+
+<h2>5. Business Model (B2C · B2B · C2C)</h2>
+<table>
+  <tr><th>กลุ่ม</th><th>แหล่งรายได้</th><th>ราคา</th></tr>
+  <tr><td><span class="tag">B2C</span></td><td>Stay Pro: ระบบเตือน + tracker + alert เมื่อกฎเปลี่ยน</td><td><b>$8/เดือน</b> หรือ <b>$59/ปี</b> (ถูกกว่า 38%)</td></tr>
+  <tr><td><span class="tag">B2C</span></td><td>Affiliate ประกัน (SafetyWing ~10% recurring, Genki 5–10%) และ eSIM (Airalo 10%)</td><td>ค่าคอมมิชชัน</td></tr>
+  <tr><td><span class="tag gold">B2B</span></td><td>Featured listing ของ coworking/coliving/คอนโด</td><td><b>$49/เดือน</b> (founding partner)</td></tr>
+  <tr><td><span class="tag gold">B2B</span></td><td>ส่ง lead ให้เอเจนต์/ทนายที่มีใบอนุญาต หรือแพ็กเกจ Verified Agent</td><td>~$45/lead หรือ $199/เดือน</td></tr>
+  <tr><td><span class="tag">C2C</span></td><td>ตลาด Local Buddies (session 60 นาที)</td><td>$25–60 แพลตฟอร์มหัก <b>20%</b></td></tr>
+</table>
+<h3>ตัวเลขสำคัญ (model ไม่ใช่การพยากรณ์)</h3>
+<ul>
+  <li>Base case เดือนที่ 12: รายได้ราว <b>$1,890/เดือน (≈ ฿62,500)</b> · สัดส่วน B2C 48% · B2B 45% · C2C 7%</li>
+  <li><b>คุ้มทุนรายเดือนตั้งแต่เดือนที่ 7</b> และทุนสะสมคืนในเดือนที่ 10 (ยังไม่รวมค่าแรงผู้ก่อตั้ง)</li>
+  <li>ช่วงผลลัพธ์: conservative ราว $550/เดือน · optimistic ราว $5,470/เดือน</li>
+  <li>ต้นทุนโครงสร้างพื้นฐาน $21–66/เดือน · Pro ARPU $7.08 · LTV ~$80 · CAC ~$35 · อัตราแปลงเป็น Pro 2–3%</li>
+  <li>รายได้จาก affiliate มีแค่ราว 21% จึงไม่ต้องพึ่งแพลตฟอร์มอื่นมาก (Booking.com เคยตัด affiliate รายเล็กกะทันหันในปี 2025)</li>
+</ul>
+
+<h2>6. ผลกระทบด้านการท่องเที่ยว (คะแนนพิเศษ)</h2>
+<p>ปี 2568 ไทยมีนักท่องเที่ยวต่างชาติ <b>32.97 ล้านคน</b> (ลดลง 7.23%) สร้างรายได้ราว <b>฿1.53 ล้านล้าน</b> คิดเป็นราว <b>฿47,000 ต่อการเดินทาง</b> (แหล่ง: กระทรวงการท่องเที่ยวและกีฬา) ส่วน nomad ใช้จ่ายราว ฿33,000–45,000 ต่อเดือน (model) ทุกเดือนที่เราช่วยให้เขาอยู่ต่ออย่างถูกกฎหมายจึงสร้างเงินเข้าเศรษฐกิจใกล้เคียงนักท่องเที่ยวใหม่ 1 คน และรายได้จาก Local Buddies ก็ตกถึงมือคนไทยในพื้นที่โดยตรง</p>
+
+<div class="pb"></div>
+<h2>7. Storyboard 3 ช่อง</h2>
+<table>
+  <tr><th>1. ก่อน</th><th>2. ใช้แอป</th><th>3. หลัง</th></tr>
+  <tr><td>ปรียา โปรแกรมเมอร์ชาวอินเดีย อยากไปทำงานที่เชียงใหม่ 6 เดือน อ่านบล็อก 5 เว็บแต่ข้อมูลขัดกันเอง</td>
+      <td>กรอกโปรไฟล์ แอปตอบว่า "DTV เหมาะที่สุด" พร้อม checklist ของสถานทูต และลิงก์ทางการที่ตรวจล่าสุด</td>
+      <td>อยู่เชียงใหม่ แอปเตือนรายงานตัว 90 วัน จองบัดดี้พาไปดูห้อง อยู่ได้ครบตามแผนอย่างถูกกฎหมาย</td></tr>
+</table>
+
+<h2>8. Tech stack และทีม agent</h2>
+<ul>
+  <li><b>Frontend:</b> Astro 7 (static ดีต่อ SEO) + vanilla TypeScript + PWA · ดีไซน์ "Jade &amp; Marigold" ฟอนต์ Anuphan / Sarabun</li>
+  <li><b>Animation:</b> GSAP ScrollTrigger + three.js · โมเดล 3D (พาสปอร์ต + เกาะไทยลอย) ปั้นใน <b>Blender ผ่าน MCP</b> ขนาด 219 KB</li>
+  <li><b>Backend:</b> Supabase (Postgres + Auth + RLS ครบ 10 ตาราง) · Stripe Checkout + webhook (test mode)</li>
+  <li><b>Deploy:</b> Vercel · <b>UX:</b> Miro (sitemap, 3 user flow, wireframe 11 จอ)</li>
+  <li><b>ทีม:</b> main agent คุมงานและตรวจงาน ส่วน subagent แบ่งตามหน้าที่: UX · UI · Content/Data · DB/Backend · 3D/Motion · Business/Pitch · Frontend A · Frontend B · Home scroll · QA/Deploy · Video</li>
+</ul>
+
+<h2>9. หน้าเว็บหลัก (scroll-down storytelling)</h2>
+<p>หน้าแรกเล่าเรื่องด้วยการเลื่อนจอ อ้างอิงสไตล์ ORYZO และ brain.fm: วัตถุ 3D ปักกลางจอ ตัวหนังสือใหญ่วิ่งผ่าน การ์ดวีซ่ากางออกรอบพาสปอร์ต มีโหมด blueprint ไทม์ไลน์ 90 วัน โปสเตอร์ 3 เมืองเลื่อนแนวนอน marquee บัดดี้ แผงราคา 3 สี (B2C/B2B/C2C) และปิดท้ายด้วยชื่อแบรนด์ตัวใหญ่ ทุกฉากมีปุ่มพาเข้าไปใช้งานจริง และรองรับคนที่ตั้งค่าลด motion</p>
+
+<h2>10. แผนงาน</h2>
+<table>
+  <tr><th>เวลา</th><th>งาน</th></tr>
+  <tr><td>23 ต.ค. เย็น</td><td>Wave 1: วิจัย, UX, ดีไซน์, ข้อมูลวีซ่า, backend, โมเดล 3D, business model ✔</td></tr>
+  <tr><td>23 ต.ค. คืน – 24 ต.ค. เช้า</td><td>Wave 2: หน้าเว็บทั้งหมด + หน้าแรก scroll-story + deploy ครั้งแรก</td></tr>
+  <tr><td>24 ต.ค. กลางวัน</td><td>Wave 3: QA, ปรับ animation, ทำคลิป 2 นาที, สไลด์นำเสนอ</td></tr>
+  <tr><td><b>24 ต.ค. 21:00</b></td><td>เส้นตายภายใน: เว็บออนไลน์ + คลิป + เอกสาร</td></tr>
+  <tr><td>25 ต.ค. 12:00–13:30</td><td>ส่งผลงานจริง (ส่งแล้วแก้ไม่ได้) · 19:00 นำเสนอ</td></tr>
+</table>
+
+<h2>11. ความเสี่ยงและวิธีรับมือ</h2>
+<ul>
+  <li><b>กฎวีซ่าเปลี่ยน:</b> ตรวจกับแหล่งทางการเป็นรอบ แสดงวันที่ตรวจ และระบุข้อมูลที่แหล่งขัดกันให้ผู้ใช้เห็นตรงๆ</li>
+  <li><b>งานที่กฎหมายควบคุม:</b> ไม่ยื่นวีซ่าเอง ส่งต่อให้ผู้มีใบอนุญาตเท่านั้น และบัดดี้ช่วยได้แค่เรื่องในชีวิตประจำวัน</li>
+  <li><b>พึ่งพาแพลตฟอร์มอื่น:</b> กระจายรายได้ 3 ขา affiliate มีไม่ถึงหนึ่งในสี่</li>
+  <li><b>AI แย่ง traffic จาก search:</b> เน้นเครื่องมือและข้อมูลที่ต้องสด ซึ่ง AI ตอบแทนไม่ได้ และสร้าง email list ของตัวเอง</li>
+</ul>
+<p class="note">ไฟล์รายละเอียด: BUILD-PLAN.md · docs/business-model.md · docs/pitch/*.md · docs/ux-flow.md · docs/home-scroll.md · research/</p>
+</body>
+</html>

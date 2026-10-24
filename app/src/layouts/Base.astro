@@ -1,0 +1,600 @@
+---
+/**
+ * Site shell. Every page wraps its content in <Base>.
+ *
+ *   <Base title="Visa Finder" description="…">
+ *     <Section …>…</Section>
+ *   </Base>
+ *
+ * Props: title (page name; " · SITE.name" is appended), description, image (OG image path or URL),
+ * noindex, canonical (path override), type (og:type).
+ * Slots: default → inside <main id="main">; `head` → extra tags in <head>.
+ * Pages own their layout inside <main>; use <Section> or .container for width.
+ */
+import '../styles/fonts.css';
+import '../styles/global.css';
+import { SITE, NAV } from '../config/site';
+import Logo from '../components/ui/Logo.astro';
+import Button from '../components/ui/Button.astro';
+import Icon from '../components/ui/Icon.astro';
+
+interface Props {
+  title: string;
+  description?: string;
+  image?: string;
+  noindex?: boolean;
+  canonical?: string;
+  type?: 'website' | 'article';
+}
+
+const {
+  title,
+  description = SITE.description,
+  image = '/og.png',
+  noindex = false,
+  canonical,
+  type = 'website',
+} = Astro.props;
+
+const fullTitle = title === SITE.name ? `${SITE.name} — ${SITE.tagline}` : `${title} · ${SITE.name}`;
+const base = Astro.site ?? new URL(SITE.url);
+const canonicalUrl = new URL(canonical ?? Astro.url.pathname, base).href;
+const imageUrl = new URL(image, base).href;
+const path = Astro.url.pathname.replace(/\/$/, '') || '/';
+const isActive = (href: string) => path === href || path.startsWith(`${href}/`);
+const year = new Date().getFullYear();
+---
+
+<!doctype html>
+<html lang="en" data-theme="light">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <title>{fullTitle}</title>
+    <meta name="description" content={description} />
+    <link rel="canonical" href={canonicalUrl} />
+    {noindex && <meta name="robots" content="noindex, nofollow" />}
+
+    <!-- Open Graph / Twitter -->
+    <meta property="og:type" content={type} />
+    <meta property="og:site_name" content={SITE.name} />
+    <meta property="og:title" content={fullTitle} />
+    <meta property="og:description" content={description} />
+    <meta property="og:url" content={canonicalUrl} />
+    <meta property="og:image" content={imageUrl} />
+    <meta property="og:locale" content="en_US" />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content={fullTitle} />
+    <meta name="twitter:description" content={description} />
+    <meta name="twitter:image" content={imageUrl} />
+
+    <!-- PWA -->
+    <link rel="manifest" href="/manifest.webmanifest" />
+    <meta name="theme-color" content="#f6f3ec" media="(prefers-color-scheme: light)" />
+    <meta name="theme-color" content="#0b1f21" media="(prefers-color-scheme: dark)" />
+    <meta name="color-scheme" content="light dark" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-title" content={SITE.name} />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <link rel="icon" href="/favicon.ico" sizes="any" />
+    <link rel="apple-touch-icon" href="/icons/icon-192.png" />
+    <meta name="generator" content={Astro.generator} />
+    <slot name="head" />
+  </head>
+  <body>
+    <a class="skip-link" href="#main">Skip to content</a>
+
+    <header class="site-header" data-site-header>
+      <div class="container site-header__bar">
+        <Logo />
+
+        <nav class="site-nav" aria-label="Main">
+          <ul class="site-nav__list">
+            {
+              NAV.map((item) => (
+                <li>
+                  <a href={item.href} class="site-nav__link" aria-current={isActive(item.href) ? 'page' : undefined}>
+                    {item.label}
+                  </a>
+                </li>
+              ))
+            }
+          </ul>
+        </nav>
+
+        <div class="site-header__actions">
+          <a href="/business" class="site-header__login" style="color: var(--color-ink-2); font-weight: var(--weight-medium)">For business</a>
+          <a href="/account" class="site-header__login" aria-current={isActive('/account') ? 'page' : undefined}>Log in</a>
+          <Button href="/finder" size="sm" iconRight="arrow-right" class="site-header__cta">Find my visa</Button>
+          <button
+            type="button"
+            class="menu-toggle"
+            aria-expanded="false"
+            aria-controls="mobile-nav"
+            data-menu-toggle
+          >
+            <span class="menu-toggle__open"><Icon name="menu" size={22} /></span>
+            <span class="menu-toggle__close"><Icon name="x" size={22} /></span>
+            <span class="sr-only" data-menu-label>Open menu</span>
+          </button>
+        </div>
+      </div>
+
+      <div id="mobile-nav" class="mobile-nav" hidden data-mobile-nav>
+        <nav aria-label="Main mobile" class="container">
+          <ul class="mobile-nav__list">
+            {
+              NAV.map((item) => (
+                <li>
+                  <a href={item.href} class="mobile-nav__link" aria-current={isActive(item.href) ? 'page' : undefined}>
+                    {item.label}
+                    <Icon name="arrow-right" size={18} />
+                  </a>
+                </li>
+              ))
+            }
+          </ul>
+          <div class="mobile-nav__actions">
+            <Button href="/finder" size="lg" block iconRight="arrow-right">Find my visa</Button>
+            <Button href="/account" size="lg" variant="secondary" block>Log in</Button>
+          </div>
+        </nav>
+      </div>
+    </header>
+
+    <main id="main" tabindex="-1">
+      <slot />
+    </main>
+
+    <footer class="site-footer">
+      <div class="container site-footer__inner">
+        <div class="site-footer__top">
+          <div class="site-footer__brand">
+            <Logo href={null} size="lg" class="site-footer__logo" />
+            <p class="site-footer__tagline">{SITE.tagline}</p>
+          </div>
+          <nav aria-label="Footer" class="site-footer__nav">
+            <div>
+              <p class="site-footer__head">Plan your stay</p>
+              <ul>
+                {NAV.map((item) => <li><a href={item.href}>{item.label}</a></li>)}
+              </ul>
+            </div>
+            <div>
+              <p class="site-footer__head">Company</p>
+              <ul>
+                <li><a href="/about">About &amp; method</a></li>
+                <li><a href="/experts">Get expert help</a></li>
+                <li><a href={`mailto:${SITE.supportEmail}`}>Contact</a></li>
+              </ul>
+            </div>
+            <div>
+              <p class="site-footer__head">Legal</p>
+              <ul>
+                <li><a href="/legal">Disclaimer</a></li>
+                <li><a href="/legal#affiliate">Affiliate disclosure</a></li>
+                <li><a href="/legal#privacy">Privacy (PDPA)</a></li>
+              </ul>
+            </div>
+          </nav>
+        </div>
+        <div class="site-footer__legal">
+          <p class="site-footer__disclaimer">
+            <Icon name="shield" size={18} />
+            <span>
+              Information only, not legal advice; verify with official sources before you apply. Some links are paid
+              links — see our <a href="/legal#affiliate">affiliate disclosure</a>.
+            </span>
+          </p>
+          <p class="site-footer__copy">© {year} {SITE.name}. Made for long stays in Thailand. · <a href="/business">For business</a></p>
+        </div>
+      </div>
+    </footer>
+
+    <a href="#top" class="to-top" data-to-top aria-label="Back to top" hidden>
+      <Icon name="chevron-down" size={22} />
+    </a>
+
+    <script>
+      const header = document.querySelector<HTMLElement>('[data-site-header]');
+      const toggle = document.querySelector<HTMLButtonElement>('[data-menu-toggle]');
+      const panel = document.querySelector<HTMLElement>('[data-mobile-nav]');
+      const label = document.querySelector<HTMLElement>('[data-menu-label]');
+
+      const setOpen = (open: boolean, returnFocus = false) => {
+        if (!toggle || !panel) return;
+        toggle.setAttribute('aria-expanded', String(open));
+        panel.hidden = !open;
+        document.documentElement.classList.toggle('nav-open', open);
+        if (label) label.textContent = open ? 'Close menu' : 'Open menu';
+        if (open) panel.querySelector<HTMLElement>('a')?.focus();
+        else if (returnFocus) toggle.focus();
+      };
+
+      toggle?.addEventListener('click', () => setOpen(toggle.getAttribute('aria-expanded') !== 'true'));
+      document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape' && toggle?.getAttribute('aria-expanded') === 'true') setOpen(false, true);
+      });
+      panel?.addEventListener('click', (e) => {
+        if ((e.target as HTMLElement).closest('a')) setOpen(false);
+      });
+      // Close if the viewport grows past the mobile breakpoint
+      window.matchMedia('(min-width: 64rem)').addEventListener('change', (e) => {
+        if (e.matches) setOpen(false);
+      });
+
+      // Separate the sticky header from content only once the page has scrolled
+      if (header) {
+        const sentinel = document.createElement('div');
+        sentinel.setAttribute('aria-hidden', 'true');
+        sentinel.style.cssText = 'position:absolute;top:0;height:1px;width:1px;';
+        document.body.prepend(sentinel);
+        new IntersectionObserver(([entry]) => {
+          header.toggleAttribute('data-scrolled', !entry.isIntersecting);
+        }).observe(sentinel);
+      }
+
+      // Back-to-top: shows after one screen of scrolling.
+      const toTop = document.querySelector<HTMLAnchorElement>('[data-to-top]');
+      if (toTop) {
+        const sync = () => (toTop.hidden = window.scrollY < window.innerHeight);
+        window.addEventListener('scroll', sync, { passive: true });
+        sync();
+        toTop.addEventListener('click', (e) => {
+          e.preventDefault();
+          const still = matchMedia('(prefers-reduced-motion: reduce)').matches;
+          window.scrollTo({ top: 0, behavior: still ? 'auto' : 'smooth' });
+          document.querySelector<HTMLElement>('main, h1')?.focus({ preventScroll: true });
+        });
+      }
+    </script>
+  </body>
+</html>
+
+<style>
+  /* ---------- Header ---------- */
+  .site-header {
+    position: sticky;
+    top: 0;
+    z-index: var(--z-header);
+    background: var(--color-bg);
+    padding-top: env(safe-area-inset-top);
+    transition: box-shadow var(--duration-base) var(--ease-out);
+  }
+  /* Glass lives on a pseudo-element: backdrop-filter on the header itself would become the
+     containing block of the fixed .mobile-nav and clip it to the bar. Static blur, never animated. */
+  @supports (backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px)) {
+    .site-header {
+      background: transparent;
+    }
+    .site-header::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      z-index: -1;
+      background: var(--header-glass);
+      -webkit-backdrop-filter: blur(16px) saturate(1.4);
+      backdrop-filter: blur(16px) saturate(1.4);
+    }
+    :global(html.nav-open) .site-header::before {
+      background: var(--color-bg);
+    }
+  }
+  .site-header[data-scrolled] {
+    box-shadow:
+      inset 0 -1px 0 var(--highlight),
+      0 1px 0 var(--color-border),
+      0 10px 28px -18px rgb(var(--shadow-rgb) / calc(0.3 * var(--shadow-k)));
+  }
+  .site-nav__link:active,
+  .site-header__login:active,
+  .menu-toggle:active {
+    transform: scale(0.96);
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .site-nav__link:active,
+    .site-header__login:active,
+    .menu-toggle:active {
+      transform: none;
+    }
+  }
+  .site-header__bar {
+    display: flex;
+    align-items: center;
+    gap: var(--space-6);
+    min-height: var(--header-h);
+  }
+  .site-nav {
+    display: none;
+    margin-inline: auto;
+  }
+  .site-nav__list {
+    display: flex;
+    gap: var(--space-1);
+    list-style: none;
+    padding: 0;
+  }
+  .site-nav__link {
+    display: inline-flex;
+    align-items: center;
+    min-height: var(--tap-min);
+    padding: 0 var(--space-3);
+    border-radius: var(--radius-pill);
+    color: var(--color-ink-2);
+    font-size: var(--text-sm);
+    font-weight: var(--weight-medium);
+    text-decoration: none;
+    transition:
+      color var(--duration-fast) var(--ease-out),
+      background-color var(--duration-fast) var(--ease-out),
+      transform var(--duration-fast) var(--ease-out);
+  }
+  .site-nav__link:hover {
+    color: var(--color-ink);
+    background: var(--color-surface-2);
+  }
+  .site-nav__link[aria-current='page'] {
+    color: var(--color-brand);
+    background: var(--color-brand-tint);
+    font-weight: var(--weight-semibold);
+  }
+  .site-header__actions {
+    display: flex;
+    align-items: center;
+    gap: var(--space-3);
+    margin-left: auto;
+  }
+  .site-header__login {
+    display: none;
+    align-items: center;
+    min-height: var(--tap-min);
+    padding: 0 var(--space-3);
+    color: var(--color-ink);
+    font-size: var(--text-sm);
+    font-weight: var(--weight-semibold);
+    text-decoration: none;
+    border-radius: var(--radius-pill);
+  }
+  .site-header__login:hover {
+    color: var(--color-brand);
+    background: var(--color-surface-2);
+  }
+  .site-header :global(.site-header__cta) {
+    display: none;
+  }
+  @media (min-width: 23rem) {
+    .site-header :global(.site-header__cta) {
+      display: inline-flex;
+    }
+  }
+
+  .menu-toggle {
+    display: inline-grid;
+    place-items: center;
+    width: var(--tap-min);
+    height: var(--tap-min);
+    border: 0;
+    border-radius: var(--radius-pill);
+    background: var(--color-surface-2);
+    color: var(--color-ink);
+  }
+  .menu-toggle:hover {
+    background: var(--color-surface-3);
+  }
+  .menu-toggle__close,
+  .menu-toggle[aria-expanded='true'] .menu-toggle__open {
+    display: none;
+  }
+  .menu-toggle[aria-expanded='true'] .menu-toggle__close {
+    display: contents;
+  }
+  .menu-toggle__open {
+    display: contents;
+  }
+
+  .mobile-nav {
+    position: fixed;
+    inset: calc(var(--header-h) + env(safe-area-inset-top)) 0 0 0;
+    z-index: var(--z-overlay);
+    background: var(--color-bg);
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    padding-bottom: calc(var(--space-8) + env(safe-area-inset-bottom));
+  }
+  .mobile-nav:not([hidden]) {
+    animation: nav-in var(--duration-slow) var(--ease-out);
+  }
+  @keyframes nav-in {
+    from {
+      opacity: 0;
+      transform: translateY(-8px);
+    }
+  }
+  .mobile-nav__list {
+    list-style: none;
+    padding: var(--space-4) 0;
+  }
+  .mobile-nav__link {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    min-height: 56px;
+    color: var(--color-ink);
+    font-family: var(--font-display);
+    font-size: var(--text-2xl);
+    font-weight: var(--weight-semibold);
+    letter-spacing: -0.01em;
+    text-decoration: none;
+  }
+  .mobile-nav__list li + li {
+    box-shadow: 0 -1px 0 var(--color-border);
+  }
+  .mobile-nav__link[aria-current='page'] {
+    color: var(--color-brand);
+  }
+  .mobile-nav__actions {
+    display: grid;
+    gap: var(--space-3);
+    padding-top: var(--space-4);
+  }
+  :global(html.nav-open) {
+    overflow: hidden;
+  }
+
+  @media (min-width: 64rem) {
+    .site-nav {
+      display: block;
+    }
+    .site-header__login {
+      display: inline-flex;
+    }
+    .menu-toggle,
+    .mobile-nav {
+      display: none !important;
+    }
+  }
+
+  main:focus {
+    outline: none;
+  }
+
+  /* ---------- Footer ---------- */
+  .site-footer {
+    background: var(--color-inverse-bg);
+    color: var(--color-inverse-ink);
+    padding-top: clamp(var(--space-12), 7vw, var(--space-24));
+    padding-bottom: calc(var(--space-8) + env(safe-area-inset-bottom));
+  }
+  .site-footer a {
+    color: var(--color-inverse-ink);
+    text-decoration: none;
+  }
+  .site-footer a:hover {
+    color: var(--color-accent);
+    text-decoration: underline;
+  }
+  .site-footer__inner {
+    display: flex;
+    flex-direction: column;
+    gap: clamp(var(--space-10), 6vw, var(--space-16));
+  }
+  .site-footer__top {
+    display: grid;
+    gap: var(--space-12);
+  }
+  @media (min-width: 60rem) {
+    .site-footer__top {
+      grid-template-columns: 1.1fr 1fr;
+      align-items: start;
+    }
+  }
+  .site-footer__brand {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-4);
+  }
+  .site-footer :global(.site-footer__logo) {
+    color: var(--color-inverse-ink);
+  }
+  .site-footer__tagline {
+    font-size: var(--text-lg);
+    color: var(--color-inverse-ink-2);
+    max-width: 32ch;
+  }
+  .site-footer__nav {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(9.5rem, 1fr));
+    gap: var(--space-8);
+  }
+  .site-footer__head {
+    margin-bottom: var(--space-3);
+    font-size: var(--text-sm);
+    font-weight: var(--weight-semibold);
+    color: var(--color-inverse-ink-2);
+  }
+  .site-footer__nav ul {
+    list-style: none;
+    padding: 0;
+    display: grid;
+    gap: var(--space-1);
+  }
+  .site-footer__nav a {
+    display: inline-flex;
+    align-items: center;
+    min-height: 36px;
+    font-size: var(--text-sm);
+  }
+  .site-footer__legal {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-4);
+    padding-top: var(--space-6);
+    box-shadow: 0 -1px 0 rgb(255 255 255 / 0.12);
+    font-size: var(--text-sm);
+    color: var(--color-inverse-ink-2);
+  }
+  @media (min-width: 60rem) {
+    .site-footer__legal {
+      flex-direction: row;
+      justify-content: space-between;
+      align-items: flex-start;
+      gap: var(--space-12);
+    }
+  }
+  .site-footer__disclaimer {
+    display: flex;
+    gap: var(--space-3);
+    max-width: 70ch;
+    color: var(--color-inverse-ink);
+  }
+  .site-footer__disclaimer :global(svg) {
+    color: var(--color-accent);
+    margin-top: 0.15em;
+  }
+  .site-footer__disclaimer a {
+    text-decoration: underline;
+  }
+  .site-footer__copy {
+    flex-shrink: 0;
+  }
+  .to-top {
+    position: fixed;
+    right: max(var(--space-4), env(safe-area-inset-right));
+    bottom: calc(max(var(--space-4), env(safe-area-inset-bottom)) + var(--to-top-offset, 0px));
+    z-index: 40;
+    display: grid;
+    place-items: center;
+    width: 48px;
+    height: 48px;
+    border-radius: 999px;
+    color: var(--color-ink);
+    background: var(--color-surface);
+    box-shadow: var(--elev-2);
+    transition: transform 120ms ease, box-shadow 120ms ease;
+  }
+  .to-top :global(svg) {
+    transform: rotate(180deg);
+  }
+  .to-top:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--elev-3);
+  }
+  .to-top:active {
+    transform: scale(0.94);
+  }
+  .to-top:focus-visible {
+    outline: 2px solid var(--color-focus, var(--color-brand));
+    outline-offset: 3px;
+  }
+  .to-top[hidden] {
+    display: none;
+  }
+  :global(body:has(.sticky-cta)) .to-top {
+    --to-top-offset: 5rem;
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .to-top {
+      transition: none;
+    }
+  }
+</style>

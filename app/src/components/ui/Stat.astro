@@ -1,0 +1,71 @@
+---
+/**
+ * A single figure with its label. Use real, sourced numbers only (pass `source`).
+ * Example: <Stat value="180" unit="days" label="Max stay per entry on a DTV" />
+ */
+interface Props {
+  value: string | number;
+  label: string;
+  unit?: string;     // small suffix after the value: "days", "THB", "/mo"
+  prefix?: string;   // small prefix: "$", "฿"
+  note?: string;     // secondary line, e.g. source or caveat
+  size?: 'md' | 'lg';
+  class?: string;
+  [key: string]: unknown;
+}
+const { value, label, unit, prefix, note, size = 'md', class: className, ...rest } = Astro.props;
+---
+
+<div class:list={['stat', `stat--${size}`, className]} {...rest}>
+  <p class="stat__value">
+    {prefix && <span class="stat__affix">{prefix}</span>}<span class="stat__num">{value}</span>{unit && <span class="stat__affix stat__unit">{unit}</span>}
+  </p>
+  <p class="stat__label">{label}</p>
+  {note && <p class="stat__note">{note}</p>}
+</div>
+
+<style>
+  .stat {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-1);
+  }
+  .stat__value {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: 0 0.15em;
+    font-family: var(--font-display);
+    font-weight: var(--weight-bold);
+    font-size: var(--text-3xl);
+    line-height: 1;
+    letter-spacing: -0.03em;
+    font-variant-numeric: tabular-nums;
+    color: var(--color-ink);
+  }
+  .stat--lg .stat__value {
+    font-size: var(--text-4xl);
+  }
+  .stat__affix {
+    font-size: 0.5em;
+    font-weight: var(--weight-semibold);
+    letter-spacing: 0;
+    color: var(--color-ink-2);
+  }
+  .stat__unit {
+    margin-left: 0.2em;
+  }
+  .stat__label {
+    font-size: var(--text-sm);
+    font-weight: var(--weight-medium);
+    color: var(--color-ink);
+    max-width: 24ch;
+  }
+  .stat__note {
+    font-size: var(--text-xs);
+    color: var(--color-ink-2);
+  }
+  :global(.section--brand) .stat :is(.stat__value, .stat__affix, .stat__label, .stat__note) {
+    color: inherit;
+  }
+</style>

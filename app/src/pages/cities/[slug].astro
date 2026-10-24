@@ -1,0 +1,556 @@
+---
+import type { GetStaticPaths } from 'astro';
+import type { City } from '../../types/contracts';
+import Base from '../../layouts/Base.astro';
+import Section from '../../components/ui/Section.astro';
+import Button from '../../components/ui/Button.astro';
+import Badge from '../../components/ui/Badge.astro';
+import Callout from '../../components/ui/Callout.astro';
+import SourceTag from '../../components/ui/SourceTag.astro';
+import EmptyState from '../../components/ui/EmptyState.astro';
+import Avatar from '../../components/ui/Avatar.astro';
+import Rating from '../../components/ui/Rating.astro';
+import Icon from '../../components/ui/Icon.astro';
+import PageHeader from '../../components/core/PageHeader.astro';
+import Motion from '../../components/core/Motion.astro';
+import { cities, cityPhotos } from '../../data/cities';
+import { listings } from '../../data/listings';
+import { buddies } from '../../data/buddies';
+import { SITE } from '../../config/site';
+import { THAI_CITY_NAMES, fmtDateISO, isStale, n } from '../../components/core/format';
+
+export const getStaticPaths = (() => cities.map((c) => ({ params: { slug: c.slug }, props: { city: c } }))) satisfies GetStaticPaths;
+
+interface Props {
+  city: City;
+}
+const { city } = Astro.props;
+
+// Coworking: partner listings (featured first) merged with the curated list, without duplicates.
+type Space = { name: string; area?: string; price?: string; url?: string; featured: boolean; affiliate: boolean };
+const norm = (s: string) => s.toLowerCase().replace(/[^a-z0-9]/g, '');
+const fromListings: Space[] = listings
+  .filter((l) => l.city === city.slug && l.kind === 'coworking')
+  .map((l) => ({ name: l.name, price: l.priceFrom, url: l.url, featured: l.featured, affiliate: Boolean(l.affiliate) }));
+const spaces: Space[] = [...fromListings];
+for (const c of city.coworking) {
+  const match = spaces.find((s) => norm(s.name) === norm(c.name) || norm(s.name).startsWith(norm(c.name)) || norm(c.name).startsWith(norm(s.name)));
+  const price = c.dayPassThb ? `${n(c.dayPassThb)} THB / day` : undefined;
+  if (match) {
+    match.area ??= c.area;
+    match.price ??= price;
+  } else {
+    spaces.push({ name: c.name, area: c.area, price, url: c.url, featured: false, affiliate: false });
+  }
+}
+spaces.sort((a, b) => Number(b.featured) - Number(a.featured));
+
+const services = listings.filter((l) => (l.city === city.slug && l.kind === 'coliving') || (!l.city && (l.kind === 'insurance' || l.kind === 'esim')));
+const kindLabel: Record<string, string> = { coliving: 'Coliving', insurance: 'Health insurance', esim: 'eSIM' };
+const cityBuddies = buddies.filter((b) => b.city === city.slug).slice(0, 3);
+const stale = isStale(city.verifiedAt);
+const thai = THAI_CITY_NAMES[city.slug];
+const photo = cityPhotos[city.slug];
+
+const jsonLd = JSON.stringify({
+  '@context': 'https://schema.org',
+  '@type': 'Article',
+  headline: `Living in ${city.name} as a long-stayer: costs, rent, internet and neighbourhoods`,
+  description: city.summary,
+  dateModified: city.verifiedAt,
+  about: { '@type': 'City', name: city.name, containedInPlace: { '@type': 'Country', name: 'Thailand' } },
+  publisher: { '@type': 'Organization', name: SITE.name, url: SITE.url },
+});
+---
+
+<Base
+  title={`Living in ${city.name}: costs, rent and coworking`}
+  description={`${city.name} for long stays: about $${n(city.costOfLivingUsdMonth.budget)}–${n(city.costOfLivingUsdMonth.comfortable)} a month, rent, internet speed, best months, neighbourhoods and coworking.`}
+  type="article"
+>
+  <script slot="head" type="application/ld+json" set:html={jsonLd} />
+
+  <PageHeader title={city.name} lead={city.summary} crumbs={[{ label: 'Cities', href: '/cities' }, { label: city.name }]}>
+    <div class="hero-actions">
+      <Button href={`/buddies?city=${city.slug}`} iconRight="arrow-right">Book a Local Buddy in {city.name}</Button>
+    </div>
+    <figure slot="aside" class="cover">
+      <img src={photo.src} alt={photo.alt} width={photo.width} height={photo.height} loading="eager" fetchpriority="high" decoding="async" />
+      <p class="thai" lang="th" aria-hidden="true">{thai}</p>
+      <figcaption class="cover__credit">
+        Photo: <a href={photo.sourceUrl} target="_blank" rel="noopener noreferrer">{photo.author}<span class="sr-only"> on Wikimedia Commons (opens in a new tab)</span></a>, <a href={photo.licenceUrl} target="_blank" rel="noopener noreferrer license">{photo.licence}</a>
+      </figcaption>
+    </figure>
+  </PageHeader>
+
+  <section class="stats section--tint" aria-labelledby="stats-title">
+    <div class="container">
+      <h2 id="stats-title" class="sr-only">{city.name} in numbers</h2>
+      <dl class="stats__grid" data-reveal-stagger>
+        <div class="stat">
+          <dt>Cost per month, one person</dt>
+          <dd class="stat__num tabular">
+            <span data-count-to={city.costOfLivingUsdMonth.budget} data-count-prefix="$">${n(city.costOfLivingUsdMonth.budget)}</span>–<span data-count-to={city.costOfLivingUsdMonth.comfortable} data-count-prefix="$">${n(city.costOfLivingUsdMonth.comfortable)}</span>
+          </dd>
+          <dd class="stat__note">Budget to comfortable, USD</dd>
+        </div>
+        <div class="stat">
+          <dt>Rent: studio / 1-bed</dt>
+          <dd class="stat__num tabular">
+            <span data-count-to={city.rentUsdMonth.studio} data-count-prefix="$">${n(city.rentUsdMonth.studio)}</span> / <span data-count-to={city.rentUsdMonth.oneBed} data-count-prefix="$">${n(city.rentUsdMonth.oneBed)}</span>
+          </dd>
+          <dd class="stat__note">USD a month, typical condo</dd>
+        </div>
+        <div class="stat">
+          <dt>Home internet</dt>
+          <dd class="stat__num tabular"><span data-count-to={city.internetMbps}>{city.internetMbps}</span><span class="stat__unit"> Mbps</span></dd>
+          <dd class="stat__note">Typical condo fibre plan</dd>
+        </div>
+        <div class="stat">
+          <dt>Best months</dt>
+          <dd class="stat__months">{city.bestMonths.map((m) => m.slice(0, 3)).join(' · ')}</dd>
+          <dd class="stat__note">Cooler and drier</dd>
+        </div>
+      </dl>
+      <div class="stats__src">
+        {city.sources.slice(0, 2).map((s) => <SourceTag source={s} verifiedAt={city.verifiedAt} />)}
+        {stale && <Badge variant="warning" icon="alert">May be out of date</Badge>}
+      </div>
+    </div>
+  </section>
+
+  <Section id="watch-out" aria-labelledby="wo-title">
+    <div class="wo">
+      <div>
+        <h2 id="wo-title" class="wo__title">Watch out</h2>
+        <p class="wo__lead">What long-stayers wish they'd known before signing a lease in {city.name}.</p>
+      </div>
+      <Callout tone="warning" title={`Before you commit to ${city.name}`} data-reveal>
+        <ul class="watch">
+          {city.watchOut.map((w) => <li>{w}</li>)}
+        </ul>
+      </Callout>
+    </div>
+  </Section>
+
+  <Section id="neighbourhoods" title="Neighbourhoods" lead="Where long-stayers tend to live, and what each area feels like.">
+    <dl class="hoods" data-reveal-stagger>
+      {
+        city.neighborhoods.map((h) => (
+          <div class="hood">
+            <dt>{h.name}</dt>
+            <dd>{h.vibe}</dd>
+          </div>
+        ))
+      }
+    </dl>
+  </Section>
+
+  <Section id="coworking" tone="tint" title="Coworking" lead="Featured spaces are partners who pay for top placement. Day-pass prices change often; check with the space.">
+    {
+      spaces.length ? (
+        <ul class="spaces" data-reveal-stagger>
+          {spaces.map((s) => (
+            <li class:list={['space', s.featured && 'space--featured']}>
+              <div class="space__main">
+                <h3 class="space__name">
+                  {s.url ? (
+                    <a href={s.url} target="_blank" rel={s.affiliate ? 'sponsored noopener' : 'noopener noreferrer'}>
+                      {s.name}
+                      <Icon name="arrow-up-right" size={16} />
+                      <span class="sr-only"> (opens in a new tab)</span>
+                    </a>
+                  ) : (
+                    s.name
+                  )}
+                </h3>
+                {s.area && <p class="space__area"><Icon name="map-pin" size={16} /> {s.area}</p>}
+              </div>
+              <div class="space__meta">
+                {s.featured && <Badge variant="accent" icon="star">Featured</Badge>}
+                {s.affiliate && <a href="/legal#affiliate" class="paid"><Badge variant="paid" /></a>}
+                <p class="space__price tabular">{s.price ?? 'Ask for prices'}</p>
+              </div>
+            </li>
+          ))}
+        </ul>
+      ) : (
+        <EmptyState title="No coworking listed here yet" description={`We haven't checked any coworking spaces in ${city.name} yet.`} icon="briefcase" actionLabel="Compare other cities" actionHref="/cities" />
+      )
+    }
+  </Section>
+
+  <Section id="services" title="Coliving and services" width="narrow">
+    {
+      services.length ? (
+        <ul class="services">
+          {services.map((l) => (
+            <li>
+              <span class="services__kind">{kindLabel[l.kind] ?? l.kind}</span>
+              <a href={l.url} target="_blank" rel={l.affiliate ? 'sponsored noopener' : 'noopener noreferrer'}>
+                {l.name}<span class="sr-only"> (opens in a new tab)</span>
+              </a>
+              {l.featured && <Badge variant="accent" icon="star">Featured</Badge>}
+              {l.affiliate && <a href="/legal#affiliate" class="paid"><Badge variant="paid" /></a>}
+            </li>
+          ))}
+        </ul>
+      ) : (
+        <EmptyState title="No coliving or services listed yet" icon="briefcase" actionLabel="Compare other cities" actionHref="/cities" />
+      )
+    }
+  </Section>
+
+  <Section id="buddies" tone="tint" title={`Local Buddies in ${city.name}`} lead="Practical help from people who live here: viewings, a bank visit, a SIM, finding your way around.">
+    <Button slot="actions" href={`/buddies?city=${city.slug}`} variant="secondary" iconRight="arrow-right">See all</Button>
+    {
+      cityBuddies.length ? (
+        <ul class="buddies" data-reveal-stagger>
+          {cityBuddies.map((b) => (
+            <li class="buddy">
+              <Avatar name={b.displayName.replace(/\s*\(demo\)/i, '')} src={b.avatarUrl ?? `/images/buddies/${b.id}.svg`} size="lg" />
+              <div class="buddy__text">
+                <h3 class="buddy__name">
+                  <a href={`/buddies/${b.id}`}>{b.displayName}</a>
+                </h3>
+                <Rating value={b.rating} count={b.sessions} size={14} />
+                <p class="buddy__services">{b.services.slice(0, 3).join(' · ')}</p>
+                <p class="buddy__price tabular">${b.priceUsd} / 60 min <Badge variant="demo" /></p>
+              </div>
+            </li>
+          ))}
+        </ul>
+      ) : (
+        <EmptyState title={`No buddies in ${city.name} yet`} description="Live here? Help newcomers settle in and get paid for it." icon="users" actionLabel="Become a buddy" actionHref="/buddies/join" />
+      )
+    }
+  </Section>
+
+  <Section id="sources" spacing="tight" title="Sources" width="narrow">
+    <ul class="srcs">
+      {city.sources.map((s) => <li><SourceTag source={s} verifiedAt={city.verifiedAt} /></li>)}
+    </ul>
+    <p class="small muted">Costs are rounded ranges for one person in USD, hand-checked {fmtDateISO(city.verifiedAt)}. Your own costs will differ.</p>
+  </Section>
+
+  <Section spacing="tight">
+    <p class="next">
+      <a href="/finder">Next: find the visa that lets you stay <Icon name="arrow-right" size={16} /></a>
+    </p>
+  </Section>
+</Base>
+
+<Motion />
+
+<style>
+  .hero-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-3);
+  }
+  .cover {
+    position: relative;
+    isolation: isolate;
+    margin: 0;
+    aspect-ratio: 4 / 3;
+    border-radius: var(--radius-xl);
+    overflow: hidden;
+    background: #0d1f21;
+    display: grid;
+    align-content: end;
+    padding: var(--space-5) var(--space-6);
+    color: #fff;
+  }
+  .cover img {
+    position: absolute;
+    inset: 0;
+    z-index: -2;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+  /* Scrim darkens the lower half so the Thai name and credit stay AA on the photo. */
+  .cover::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    z-index: -1;
+    background: linear-gradient(180deg, rgb(6 16 18 / 0) 30%, rgb(6 16 18 / 0.55) 60%, rgb(6 16 18 / 0.88));
+  }
+  .thai {
+    font-family: var(--font-display);
+    font-size: clamp(3rem, 1.5rem + 5vw, 6rem);
+    font-weight: var(--weight-bold);
+    line-height: 1.15;
+    letter-spacing: -0.02em;
+    white-space: nowrap;
+    text-shadow: 0 2px 12px rgb(0 0 0 / 0.35);
+  }
+  .cover__credit {
+    font-size: var(--text-xs);
+    color: rgb(255 255 255 / 0.92);
+  }
+  .cover__credit a {
+    color: inherit;
+  }
+
+  .stats {
+    padding-block: var(--space-12);
+  }
+  .stats__grid {
+    display: grid;
+    gap: var(--space-8) var(--space-6);
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    margin: 0;
+  }
+  @media (min-width: 60rem) {
+    .stats__grid {
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+    }
+  }
+  .stat dt {
+    font-size: var(--text-sm);
+    font-weight: var(--weight-semibold);
+  }
+  .stat dd {
+    margin: 0;
+  }
+  .stat__num {
+    margin-top: var(--space-2) !important;
+    font-family: var(--font-display);
+    font-size: var(--text-3xl);
+    font-weight: var(--weight-bold);
+    line-height: 1.05;
+    letter-spacing: -0.02em;
+  }
+  .stat__unit {
+    font-size: 0.5em;
+    color: var(--color-ink-2);
+  }
+  .stat__months {
+    margin-top: var(--space-2) !important;
+    font-family: var(--font-display);
+    font-size: var(--text-xl);
+    font-weight: var(--weight-semibold);
+    line-height: var(--leading-snug);
+  }
+  .stat__note {
+    margin-top: var(--space-1) !important;
+    font-size: var(--text-sm);
+    color: var(--color-ink-2);
+  }
+  .stats__src {
+    display: grid;
+    gap: var(--space-2);
+    justify-items: start;
+    margin-top: var(--space-8);
+  }
+
+  .wo {
+    display: grid;
+    gap: var(--space-6);
+  }
+  @media (min-width: 60rem) {
+    .wo {
+      grid-template-columns: minmax(0, 1fr) minmax(0, 1.6fr);
+      gap: var(--space-16);
+      align-items: start;
+    }
+  }
+  .wo__title {
+    font-size: var(--text-3xl);
+  }
+  .wo__lead {
+    margin-top: var(--space-3);
+    color: var(--color-ink-2);
+    font-size: var(--text-lg);
+    max-width: 36ch;
+  }
+  .watch {
+    margin: var(--space-2) 0 0;
+    padding-left: 1.2em;
+    display: grid;
+    gap: var(--space-3);
+  }
+
+  .hoods {
+    display: grid;
+    gap: var(--space-6) var(--space-12);
+    margin: 0;
+  }
+  @media (min-width: 48rem) {
+    .hoods {
+      grid-template-columns: 1fr 1fr;
+    }
+  }
+  .hood {
+    padding-left: var(--space-5);
+    box-shadow: inset 3px 0 0 var(--color-brand-tint);
+  }
+  .hood dt {
+    font-family: var(--font-display);
+    font-size: var(--text-xl);
+    font-weight: var(--weight-semibold);
+  }
+  .hood dd {
+    margin: var(--space-1) 0 0;
+    color: var(--color-ink-2);
+    max-width: 48ch;
+  }
+
+  .spaces {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    display: grid;
+    gap: var(--space-2);
+  }
+  .space {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    align-items: center;
+    gap: var(--space-3) var(--space-6);
+    padding: var(--space-5) var(--space-6);
+    border-radius: var(--radius-lg);
+    background: var(--color-surface);
+  }
+  .space--featured {
+    background: var(--color-accent-tint);
+  }
+  .space__name {
+    font-size: var(--text-lg);
+  }
+  .space__name a {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-1);
+    min-height: var(--tap-min);
+    color: var(--color-ink);
+    text-decoration: none;
+  }
+  .space__name a:hover {
+    color: var(--color-brand);
+    text-decoration: underline;
+  }
+  .space__area {
+    display: flex;
+    gap: var(--space-1);
+    align-items: center;
+    font-size: var(--text-sm);
+    color: var(--color-ink-2);
+  }
+  .space__meta {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--space-3);
+  }
+  .space__price {
+    font-weight: var(--weight-semibold);
+    font-size: var(--text-sm);
+  }
+  .paid {
+    text-decoration: none;
+  }
+
+  .services {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    display: grid;
+    gap: var(--space-2);
+  }
+  .services li {
+    display: grid;
+    grid-template-columns: 8.5rem 1fr;
+    align-items: center;
+    gap: var(--space-2) var(--space-4);
+    min-height: var(--tap-min);
+  }
+  .services li > :global(:nth-child(n + 3)) {
+    grid-column: 2;
+    justify-self: start;
+  }
+  .services__kind {
+    font-size: var(--text-sm);
+    color: var(--color-ink-2);
+  }
+
+  .buddies {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    display: grid;
+    gap: var(--space-4);
+  }
+  @media (min-width: 48rem) {
+    .buddies {
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+  }
+  .buddy {
+    position: relative;
+    display: flex;
+    gap: var(--space-4);
+    padding: var(--space-5);
+    border-radius: var(--radius-lg);
+    background: var(--color-surface);
+    transition:
+      transform var(--duration-base) var(--ease-out),
+      box-shadow var(--duration-base) var(--ease-out);
+  }
+  .buddy:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-raise);
+  }
+  .buddy__text {
+    display: grid;
+    gap: var(--space-1);
+    align-content: start;
+  }
+  .buddy__name {
+    font-size: var(--text-lg);
+  }
+  .buddy__name a {
+    color: var(--color-ink);
+    text-decoration: none;
+  }
+  .buddy__name a::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+  }
+  .buddy__services {
+    font-size: var(--text-sm);
+    color: var(--color-ink-2);
+  }
+  .buddy__price {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-2);
+    align-items: center;
+    font-weight: var(--weight-semibold);
+    font-size: var(--text-sm);
+  }
+
+  .srcs {
+    list-style: none;
+    padding: 0;
+    margin: 0 0 var(--space-4);
+    display: grid;
+    gap: var(--space-3);
+  }
+
+  .next {
+    margin-top: var(--space-8);
+  }
+  .next a {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-2);
+    min-height: var(--tap-min);
+    font-weight: var(--weight-semibold);
+  }
+</style>

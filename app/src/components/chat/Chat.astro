@@ -1,0 +1,94 @@
+---
+/**
+ * Conversation list + thread view for lead chat. Same markup on /messages (side="customer")
+ * and /partner/messages (side="partner"). All content is rendered by chat.ts with textContent.
+ * The page starts it: `initChat(document.querySelector('[data-chat]')!, { demo })`.
+ */
+import Icon from '../ui/Icon.astro';
+import Button from '../ui/Button.astro';
+import { visas } from '../../data/visas';
+import { MESSAGE_MAX } from '../../lib/ops';
+import './chat.css';
+
+interface Props {
+  side: 'customer' | 'partner';
+  emptyHref: string;
+  emptyLabel: string;
+  emptyText: string;
+}
+const { side, emptyHref, emptyLabel, emptyText } = Astro.props;
+const visaNames = JSON.stringify(Object.fromEntries(visas.map((v) => [v.slug, v.shortName])));
+---
+
+<div class="chat" data-chat data-side={side} data-open="false" data-visas={visaNames}>
+  <aside class="chat__list" aria-labelledby="chat-list-title">
+    <h2 id="chat-list-title" class="chat__list-title">Conversations</h2>
+    <div class="chat__list-skel" data-chat-list-loading aria-busy="true" aria-label="Loading conversations">
+      <span class="chat-skel" style="height: 4.25rem"></span>
+      <span class="chat-skel" style="height: 4.25rem"></span>
+      <span class="chat-skel" style="height: 4.25rem; width: 80%"></span>
+    </div>
+    <ul class="chat__threads" data-chat-threads hidden></ul>
+    <div class="chat__list-empty" data-chat-list-empty hidden>
+      <span class="chat__empty-icon"><Icon name="users" size={24} /></span>
+      <p class="chat__empty-title">No conversations yet</p>
+      <p class="chat__muted">{emptyText}</p>
+      <Button href={emptyHref} size="sm" variant="secondary" iconRight="arrow-right">{emptyLabel}</Button>
+    </div>
+    <p class="chat__list-error" data-chat-list-error role="alert" hidden></p>
+  </aside>
+
+  <section class="chat__pane" aria-labelledby="chat-title">
+    <div class="chat__placeholder" data-chat-placeholder>
+      <span class="chat__empty-icon"><Icon name="users" size={24} /></span>
+      <p data-chat-placeholder-text>Choose a conversation to read it.</p>
+    </div>
+
+    <div class="chat__thread" data-chat-thread hidden>
+      <header class="chat__head">
+        <a href="?" class="chat__back" data-chat-back aria-label="Back to all conversations">
+          <Icon name="arrow-right" size={20} class="chat__back-icon" />
+        </a>
+        <div class="chat__head-text">
+          <h2 id="chat-title" class="chat__title" data-chat-title></h2>
+          <p class="chat__sub" data-chat-sub></p>
+        </div>
+      </header>
+      <p class="chat__safety">
+        <Icon name="lock" size={16} />
+        <span>Never share passport scans or payment details in chat. Pay only through Yoo Yaao.</span>
+      </p>
+
+      <div class="chat__log-wrap">
+        <div
+          class="chat__log"
+          data-chat-log
+          role="log"
+          aria-live="polite"
+          aria-relevant="additions"
+          aria-labelledby="chat-title"
+          tabindex="0"
+        >
+        </div>
+        <button type="button" class="chat__pill" data-chat-pill hidden>
+          New messages <Icon name="chevron-down" size={16} />
+        </button>
+      </div>
+
+      <form class="chat__composer" data-chat-form novalidate>
+        <label for="chat-input" class="sr-only">Message</label>
+        <textarea
+          id="chat-input"
+          class="chat__input"
+          rows="1"
+          maxlength={MESSAGE_MAX}
+          placeholder="Write a message…"
+          aria-describedby="chat-hint"
+          data-chat-input
+        ></textarea>
+        <Button type="submit" data-chat-send disabled>Send</Button>
+      </form>
+      <p id="chat-hint" class="chat__hint">Enter to send, Shift+Enter for a new line.</p>
+    </div>
+  </section>
+</div>

@@ -1,0 +1,171 @@
+---
+import Base from '../../layouts/Base.astro';
+import Section from '../../components/ui/Section.astro';
+import Icon, { type IconName } from '../../components/ui/Icon.astro';
+import PageHeader from '../../components/core/PageHeader.astro';
+import ProBand from '../../components/core/ProBand.astro';
+import Motion from '../../components/core/Motion.astro';
+
+const tools: { href: string; title: string; body: string; detail: string; icon: IconName }[] = [
+  {
+    href: '/tools/90-day',
+    title: '90-day report calculator',
+    body: 'Enter your arrival or last report date. See your next due date, the filing window and the next three reports.',
+    detail: 'Exports to your calendar (.ics)',
+    icon: 'calendar',
+  },
+  {
+    href: '/tools/stay-counter',
+    title: 'Stay & tax counter',
+    body: 'Days left on your permission to stay, and how close you are to 180 days in Thailand this year — the tax-residency line.',
+    detail: 'Warns you from day 150',
+    icon: 'clock',
+  },
+  {
+    href: '/tools/checklist',
+    title: 'Document checklist',
+    body: 'Every document your visa asks for, as a checklist you tick off. Add a note to each one.',
+    detail: 'Saved on this device',
+    icon: 'check',
+  },
+];
+---
+
+<Base
+  title="Stay Tools"
+  description="Free tools for long stays in Thailand: a 90-day report calculator with calendar export, a visa expiry and 180-day tax counter, and a document checklist."
+>
+  <PageHeader
+    title="Stay Tools"
+    lead="Free. Works offline. Pro adds reminders and sync."
+    crumbs={[{ label: 'Stay Tools' }]}
+  />
+
+  <Section spacing="none" aria-label="Tools">
+    <ul class="tools" data-reveal-stagger>
+      {
+        tools.map((t) => (
+          <li class="tool">
+            <span class="tool__icon"><Icon name={t.icon} size={26} /></span>
+            <div class="tool__text">
+              <h2 class="tool__title">
+                <a href={t.href}>{t.title}</a>
+              </h2>
+              <p>{t.body}</p>
+              <p class="tool__detail">{t.detail}</p>
+            </div>
+            <span class="tool__go" aria-hidden="true">
+              Open <Icon name="arrow-right" size={18} />
+            </span>
+          </li>
+        ))
+      }
+    </ul>
+  </Section>
+
+  <Section title="Why these three" lead="They cover the deadlines that cost long-stayers money: the 90-day report (late fines start at 2,000 THB), the day your permission to stay runs out, and the 180-day tax-residency line.">
+    <ProBand
+      title="Never miss a deadline"
+      points={[
+        'Email 15 days and 1 day before each 90-day report',
+        'Alerts 30 and 7 days before your visa expires',
+        'A warning before you reach 180 days in a year',
+        'Your checklist synced across your phone and laptop',
+      ]}
+      data-reveal
+    />
+  </Section>
+</Base>
+
+<Motion />
+
+<style>
+  .tools {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: grid;
+    gap: var(--space-4);
+  }
+  .tool {
+    position: relative;
+    display: grid;
+    grid-template-columns: auto 1fr;
+    gap: var(--space-4) var(--space-5);
+    align-items: start;
+    padding: var(--space-6);
+    border-radius: var(--radius-lg);
+    background: var(--color-surface);
+    transition:
+      transform var(--duration-base) var(--ease-out),
+      box-shadow var(--duration-base) var(--ease-out);
+  }
+  @media (min-width: 48rem) {
+    .tool {
+      grid-template-columns: auto 1fr auto;
+      align-items: center;
+      padding: var(--space-8) var(--space-10);
+      gap: var(--space-8);
+    }
+  }
+  .tool:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-raise);
+  }
+  .tool:has(a:focus-visible) {
+    outline: 3px solid var(--color-focus);
+    outline-offset: 2px;
+  }
+  .tool__icon {
+    display: grid;
+    place-items: center;
+    width: 3.25rem;
+    height: 3.25rem;
+    border-radius: var(--radius-pill);
+    background: var(--color-brand-tint);
+    color: var(--color-brand);
+  }
+  .tool__title {
+    font-size: var(--text-2xl);
+    line-height: var(--leading-snug);
+  }
+  .tool__title a {
+    color: var(--color-ink);
+    text-decoration: none;
+  }
+  .tool__title a:focus-visible {
+    outline: none;
+  }
+  .tool__title a::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+  }
+  .tool:hover .tool__title a {
+    color: var(--color-brand);
+  }
+  .tool__text p {
+    margin-top: var(--space-2);
+    max-width: 60ch;
+    color: var(--color-ink-2);
+  }
+  .tool__text .tool__detail {
+    font-size: var(--text-sm);
+    font-weight: var(--weight-semibold);
+    color: var(--color-ink);
+  }
+  .tool__go {
+    grid-column: 2;
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-2);
+    font-weight: var(--weight-semibold);
+    color: var(--color-brand);
+  }
+  @media (min-width: 48rem) {
+    .tool__go {
+      grid-column: auto;
+    }
+  }
+</style>

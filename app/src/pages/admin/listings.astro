@@ -1,0 +1,122 @@
+---
+import Admin from '../../layouts/Admin.astro';
+import Panel from '../../components/admin/Panel.astro';
+---
+
+<Admin
+  title="Listings"
+  lead="The partner directory. Featured listings are the paid $49/month slot; inactive listings are hidden from the site."
+>
+  <p class="adm-err" role="alert" data-err hidden></p>
+  <Panel
+    id="listings"
+    title="Directory listings"
+    caption="Listings A to Z. Ticking a box saves straight away."
+    cols={['Listing', 'Price from', 'Featured', 'Featured until', 'Active']}
+  >
+    <div slot="tools" class="adm-filters">
+      <label class="adm-filters__label" for="f-show">Show</label>
+      <select id="f-show" class="control" data-filter>
+        <option value="all">All</option>
+        <option value="featured">Featured</option>
+        <option value="inactive">Inactive</option>
+      </select>
+    </div>
+    <tr slot="row">
+      <th scope="row">
+        <span data-f="name"></span>
+        <span class="adm-sub" data-f="meta"></span>
+      </th>
+      <td data-f="price"></td>
+      <td>
+        <label class="adm-switch"><input type="checkbox" data-toggle="featured" /><span data-f="featured"></span></label>
+      </td>
+      <td class="nowrap" data-f="until"></td>
+      <td>
+        <label class="adm-switch"><input type="checkbox" data-toggle="active" /><span data-f="active"></span></label>
+      </td>
+    </tr>
+  </Panel>
+</Admin>
+
+<script>
+  import { announce, boot, fmtDate, put, renderRows, setState, type Mode } from '../../components/admin/admin';
+  import { source, syncCounts } from '../../components/admin/data';
+  import type { OpsListing } from '../../lib/ops';
+
+  const CITY: Record<string, string> = { bangkok: 'Bangkok', 'chiang-mai': 'Chiang Mai', phuket: 'Phuket' };
+  const panel = document.querySelector<HTMLElement>('[data-panel="listings"]')!;
+  const filter = document.querySelector<HTMLSelectElement>('[data-filter]')!;
+  const err = document.querySelector<HTMLElement>('[data-err]')!;
+  let mode: Mode = 'demo';
+  let rows: OpsListing[] = [];
+
+  function fill(tr: HTMLTableRowElement, l: OpsListing) {
+    put(tr, 'name', l.name);
+    put(tr, 'meta', [l.kind, l.city ? CITY[l.city] : null].filter(Boolean).join(' · '));
+    put(tr, 'price', l.price_from);
+    put(tr, 'until', l.featured ? (l.featured_until ? fmtDate(l.featured_until) : 'No end date') : null);
+    tr.querySelectorAll<HTMLInputElement>('[data-toggle]').forEach((box) => {
+      const field = box.dataset.toggle as 'active' | 'featured';
+      const word = field === 'active' ? ['Active', 'Hidden'] : ['Featured', 'Standard'];
+      const sync = () => {
+        box.checked = l[field];
+        put(tr, field, l[field] ? word[0] : word[1]);
+      };
+      box.setAttribute('aria-label', `${word[0]}: ${l.name}`);
+      box.addEventListener('change', async () => {
+        const next = box.checked;
+        box.disabled = true;
+        try {
+          await source(mode).toggleListing(l.id, field, next);
+          l[field] = next;
+          err.hidden = true;
+          announce(`${l.name} ${next ? word[0].toLowerCase() : word[1].toLowerCase()}.`);
+        } catch {
+          err.textContent = `Couldn't update ${l.name}. Check your connection and try again.`;
+          err.hidden = false;
+          announce(err.textContent);
+        } finally {
+          box.disabled = false;
+          sync();
+          put(tr, 'until', l.featured ? (l.featured_until ? fmtDate(l.featured_until) : 'No end date') : null);
+          box.focus();
+        }
+      });
+      sync();
+    });
+  }
+
+  const render = () =>
+    renderRows(
+      panel,
+      rows.filter((l) => filter.value === 'all' || (filter.value === 'featured' ? l.featured : !l.active)),
+      fill,
+      filter.value === 'all' ? 'No listings yet. Approve a listing application to add one.' : 'No listings match this filter.',
+    );
+
+  async function load() {
+    setState(panel, 'loading');
+    try {
+      rows = await source(mode).listings();
+      render();
+    } catch {
+      setState(panel, 'error', "Couldn't load listings.");
+    }
+  }
+
+  filter.addEventListener('change', render);
+  panel.querySelector('[data-retry]')!.addEventListener('click', load);
+  boot().then((b) => {
+    mode = b.mode;
+    if (mode === 'denied') return;
+    syncCounts(mode);
+    load();
+  });
+</script>
+
+<style>
+  .nowrap {
+    white-space: nowrap;
+  }
+</style>

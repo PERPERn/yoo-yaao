@@ -1,0 +1,108 @@
+---
+/**
+ * Round avatar. With no `src`, shows initials on a tint picked from the name (stable per person).
+ * `verified` adds a teal check dot (identity checked); it is announced via the alt/label.
+ */
+interface Props {
+  name: string;
+  src?: string;
+  size?: 'sm' | 'md' | 'lg' | 'xl';
+  verified?: boolean;
+  class?: string;
+  [key: string]: unknown;
+}
+const { name, src, size = 'md', verified = false, class: className, ...rest } = Astro.props;
+const initials = name
+  .split(/\s+/)
+  .filter(Boolean)
+  .slice(0, 2)
+  .map((p) => p[0]?.toUpperCase())
+  .join('');
+const tints = ['brand', 'accent', 'info', 'neutral'];
+const hash = [...name].reduce((a, c) => (a * 31 + c.charCodeAt(0)) >>> 0, 7);
+const tint = tints[hash % tints.length];
+const px = { sm: 32, md: 44, lg: 64, xl: 96 }[size];
+const label = verified ? `${name}, verified` : name;
+---
+
+<span class:list={['avatar', `avatar--${size}`, `avatar--${tint}`, className]} {...rest}>
+  {
+    src ? (
+      <img src={src} alt={label} width={px} height={px} loading="lazy" decoding="async" />
+    ) : (
+      <span class="avatar__initials" role="img" aria-label={label}>
+        <span aria-hidden="true">{initials}</span>
+      </span>
+    )
+  }
+  {verified && <span class="avatar__badge" aria-hidden="true" />}
+</span>
+
+<style>
+  .avatar {
+    position: relative;
+    display: inline-flex;
+    flex-shrink: 0;
+    width: var(--av);
+    height: var(--av);
+  }
+  .avatar--sm {
+    --av: 32px;
+    font-size: 0.75rem;
+  }
+  .avatar--md {
+    --av: 44px;
+    font-size: 0.95rem;
+  }
+  .avatar--lg {
+    --av: 64px;
+    font-size: 1.3rem;
+  }
+  .avatar--xl {
+    --av: 96px;
+    font-size: 1.9rem;
+  }
+  .avatar img,
+  .avatar__initials {
+    width: 100%;
+    height: 100%;
+    border-radius: 50%;
+    object-fit: cover;
+  }
+  .avatar__initials {
+    display: grid;
+    place-items: center;
+    font-family: var(--font-display);
+    font-weight: var(--weight-semibold);
+    background: var(--av-bg);
+    color: var(--av-fg);
+  }
+  .avatar--brand {
+    --av-bg: var(--color-brand-tint);
+    --av-fg: var(--color-brand);
+  }
+  .avatar--accent {
+    --av-bg: var(--color-accent-tint);
+    --av-fg: var(--color-accent-text);
+  }
+  .avatar--info {
+    --av-bg: var(--color-info-tint);
+    --av-fg: var(--color-info);
+  }
+  .avatar--neutral {
+    --av-bg: var(--color-surface-3);
+    --av-fg: var(--color-ink-2);
+  }
+  .avatar__badge {
+    position: absolute;
+    right: -2px;
+    bottom: -2px;
+    width: max(14px, calc(var(--av) * 0.3));
+    height: max(14px, calc(var(--av) * 0.3));
+    border-radius: 50%;
+    border: 2px solid var(--color-surface);
+    background: var(--color-brand)
+      url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='white' stroke-width='3.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M5 12.5l4.5 4.5L19 7.5'/%3E%3C/svg%3E")
+      center / 65% no-repeat;
+  }
+</style>

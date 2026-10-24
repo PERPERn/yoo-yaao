@@ -1,0 +1,559 @@
+---
+import Base from '../layouts/Base.astro';
+import Button from '../components/ui/Button.astro';
+import Callout from '../components/ui/Callout.astro';
+import Icon from '../components/ui/Icon.astro';
+import '../components/money/money.css';
+import { products } from '../data/products';
+import { FEE_PCT } from '../components/money/plans';
+
+const SEGMENTS = [
+  { key: 'B2C', title: 'B2C', sub: 'Pro subscriptions', icon: 'passport' as const, netLabel: 'Net revenue' },
+  { key: 'B2B', title: 'B2B', sub: 'Featured listings and leads', icon: 'briefcase' as const, netLabel: 'Net revenue' },
+  { key: 'C2C', title: 'C2C', sub: 'Local Buddy fees', icon: 'users' as const, netLabel: `Platform fee (${FEE_PCT}%)` },
+];
+const productNames = JSON.stringify(Object.fromEntries(products.map((p) => [p.id, p.name])));
+---
+
+<Base
+  title="Revenue (live demo)"
+  description="Real Stripe test-mode payments from this site, split into B2C subscriptions, B2B listings and C2C buddy fees. Updates every 10 seconds."
+>
+  <div class="container m-hero rev-hero">
+    <div class="stack" style="--stack-gap: var(--space-4)">
+      <h1 data-intro>Revenue (live demo)</h1>
+      <p class="lead" data-intro>
+        Real Stripe test-mode payments from this site, split by who paid. No names or emails are shown. Updates every
+        10 seconds.
+      </p>
+    </div>
+    <div class="refresh" data-intro>
+      <Button variant="secondary" icon="clock" data-refresh>Refresh</Button>
+      <p class="small muted" aria-live="polite" data-updated>Loading…</p>
+    </div>
+  </div>
+
+  <div class="container stack board" style="--stack-gap: var(--space-6)" data-board data-products={productNames} aria-busy="true">
+    <div data-state="unconfigured" hidden>
+      <Callout tone="warning" title="Sample data — not real revenue">
+        Payments aren't connected yet, so these figures are the month-12 base case from our business model (about
+        $1,890/month net: B2C 48%, B2B 45%, C2C 7%). Once Stripe test keys are added, real payments replace them.
+      </Callout>
+    </div>
+    <div data-state="error" hidden>
+      <Callout tone="danger" live title="Couldn't load revenue">
+        Try again with Refresh. The last numbers we loaded are still shown.
+      </Callout>
+    </div>
+
+    <section class="total" aria-labelledby="total-title">
+      <p class="total__sample" data-sample-flag hidden>Sample data — not real revenue</p>
+      <h2 id="total-title" class="total__label">Total revenue</h2>
+      <p class="total__num tabular"><span data-total-gross >$0</span></p>
+      <dl class="total__meta">
+        <div><dt>Net, after buddy payouts</dt><dd class="tabular" data-total-net>$0</dd></div>
+        <div><dt>Payments</dt><dd class="tabular" data-total-count>0</dd></div>
+      </dl>
+    </section>
+
+    <section aria-labelledby="seg-title">
+      <h2 id="seg-title" class="sr-only">By segment</h2>
+      <ul class="segs">
+        {
+          SEGMENTS.map((s) => (
+            <li class={`seg-card seg-card--${s.key.toLowerCase()}`} data-seg={s.key}>
+              <div class="seg-card__head">
+                <span class="seg-card__icon"><Icon name={s.icon} size={20} /></span>
+                <div>
+                  <h3>{s.title}</h3>
+                  <p class="small">{s.sub}</p>
+                </div>
+              </div>
+              <p class="seg-card__gross tabular" data-gross>$0</p>
+              <dl class="facts">
+                <div><dt>{s.netLabel}</dt><dd data-net>$0</dd></div>
+                <div><dt>Payments</dt><dd data-count>0</dd></div>
+              </dl>
+              <div class="seg-card__bar" aria-hidden="true"><span data-share style="transform: scaleX(0)"></span></div>
+              <p class="small" data-share-label>0% of total</p>
+            </li>
+          ))
+        }
+      </ul>
+    </section>
+
+    <div class="two">
+      <section class="panel" aria-labelledby="recent-title">
+        <h2 id="recent-title" class="panel__title">Recent payments</h2>
+        <ol class="recent" aria-live="polite" data-recent>
+          {Array.from({ length: 5 }).map(() => <li class="recent__skel"><span class="skel" style="height: 1.25rem; width: 60%"></span></li>)}
+        </ol>
+        <div data-state="empty" hidden class="empty-pay">
+          <p><strong>No payments yet.</strong> Make the first one with a test card:</p>
+        </div>
+      </section>
+
+      <section class="panel" aria-labelledby="prod-title">
+        <h2 id="prod-title" class="panel__title">By product</h2>
+        <table class="prod">
+          <thead>
+            <tr><th scope="col">Product</th><th scope="col" class="num">Sold</th><th scope="col" class="num">Gross</th></tr>
+          </thead>
+          <tbody data-products-body>
+            {products.map((p) => (
+              <tr data-product={p.id}>
+                <th scope="row">{p.name}</th>
+                <td class="num" data-count>0</td>
+                <td class="num" data-gross>$0</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </section>
+    </div>
+
+    <section class="try" aria-labelledby="try-title">
+      <div class="stack" style="--stack-gap: var(--space-2)">
+        <h2 id="try-title">Try it yourself</h2>
+        <p>Pay with the test card <strong class="tabular">4242 4242 4242 4242</strong>, any future date and any CVC. No real money moves.</p>
+      </div>
+      <div class="cluster">
+        <Button href="/pricing" variant="accent" icon="passport">Go Pro</Button>
+        <Button href="/buddies" variant="secondary" icon="users">Book a buddy</Button>
+        <Button href="/business" variant="secondary" icon="briefcase">Get featured</Button>
+      </div>
+    </section>
+  </div>
+</Base>
+
+<style>
+  .rev-hero {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-6);
+    align-items: flex-end;
+    justify-content: space-between;
+    padding-bottom: var(--space-8);
+  }
+  .refresh {
+    display: grid;
+    gap: var(--space-2);
+    justify-items: start;
+  }
+  .board {
+    padding-bottom: var(--space-section);
+  }
+  .total {
+    display: grid;
+    gap: var(--space-3);
+    padding: clamp(var(--space-6), 4vw, var(--space-10));
+    border-radius: var(--radius-xl);
+    background: var(--color-brand);
+    color: var(--color-on-brand);
+  }
+  .total__label {
+    font-size: var(--text-lg);
+    color: inherit;
+    font-family: var(--font-body);
+    font-weight: var(--weight-semibold);
+  }
+  .total__num {
+    font-family: var(--font-display);
+    font-size: var(--text-6xl);
+    font-weight: var(--weight-bold);
+    line-height: var(--leading-display);
+    letter-spacing: var(--tracking-giant);
+  }
+  .total__meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-2) var(--space-10);
+    margin: 0;
+  }
+  .total__meta dt {
+    font-size: var(--text-sm);
+    opacity: 0.88;
+  }
+  .total__meta dd {
+    margin: 0;
+    font-family: var(--font-display);
+    font-size: var(--text-2xl);
+    font-weight: var(--weight-semibold);
+  }
+  .segs {
+    display: grid;
+    gap: var(--space-4);
+    padding: 0;
+    list-style: none;
+  }
+  @media (min-width: 56rem) {
+    .segs {
+      grid-template-columns: repeat(3, 1fr);
+    }
+  }
+  .seg-card {
+    display: grid;
+    gap: var(--space-4);
+    padding: var(--space-6);
+    border-radius: var(--radius-xl);
+    background: var(--seg-bg);
+    color: var(--seg-ink);
+    transition: opacity var(--duration-slow) var(--ease-out);
+  }
+  .seg-card--b2c {
+    --seg-bg: var(--seg-b2c-bg);
+    --seg-strong: var(--seg-b2c-strong);
+  }
+  .seg-card--b2b {
+    --seg-bg: var(--seg-b2b-bg);
+    --seg-strong: var(--seg-b2b-strong);
+  }
+  .seg-card--c2c {
+    --seg-bg: var(--seg-c2c-bg);
+    --seg-strong: var(--seg-c2c-strong);
+  }
+  .seg-card :is(h3, p, dt) {
+    color: var(--seg-ink);
+  }
+  .seg-card__head {
+    display: flex;
+    gap: var(--space-3);
+    align-items: center;
+  }
+  .seg-card__head h3 {
+    font-size: var(--text-xl);
+  }
+  .seg-card__icon {
+    display: grid;
+    place-items: center;
+    width: 2.5rem;
+    height: 2.5rem;
+    border-radius: 50%;
+    background: var(--color-surface);
+    color: var(--seg-strong);
+  }
+  .seg-card__gross {
+    font-family: var(--font-display);
+    font-size: var(--text-4xl);
+    font-weight: var(--weight-bold);
+    line-height: 1;
+    letter-spacing: var(--tracking-display);
+  }
+  .seg-card__bar {
+    height: 0.5rem;
+    border-radius: var(--radius-pill);
+    background: var(--color-surface);
+    overflow: hidden;
+  }
+  .seg-card__bar span {
+    display: block;
+    height: 100%;
+    background: var(--seg-strong);
+    transform-origin: left;
+    transition: transform 700ms var(--ease-out);
+  }
+  .total__sample {
+    justify-self: start;
+    padding: var(--space-1) var(--space-3);
+    border-radius: var(--radius-pill);
+    background: var(--color-warning-tint);
+    color: var(--color-warning);
+    font-size: var(--text-sm);
+    font-weight: var(--weight-bold);
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+  }
+  .total__sample[hidden] {
+    display: none;
+  }
+  .two {
+    display: grid;
+    gap: var(--space-4);
+  }
+  @media (min-width: 56rem) {
+    .two {
+      grid-template-columns: 1.3fr 1fr;
+      align-items: start;
+    }
+  }
+  .panel {
+    display: grid;
+    gap: var(--space-4);
+    padding: var(--space-6);
+    border-radius: var(--radius-xl);
+    background: var(--color-surface);
+  }
+  .panel__title {
+    font-size: var(--text-xl);
+  }
+  .recent {
+    display: grid;
+    padding: 0;
+    margin: 0;
+    list-style: none;
+  }
+  .recent :global(li) {
+    display: grid;
+    grid-template-columns: 1fr auto;
+    gap: var(--space-1) var(--space-4);
+    padding-block: var(--space-3);
+    border-bottom: 1px solid var(--color-border);
+  }
+  .recent :global(li:last-child) {
+    border-bottom: 0;
+  }
+  .recent :global(.r-name) {
+    font-weight: var(--weight-semibold);
+  }
+  .recent :global(.r-meta) {
+    display: flex;
+    gap: var(--space-2);
+    align-items: center;
+    font-size: var(--text-sm);
+    color: var(--color-ink-2);
+  }
+  .recent :global(.r-amt) {
+    grid-row: span 2;
+    align-self: center;
+    text-align: right;
+    font-family: var(--font-display);
+    font-size: var(--text-xl);
+    font-weight: var(--weight-semibold);
+    font-variant-numeric: tabular-nums;
+  }
+  .recent :global(.r-seg) {
+    padding: 0.1em 0.55em;
+    border-radius: var(--radius-pill);
+    font-size: var(--text-xs);
+    font-weight: var(--weight-semibold);
+  }
+  .recent :global(.r-seg--B2C) {
+    background: var(--seg-b2c-bg);
+    color: var(--seg-b2c-strong);
+  }
+  .recent :global(.r-seg--B2B) {
+    background: var(--seg-b2b-bg);
+    color: var(--seg-b2b-strong);
+  }
+  .recent :global(.r-seg--C2C) {
+    background: var(--seg-c2c-bg);
+    color: var(--seg-c2c-strong);
+  }
+  .recent :global(.is-new) {
+    animation: row-in 600ms var(--ease-out) both;
+  }
+  @keyframes row-in {
+    from {
+      opacity: 0;
+      transform: translateY(-8px);
+    }
+  }
+  .prod {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: var(--text-sm);
+  }
+  .prod th,
+  .prod td {
+    padding: var(--space-3) 0;
+    text-align: left;
+    border-bottom: 1px solid var(--color-border);
+  }
+  .prod thead th {
+    color: var(--color-ink-2);
+    font-weight: var(--weight-medium);
+  }
+  .prod tbody th {
+    font-weight: var(--weight-medium);
+  }
+  .prod .num {
+    text-align: right;
+    font-variant-numeric: tabular-nums;
+    padding-left: var(--space-4);
+  }
+  .prod tr:last-child :is(th, td) {
+    border-bottom: 0;
+  }
+  .empty-pay {
+    color: var(--color-ink-2);
+  }
+  .try {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-6);
+    align-items: center;
+    justify-content: space-between;
+    padding: var(--space-8);
+    border-radius: var(--radius-xl);
+    background: var(--color-surface-2);
+  }
+  .try h2 {
+    font-size: var(--text-2xl);
+  }
+</style>
+
+<script>
+  import { initMotion } from '../scripts/motion';
+  import { countTo, usd, relTime } from '../components/money/client';
+  import { getAccessToken } from '../lib/supabase';
+
+  initMotion();
+
+  type Bucket = { grossUsd: number; netUsd: number; count: number };
+  type Revenue = {
+    configured: boolean;
+    total: Bucket;
+    bySegment: Record<'B2C' | 'B2B' | 'C2C', Bucket>;
+    byProduct: Record<string, Bucket>;
+    recent: { productId: string; segment: string; amountUsd: number; netUsd: number; createdAt: string }[];
+    updatedAt: string;
+  };
+
+  const board = document.querySelector<HTMLElement>('[data-board]')!;
+  const names = JSON.parse(board.dataset.products ?? '{}') as Record<string, string>;
+  const updated = document.querySelector<HTMLElement>('[data-updated]')!;
+  const recentList = board.querySelector<HTMLOListElement>('[data-recent]')!;
+  const state = (name: string, on: boolean) => {
+    const el = board.querySelector<HTMLElement>(`[data-state="${name}"]`);
+    if (el) el.hidden = !on;
+  };
+  const money = (n: number) => usd(n, n >= 1000 || Number.isInteger(n) ? 0 : 2);
+  const moneyTween = (n: number) => usd(n, 0);
+  const seen = new Set<string>();
+  let first = true;
+  let last: Revenue | null = null;
+
+  // Month-12 base case from docs/business-model.md, shown only while payments are unconfigured.
+  const ago = (min: number) => new Date(Date.now() - min * 60_000).toISOString();
+  const SAMPLE: Omit<Revenue, 'configured' | 'updatedAt'> = {
+    total: { grossUsd: 2418, netUsd: 1890, count: 143 },
+    bySegment: {
+      B2C: { grossUsd: 907, netUsd: 907, count: 107 },
+      B2B: { grossUsd: 851, netUsd: 851, count: 17 },
+      C2C: { grossUsd: 660, netUsd: 132, count: 19 },
+    },
+    byProduct: {
+      pro_monthly: { grossUsd: 848, netUsd: 848, count: 106 },
+      pro_yearly: { grossUsd: 59, netUsd: 59, count: 1 },
+      listing_featured: { grossUsd: 851, netUsd: 851, count: 17 },
+      buddy_session: { grossUsd: 660, netUsd: 132, count: 19 },
+    },
+    recent: [
+      { productId: 'pro_monthly', segment: 'B2C', amountUsd: 8, netUsd: 8, createdAt: ago(4) },
+      { productId: 'buddy_session', segment: 'C2C', amountUsd: 35, netUsd: 7, createdAt: ago(26) },
+      { productId: 'listing_featured', segment: 'B2B', amountUsd: 49, netUsd: 49, createdAt: ago(75) },
+      { productId: 'pro_yearly', segment: 'B2C', amountUsd: 59, netUsd: 59, createdAt: ago(190) },
+      { productId: 'pro_monthly', segment: 'B2C', amountUsd: 8, netUsd: 8, createdAt: ago(320) },
+    ],
+  };
+
+  function render(data: Revenue) {
+    if (!data.configured) data = { ...data, ...SAMPLE };
+    board.querySelector<HTMLElement>('[data-sample-flag]')!.hidden = data.configured;
+    board.toggleAttribute('data-unconfigured', !data.configured);
+    state('unconfigured', !data.configured);
+    state('error', false);
+    state('empty', data.total.count === 0);
+
+    const t = data.total;
+    countTo(board.querySelector<HTMLElement>('[data-total-gross]')!, t.grossUsd, (n) => (n === t.grossUsd ? money(n) : moneyTween(n)), 1100);
+    countTo(board.querySelector<HTMLElement>('[data-total-net]')!, t.netUsd, (n) => (n === t.netUsd ? money(n) : moneyTween(n)));
+    countTo(board.querySelector<HTMLElement>('[data-total-count]')!, t.count, (n) => String(Math.round(n)));
+
+    for (const [key, b] of Object.entries(data.bySegment)) {
+      const card = board.querySelector<HTMLElement>(`[data-seg="${key}"]`);
+      if (!card) continue;
+      countTo(card.querySelector<HTMLElement>('[data-gross]')!, b.grossUsd, (n) => (n === b.grossUsd ? money(n) : moneyTween(n)));
+      countTo(card.querySelector<HTMLElement>('[data-net]')!, b.netUsd, (n) => (n === b.netUsd ? money(n) : moneyTween(n)));
+      countTo(card.querySelector<HTMLElement>('[data-count]')!, b.count, (n) => String(Math.round(n)));
+      // Sample split is by net revenue (C2C earns only its fee); real data keeps the gross split.
+      const share = data.configured ? (t.grossUsd > 0 ? b.grossUsd / t.grossUsd : 0) : b.netUsd / t.netUsd;
+      card.querySelector<HTMLElement>('[data-share]')!.style.transform = `scaleX(${share})`;
+      card.querySelector<HTMLElement>('[data-share-label]')!.textContent = `${Math.round(share * 100)}% of total`;
+    }
+
+    for (const [id, b] of Object.entries(data.byProduct)) {
+      const row = board.querySelector<HTMLElement>(`[data-product="${id}"]`);
+      if (!row) continue;
+      row.querySelector('[data-count]')!.textContent = String(b.count);
+      row.querySelector('[data-gross]')!.textContent = money(b.grossUsd);
+    }
+
+    recentList.replaceChildren(
+      ...data.recent.map((r) => {
+        const key = `${r.createdAt}|${r.productId}|${r.amountUsd}`;
+        const li = document.createElement('li');
+        if (!first && !seen.has(key)) li.classList.add('is-new');
+        seen.add(key);
+        const name = document.createElement('span');
+        name.className = 'r-name';
+        name.textContent = names[r.productId] ?? r.productId;
+        const amt = document.createElement('span');
+        amt.className = 'r-amt';
+        amt.textContent = money(r.amountUsd);
+        const meta = document.createElement('span');
+        meta.className = 'r-meta';
+        const seg = document.createElement('span');
+        seg.className = `r-seg r-seg--${r.segment}`;
+        seg.textContent = r.segment;
+        const time = document.createElement('time');
+        time.dateTime = r.createdAt;
+        time.title = new Date(r.createdAt).toLocaleString('en-GB');
+        time.textContent = relTime(r.createdAt);
+        meta.append(seg, time);
+        if (r.segment === 'C2C') {
+          const fee = document.createElement('span');
+          fee.textContent = `· fee ${money(r.netUsd)}`;
+          meta.append(fee);
+        }
+        li.append(name, amt, meta);
+        return li;
+      }),
+    );
+    recentList.hidden = data.recent.length === 0;
+    first = false;
+    board.setAttribute('aria-busy', 'false');
+    updated.textContent = `Updated ${new Date(data.updatedAt).toLocaleTimeString('en-GB')}`;
+  }
+
+  let inflight = false;
+  async function load() {
+    if (inflight) return;
+    inflight = true;
+    try {
+      const token = await getAccessToken().catch(() => null);
+      const res = await fetch('/api/revenue', { cache: 'no-store', headers: token ? { authorization: `Bearer ${token}` } : {} });
+      if (!res.ok) throw new Error(String(res.status));
+      last = (await res.json()) as Revenue;
+      render(last);
+    } catch {
+      state('error', true);
+      board.setAttribute('aria-busy', 'false');
+      if (!last) {
+        recentList.replaceChildren();
+        updated.textContent = "Couldn't load";
+      }
+    } finally {
+      inflight = false;
+    }
+  }
+
+  const refreshBtn = document.querySelector<HTMLButtonElement>('[data-refresh]');
+  refreshBtn?.addEventListener('click', () => {
+    refreshBtn.querySelector('svg')?.animate?.([{ transform: 'rotate(0)' }, { transform: 'rotate(360deg)' }], { duration: 600 });
+    load();
+  });
+
+  // Every 10 s while the tab is visible.
+  let timer = 0;
+  const schedule = () => {
+    clearInterval(timer);
+    if (document.visibilityState === 'visible') timer = window.setInterval(load, 10_000);
+  };
+  document.addEventListener('visibilitychange', () => {
+    if (document.visibilityState === 'visible') load();
+    schedule();
+  });
+  load();
+  schedule();
+</script>

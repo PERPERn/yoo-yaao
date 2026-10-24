@@ -1,0 +1,30 @@
+---
+import PartnerShell from '../../components/partner/PartnerShell.astro';
+import Chat from '../../components/chat/Chat.astro';
+---
+
+<PartnerShell
+  title="Messages · Partner portal"
+  heading="Messages"
+  lede="Chat with the nomads assigned to you. Keep quotes and payment on Yoo Yaao."
+  current="messages"
+>
+  <Chat
+    side="partner"
+    emptyHref="/partner/leads"
+    emptyLabel="See your leads"
+    emptyText="When our team assigns you a lead, you can chat with them here."
+  />
+</PartnerShell>
+
+<script>
+  import { boot } from '../../components/partner/portal';
+  import { initChat } from '../../components/chat/chat';
+
+  let started = false; // boot() re-renders on "Try again"; the chat must start only once
+  boot((_d, isDemo) => {
+    if (started) return;
+    started = true;
+    initChat(document.querySelector<HTMLElement>('[data-chat]')!, { demo: isDemo });
+  });
+</script>

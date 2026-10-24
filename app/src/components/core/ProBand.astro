@@ -1,0 +1,105 @@
+---
+/**
+ * Pro upsell band (ux-flow §5.4): one line of value, a lock, and "Go Pro — $X/mo".
+ * The price is read from products.ts, never hardcoded. The free alternative stays visible elsewhere.
+ */
+import { getProduct } from '../../data/products';
+import Button from '../ui/Button.astro';
+import Icon from '../ui/Icon.astro';
+
+interface Props {
+  title: string;
+  body?: string;
+  points?: string[];
+  class?: string;
+  [key: string]: unknown;
+}
+const { title, body, points = [], class: className, ...rest } = Astro.props;
+const monthly = getProduct('pro_monthly');
+const yearly = getProduct('pro_yearly');
+---
+
+<aside class:list={['proband', className]} {...rest}>
+  <div class="proband__icon"><Icon name="lock" size={22} /></div>
+  <div class="proband__text">
+    <h2 class="proband__title">{title}</h2>
+    {body && <p class="proband__body">{body}</p>}
+    {
+      points.length > 0 && (
+        <ul class="proband__points">
+          {points.map((p) => (
+            <li><Icon name="check" size={18} />{p}</li>
+          ))}
+        </ul>
+      )
+    }
+  </div>
+  <div class="proband__cta">
+    <Button href="/pricing" variant="accent" iconRight="arrow-right">Go Pro — ${monthly?.priceUsd}/mo</Button>
+    {yearly && <p class="proband__note">or ${yearly.priceUsd} a year</p>}
+  </div>
+</aside>
+
+<style>
+  .proband {
+    display: grid;
+    gap: var(--space-5);
+    padding: clamp(var(--space-6), 4vw, var(--space-10));
+    border-radius: var(--radius-xl);
+    background: var(--color-accent-tint);
+    color: var(--color-ink);
+  }
+  @media (min-width: 48rem) {
+    .proband {
+      grid-template-columns: auto 1fr auto;
+      align-items: center;
+      gap: var(--space-8);
+    }
+  }
+  .proband__icon {
+    display: grid;
+    place-items: center;
+    width: 3rem;
+    height: 3rem;
+    border-radius: var(--radius-pill);
+    background: var(--color-accent);
+    color: var(--color-on-accent);
+  }
+  .proband__title {
+    font-size: var(--text-xl);
+    line-height: var(--leading-snug);
+    text-wrap: balance;
+  }
+  .proband__body {
+    margin-top: var(--space-2);
+    color: var(--color-ink);
+    max-width: 52ch;
+  }
+  .proband__points {
+    list-style: none;
+    padding: 0;
+    margin: var(--space-3) 0 0;
+    display: grid;
+    gap: var(--space-2);
+  }
+  .proband__points li {
+    display: flex;
+    gap: var(--space-2);
+    align-items: flex-start;
+  }
+  .proband__points :global(svg) {
+    color: var(--color-accent-text);
+    flex-shrink: 0;
+    margin-top: 0.2em;
+  }
+  .proband__cta {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-2);
+    align-items: flex-start;
+  }
+  .proband__note {
+    font-size: var(--text-sm);
+    color: var(--color-ink-2);
+  }
+</style>

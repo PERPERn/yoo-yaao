@@ -1,0 +1,486 @@
+---
+import Base from '../../layouts/Base.astro';
+import Section from '../../components/ui/Section.astro';
+import Button from '../../components/ui/Button.astro';
+import Input from '../../components/ui/Input.astro';
+import Select from '../../components/ui/Select.astro';
+import Icon from '../../components/ui/Icon.astro';
+import SourceTag from '../../components/ui/SourceTag.astro';
+import PageHeader from '../../components/core/PageHeader.astro';
+import ProBand from '../../components/core/ProBand.astro';
+import ProHint from '../../components/core/ProHint.astro';
+import LegalNote from '../../components/core/LegalNote.astro';
+import Motion from '../../components/core/Motion.astro';
+import { visas, VERIFIED_ON } from '../../data/visas';
+
+const visaRules = Object.fromEntries(visas.map((v) => [v.slug, { days: v.stay.perEntryDays, name: v.shortName }]));
+const year = new Date().getFullYear();
+---
+
+<Base
+  title="Visa expiry & 180-day tax counter"
+  description="See how many days are left on your Thai permission to stay, and how many days you've spent in Thailand this year against the 180-day tax-residency line."
+>
+  <PageHeader
+    title="Stay & tax counter"
+    lead="Two numbers every long-stayer should know: the days left on your permission to stay, and your days in Thailand this year. At 180 you may become a Thai tax resident."
+    crumbs={[{ label: 'Stay Tools', href: '/tools' }, { label: 'Stay & tax counter' }]}
+  />
+
+  <Section spacing="none" aria-label="Counter">
+    <div class="sc">
+      <form class="sc__form" data-form novalidate>
+        <Select
+          name="visa"
+          label="Visa type"
+          options={visas.map((v) => ({ value: v.slug, label: v.name }))}
+          value="dtv"
+          data-visa
+        />
+        <Input name="entry" type="date" label="Latest entry date" hint="The date on your most recent arrival stamp." required data-entry />
+        <Input
+          name="until"
+          type="date"
+          label="Permitted until"
+          hint="We suggest a date from the visa rules. Change it to match the date stamped in your passport."
+          required
+          data-until
+        />
+        <Input
+          name="before"
+          type="number"
+          label={`Days already in Thailand in ${year} (before this entry)`}
+          hint="Count earlier trips this calendar year. Leave 0 if this is your first."
+          value="0"
+          min="0"
+          max="366"
+          inputmode="numeric"
+          data-before
+        />
+        <p class="small muted sc__privacy"><Icon name="lock" size={16} /> Worked out in your browser. Nothing is sent anywhere.</p>
+      </form>
+
+      <div class="sc__out" aria-live="polite">
+        <div class="empty" data-empty>
+          <Icon name="clock" size={28} />
+          <p>Enter your latest entry date to see your numbers.</p>
+        </div>
+
+        <div class="tiles" data-tiles hidden>
+          <article class="tile">
+            <h2 class="tile__title">Days left on your stay</h2>
+            <div class="ring">
+              <svg viewBox="0 0 120 120" aria-hidden="true">
+                <circle class="ring__track" cx="60" cy="60" r="52" />
+                <circle class="ring__fill" cx="60" cy="60" r="52" pathLength="100" data-ring />
+              </svg>
+              <p class="ring__value"><span class="tabular" data-left>0</span><span class="ring__unit">days</span></p>
+            </div>
+            <p class="tile__note" data-left-note></p>
+            <div class="alert alert--danger" data-expired hidden role="alert">
+              <Icon name="alert" size={20} />
+              <p>Your permission to stay has ended. Overstaying brings a fine for every day over and can lead to a ban on re-entry. Talk to immigration or a <a href="/experts">licensed agent</a> today.</p>
+            </div>
+          </article>
+
+          <article class="tile" data-tax-tile>
+            <h2 class="tile__title">Days in Thailand in {year}</h2>
+            <p class="tax__value"><span class="tabular" data-tax>0</span><span class="tax__of"> / 180</span></p>
+            <div class="bar" role="meter" aria-label={`Days in Thailand in ${year}`} aria-valuemin="0" aria-valuemax="180" aria-valuenow="0" data-meter>
+              <span class="bar__fill" data-bar></span>
+              <span class="bar__mark" style="left: calc(150 / 180 * 100%)" aria-hidden="true"></span>
+            </div>
+            <p class="tile__note" data-tax-note></p>
+            <p class="tax__status" data-tax-status></p>
+          </article>
+
+          <div class="sc__actions">
+            <Button icon="calendar" data-ics>Add expiry to calendar (.ics)</Button>
+            <Button variant="secondary" icon="plus" data-save>Save this stay</Button>
+          </div>
+          <ProHint />
+        </div>
+      </div>
+    </div>
+  </Section>
+
+  <Section title="Where these rules come from" width="narrow">
+    <div class="prose">
+      <p>
+        Your permission to stay is the date stamped in your passport on arrival, not the visa's validity. Extending it is done at an immigration office before it runs out.
+      </p>
+      <p>
+        Anyone in Thailand for 180 days or more in a calendar year is a Thai tax resident. Since 1 January 2024, foreign income you bring into Thailand while tax resident can be taxable, whenever it was earned. A tax treaty may give you credit for tax paid abroad.
+      </p>
+    </div>
+    <div class="sources">
+      {visas.map((v) => <SourceTag source={v.sources.find((s) => s.tier === 'primary') ?? v.sources[0]} verifiedAt={v.verifiedAt} data-source={v.slug} hidden={v.slug !== 'dtv'} />)}
+      <SourceTag label="Thai Revenue Department — personal income tax and tax residency" url="https://www.rd.go.th/english/" tier="primary" verifiedAt={VERIFIED_ON} />
+      <LegalNote />
+    </div>
+  </Section>
+
+  <Section spacing="tight">
+    <ProBand
+      title="Save multiple stays and get alerts"
+      body="Pro reminds you 30 and 7 days before your stay ends, and warns you before you reach 180 days in a year."
+      data-reveal
+    />
+  </Section>
+
+  <script is:inline type="application/json" id="visa-rules" set:html={JSON.stringify(visaRules)} />
+</Base>
+
+<Motion />
+
+<script>
+  import { addDays, buildIcs, diffDays, downloadFile, fmtDate, parseISODate, plural, toISODate, today } from '../../components/core/dates';
+  import { readJSON, writeJSON } from '../../components/core/storage';
+  import { handleSaveStay } from '../../components/core/save-stay';
+
+  const RULES = JSON.parse(document.getElementById('visa-rules')!.textContent || '{}') as Record<string, { days: number; name: string }>;
+  const KEY = 'ls-stay-counter';
+  const $ = <T extends HTMLElement>(sel: string) => document.querySelector<T>(sel)!;
+  const visa = $<HTMLSelectElement>('[data-visa]');
+  const entry = $<HTMLInputElement>('[data-entry]');
+  const until = $<HTMLInputElement>('[data-until]');
+  const before = $<HTMLInputElement>('[data-before]');
+  const hint = $('[data-pro-hint]');
+  const now = today();
+  const year = now.getUTCFullYear();
+  const jan1 = new Date(Date.UTC(year, 0, 1));
+  const dec31 = new Date(Date.UTC(year, 11, 31));
+  let untilEdited = false;
+  let untilDate: Date | null = null;
+
+  const setErr = (id: string, msg: string) => {
+    const el = document.getElementById(`${id}-error`);
+    if (el) el.textContent = msg;
+    document.getElementById(id)?.setAttribute('aria-invalid', msg ? 'true' : 'false');
+  };
+
+  function suggestUntil() {
+    const e = parseISODate(entry.value);
+    const rule = RULES[visa.value];
+    if (e && rule && !untilEdited) until.value = toISODate(addDays(e, rule.days - 1));
+  }
+
+  function daysInYear(from: Date, to: Date): number {
+    const a = from < jan1 ? jan1 : from;
+    const b = to > dec31 ? dec31 : to;
+    return b < a ? 0 : diffDays(b, a) + 1;
+  }
+
+  function render() {
+    document.querySelectorAll<HTMLElement>('[data-source]').forEach((el) => (el.hidden = el.dataset.source !== visa.value));
+    const e = parseISODate(entry.value);
+    const u = parseISODate(until.value);
+    const prior = Math.max(0, Math.min(366, Number(before.value) || 0));
+    hint.hidden = true;
+    setErr('entry', '');
+    setErr('until', '');
+    setErr('before', Number(before.value) < 0 ? 'Enter 0 or more.' : '');
+
+    if (!e || !u) {
+      $('[data-empty]').hidden = false;
+      $('[data-tiles]').hidden = true;
+      return;
+    }
+    if (u <= e) {
+      setErr('until', 'Permitted-until must be after entry date.');
+      $('[data-empty]').hidden = false;
+      $('[data-tiles]').hidden = true;
+      return;
+    }
+    untilDate = u;
+    writeJSON(KEY, { visa: visa.value, entry: entry.value, until: until.value, before: prior, untilEdited });
+
+    // Days left + ring
+    const total = diffDays(u, e) + 1;
+    const left = Math.max(0, diffDays(u, now));
+    const used = Math.min(total, Math.max(0, diffDays(now, e) + 1));
+    $('[data-left]').textContent = left.toLocaleString('en-US');
+    $('[data-ring]').style.strokeDashoffset = String(100 - (left / total) * 100);
+    const expired = diffDays(now, u) > 0;
+    $('[data-expired]').hidden = !expired;
+    $('[data-left-note]').textContent = expired
+      ? `Your stay ended on ${fmtDate(u)}.`
+      : diffDays(e, now) > 0
+        ? `Your stay starts ${fmtDate(e)} and runs to ${fmtDate(u)}.`
+        : `Permitted until ${fmtDate(u)}. ${plural(used, 'day')} used of ${plural(total, 'day')}.`;
+    $('[data-tiles]').toggleAttribute('data-expired', expired);
+
+    // Days in Thailand this year
+    const soFar = prior + (e <= now ? daysInYear(e, now) : 0);
+    const projected = prior + daysInYear(e, u);
+    $('[data-tax]').textContent = String(soFar);
+    $('[data-bar]').style.transform = `scaleX(${Math.min(1, soFar / 180)})`;
+    $('[data-meter]').setAttribute('aria-valuenow', String(Math.min(soFar, 180)));
+    const level = soFar >= 180 ? 'red' : soFar >= 150 ? 'amber' : 'ok';
+    $('[data-tax-tile]').dataset.level = level;
+    $('[data-tax-status]').textContent =
+      level === 'red'
+        ? `You may be a Thai tax resident for ${year}. Foreign income brought into Thailand may be taxed.`
+        : level === 'amber'
+          ? `Getting close: ${plural(180 - soFar, 'day')} until the 180-day line.`
+          : `${plural(180 - soFar, 'day')} until the 180-day line.`;
+    $('[data-tax-note]').textContent =
+      projected > soFar
+        ? `If you stay until ${fmtDate(u > dec31 ? dec31 : u)}, you'll reach ${plural(projected, 'day')} in ${year}.${projected >= 180 && soFar < 180 ? ' That crosses 180.' : ''}`
+        : '';
+
+    $('[data-empty]').hidden = true;
+    $('[data-tiles]').hidden = false;
+  }
+
+  // Restore
+  const saved = readJSON<{ visa?: string; entry?: string; until?: string; before?: number; untilEdited?: boolean }>(KEY, {});
+  const q = new URLSearchParams(location.search);
+  const qVisa = q.get('visa') ?? saved.visa;
+  if (qVisa && RULES[qVisa]) visa.value = qVisa;
+  if (saved.entry) entry.value = saved.entry;
+  if (saved.until) until.value = saved.until;
+  if (saved.before !== undefined) before.value = String(saved.before);
+  untilEdited = Boolean(saved.untilEdited);
+  if (!until.value) suggestUntil();
+  render();
+
+  visa.addEventListener('change', () => {
+    untilEdited = false;
+    suggestUntil();
+    render();
+  });
+  entry.addEventListener('change', () => {
+    suggestUntil();
+    render();
+  });
+  until.addEventListener('change', () => {
+    untilEdited = true;
+    render();
+  });
+  before.addEventListener('input', render);
+  $('[data-form]').addEventListener('submit', (ev) => {
+    ev.preventDefault();
+    render();
+  });
+
+  $('[data-ics]').addEventListener('click', () => {
+    if (!untilDate) return;
+    const name = RULES[visa.value]?.name ?? 'Visa';
+    downloadFile(
+      `stay-ends-${toISODate(untilDate)}.ics`,
+      buildIcs(
+        [
+          {
+            date: untilDate,
+            title: `Thailand: ${name} permission to stay ends`,
+            description: `Last day of your permitted stay. Extend at immigration or leave before this date. ${location.origin}/tools/stay-counter`,
+            alarmsDaysBefore: [30, 7],
+          },
+        ],
+        'Thailand stay',
+      ),
+    );
+  });
+
+  $('[data-save]').addEventListener('click', () => {
+    if (!untilDate || !entry.value) return;
+    handleSaveStay(hint, { visaType: visa.value, entryDate: entry.value, expiryDate: until.value }, '/tools/stay-counter');
+  });
+</script>
+
+<style>
+  .sc {
+    display: grid;
+    gap: var(--space-8);
+    padding-bottom: var(--space-section);
+  }
+  @media (min-width: 60rem) {
+    .sc {
+      grid-template-columns: minmax(0, 1fr) minmax(0, 1.2fr);
+      gap: var(--space-12);
+      align-items: start;
+    }
+  }
+  .sc__form {
+    display: grid;
+    gap: var(--space-6);
+    padding: var(--space-6);
+    border-radius: var(--radius-lg);
+    background: var(--color-surface);
+  }
+  .sc__privacy {
+    display: flex;
+    gap: var(--space-2);
+    align-items: center;
+  }
+  .empty {
+    display: grid;
+    justify-items: start;
+    gap: var(--space-3);
+    padding: var(--space-10) var(--space-8);
+    border-radius: var(--radius-xl);
+    background: var(--color-surface-2);
+    color: var(--color-ink-2);
+    font-size: var(--text-lg);
+  }
+  .tiles {
+    display: grid;
+    gap: var(--space-4);
+  }
+  @media (min-width: 40rem) {
+    .tiles {
+      grid-template-columns: 1fr 1fr;
+    }
+    .sc__actions,
+    .tiles :global([data-pro-hint]) {
+      grid-column: 1 / -1;
+    }
+  }
+  .tile {
+    display: grid;
+    gap: var(--space-4);
+    align-content: start;
+    padding: var(--space-6);
+    border-radius: var(--radius-xl);
+    background: var(--color-brand-tint);
+  }
+  .tile__title {
+    font-size: var(--text-lg);
+    line-height: var(--leading-snug);
+  }
+  .tile__note {
+    font-size: var(--text-sm);
+    color: var(--color-ink);
+  }
+  .tile__note:empty {
+    display: none;
+  }
+  .ring {
+    position: relative;
+    width: min(11rem, 100%);
+    aspect-ratio: 1;
+  }
+  .ring svg {
+    width: 100%;
+    height: 100%;
+    transform: rotate(-90deg);
+  }
+  .ring circle {
+    fill: none;
+    stroke-width: 10;
+  }
+  .ring__track {
+    stroke: var(--color-surface);
+  }
+  .ring__fill {
+    stroke: var(--color-brand);
+    stroke-linecap: round;
+    stroke-dasharray: 100;
+    stroke-dashoffset: 100;
+    transition: stroke-dashoffset var(--duration-reveal) var(--ease-out);
+  }
+  [data-expired] .ring__fill {
+    stroke: var(--color-danger);
+  }
+  .ring__value {
+    position: absolute;
+    inset: 0;
+    display: grid;
+    place-content: center;
+    text-align: center;
+    font-family: var(--font-display);
+    font-size: var(--text-4xl);
+    font-weight: var(--weight-bold);
+    line-height: 1;
+  }
+  .ring__unit {
+    font-size: var(--text-sm);
+    font-weight: var(--weight-semibold);
+    color: var(--color-ink-2);
+    margin-top: var(--space-1);
+  }
+  .tile[data-level='amber'] {
+    background: var(--color-warning-tint);
+  }
+  .tile[data-level='red'] {
+    background: var(--color-danger-tint);
+  }
+  .tax__value {
+    font-family: var(--font-display);
+    font-size: var(--text-4xl);
+    font-weight: var(--weight-bold);
+    line-height: 1;
+  }
+  .tax__of {
+    font-size: var(--text-xl);
+    color: var(--color-ink-2);
+  }
+  .bar {
+    position: relative;
+    height: 0.75rem;
+    border-radius: var(--radius-pill);
+    background: var(--color-surface);
+  }
+  .bar__fill {
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    background: var(--color-brand);
+    transform: scaleX(0);
+    transform-origin: left;
+    transition: transform var(--duration-reveal) var(--ease-out);
+  }
+  .tile[data-level='amber'] .bar__fill {
+    background: var(--color-accent);
+  }
+  .tile[data-level='red'] .bar__fill {
+    background: var(--color-danger);
+  }
+  .bar__mark {
+    position: absolute;
+    top: -0.25rem;
+    bottom: -0.25rem;
+    width: 2px;
+    background: var(--color-ink-2);
+  }
+  .tax__status {
+    font-weight: var(--weight-semibold);
+  }
+  .tile[data-level='red'] .tax__status {
+    color: var(--color-danger);
+  }
+  .tile[data-level='amber'] .tax__status {
+    color: var(--color-warning);
+  }
+  .sc__actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-3);
+    margin-top: var(--space-2);
+  }
+  .alert {
+    display: flex;
+    gap: var(--space-3);
+    align-items: flex-start;
+    padding: var(--space-4);
+    border-radius: var(--radius-md);
+    background: var(--color-danger-tint);
+    font-size: var(--text-sm);
+  }
+  .alert :global(svg) {
+    color: var(--color-danger);
+    flex-shrink: 0;
+  }
+  .sources {
+    display: grid;
+    gap: var(--space-4);
+    margin-top: var(--space-8);
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .ring__fill,
+    .bar__fill {
+      transition: none;
+    }
+  }
+</style>

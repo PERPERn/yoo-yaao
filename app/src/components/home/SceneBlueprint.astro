@@ -1,0 +1,181 @@
+---
+import Button from '../ui/Button.astro';
+import Icon from '../ui/Icon.astro';
+
+// Example timeline for one long stay: arrive, then a report every 90 days in a row.
+const marks = [
+  { day: 0, label: 'Arrive' },
+  { day: 90, label: '90-day report' },
+  { day: 180, label: '90-day report' },
+  { day: 270, label: '90-day report' },
+  { day: 360, label: 'Visa check' },
+];
+const checks = ['TM30 address notice filed', 'Reminder 15 days before each report', 'Visa expiry date saved'];
+const x = (d: number) => 50 + (d / 360) * 540;
+---
+
+<section class="scene scene--blueprint section--night blueprint-grid" data-scene="blueprint" aria-labelledby="bp-title">
+  <div class="container blueprint">
+    <div class="bp__copy stack" data-reveal>
+      <h2 id="bp-title" class="display-6xl bp__title">Never miss a 90-day report.</h2>
+      <p class="lead">Every date on one timeline, with a reminder before each deadline.</p>
+
+      <ul class="bp__checks" role="list" data-bp-checks>
+        {
+          checks.map((c) => (
+            <li>
+              <span class="bp__tick">
+                <Icon name="check" size={16} />
+              </span>
+              {c}
+            </li>
+          ))
+        }
+      </ul>
+
+      <p class="bp__stat">
+        <span class="bp__num tabular">0</span>
+        <span>missed reports in this example year</span>
+      </p>
+      <div><Button href="/tools/90-day" iconRight="arrow-right">Try the 90-day tool</Button></div>
+    </div>
+
+    <figure class="bp__figure">
+      <svg class="bp__svg" viewBox="0 0 640 170" role="img" aria-labelledby="bp-svg-title">
+        <title id="bp-svg-title">Example year: arrive on day 0, report on days 90, 180 and 270, check your visa on day 360.</title>
+        <path class="bp__line" d="M50 80 H590" pathLength="1" data-bp-line></path>
+        {
+          marks.map((m) => (
+            <g class="bp__mark" data-bp-mark transform={`translate(${x(m.day)} 80)`}>
+              <circle r="9"></circle>
+              <text y="-26" text-anchor="middle" class="bp__day">Day {m.day}</text>
+              <text y="44" text-anchor="middle" class="bp__label">{m.label}</text>
+            </g>
+          ))
+        }
+      </svg>
+      <figcaption class="small bp__cap">Example timeline. Your dates come from your own entry stamp.</figcaption>
+    </figure>
+  </div>
+</section>
+
+<style>
+  .scene--blueprint {
+    padding-block: var(--space-section);
+  }
+  .blueprint {
+    display: grid;
+    gap: var(--space-12);
+  }
+  .bp__title {
+    font-size: var(--text-5xl);
+    max-width: 12ch;
+  }
+  .bp__checks {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: grid;
+    gap: var(--space-3);
+  }
+  .bp__checks li {
+    display: flex;
+    gap: var(--space-3);
+    align-items: center;
+  }
+  .bp__tick {
+    display: inline-grid;
+    place-items: center;
+    width: 1.75rem;
+    height: 1.75rem;
+    border-radius: var(--radius-pill);
+    background: var(--color-brand);
+    color: var(--color-on-brand);
+    flex-shrink: 0;
+  }
+  .bp__stat {
+    display: flex;
+    align-items: baseline;
+    gap: var(--space-3);
+    margin: 0;
+    color: var(--color-ink-2);
+  }
+  .bp__num {
+    font-family: var(--font-display);
+    font-size: var(--text-6xl);
+    font-weight: var(--weight-bold);
+    line-height: 1;
+    color: var(--color-accent);
+  }
+  .bp__figure {
+    margin: 0;
+    overflow-x: auto;
+  }
+  .bp__svg {
+    width: 100%;
+    min-width: 34rem;
+    height: auto;
+    display: block;
+  }
+  .bp__line {
+    fill: none;
+    stroke: var(--night-line-strong);
+    stroke-width: 3;
+  }
+  .bp__mark circle {
+    fill: var(--night-bg);
+    stroke: var(--night-line-strong);
+    stroke-width: 3;
+  }
+  .bp__day {
+    fill: var(--color-ink);
+    font: var(--weight-bold) 20px var(--font-display);
+  }
+  .bp__label {
+    fill: var(--color-ink-2);
+    font: 17px var(--font-body);
+  }
+  .bp__cap {
+    color: var(--color-ink-2);
+    margin-top: var(--space-2);
+  }
+  /* Solid night panels: the measuring grid frames the copy and timeline but never runs through text. */
+  .bp__copy,
+  .bp__figure {
+    background: var(--night-bg);
+    border-radius: var(--radius-2xl);
+    padding: var(--space-4);
+  }
+  @media (min-width: 60rem) {
+    .blueprint {
+      grid-template-columns: 1fr 1fr;
+      align-items: center;
+    }
+    .bp__copy,
+    .bp__figure {
+      padding: var(--space-8);
+    }
+    .bp__svg {
+      min-width: 0;
+    }
+    :global(html.home-story) .scene--blueprint {
+      min-height: 100svh;
+      display: grid;
+      align-content: center;
+      padding-block: calc(var(--header-h) + var(--space-6)) var(--space-8);
+    }
+    :global(html.home-story) .bp__copy {
+      --stack-gap: var(--space-3);
+    }
+    :global(html.home-story) .bp__title {
+      font-size: var(--text-4xl);
+    }
+    :global(html.home-story) .bp__num {
+      font-size: var(--text-5xl);
+    }
+    /* The wireframe island floats in the free space above the timeline (POSES.blueprint). */
+    :global(html.home-story) .bp__figure {
+      align-self: end;
+    }
+  }
+</style>

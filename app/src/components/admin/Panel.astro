@@ -1,0 +1,72 @@
+---
+/**
+ * Admin table panel. Page scripts fill it with renderRows()/setState() from ./admin.ts.
+ *   <Panel id="leads" title="Leads" caption="…" cols={['Lead', 'Visa', …]}>
+ *     <Fragment slot="tools">filters</Fragment>
+ *     <tr slot="row"><th scope="row" data-f="name"></th>…</tr>
+ *   </Panel>
+ * The table scrolls inside the panel on narrow screens (focusable region), never the page.
+ */
+import Button from '../ui/Button.astro';
+
+interface Props {
+  id: string;
+  title: string;
+  caption: string;
+  cols: (string | { label: string; num?: boolean; sr?: boolean })[];
+}
+const { id, title, caption, cols } = Astro.props;
+---
+
+<section class="adm-panel" aria-labelledby={`${id}-title`} data-panel={id} aria-busy="true">
+  <div class="adm-panel__head">
+    <h2 id={`${id}-title`}>{title}</h2>
+    <slot name="tools" />
+  </div>
+  <div class="adm-state" data-state="loading">
+    <div class="skel" data-skel aria-hidden="true">
+      <span class="adm-skel"></span><span class="adm-skel"></span><span class="adm-skel"></span>
+    </div>
+    <p data-state-text>Loading…</p>
+    <Button variant="secondary" size="sm" data-retry hidden>Try again</Button>
+  </div>
+  <div class="adm-scroll" role="region" aria-labelledby={`${id}-title`} tabindex="0" hidden>
+    <table class="adm-table">
+      <caption>{caption}</caption>
+      <thead>
+        <tr>
+          {
+            cols.map((c) => {
+              const col = typeof c === 'string' ? { label: c } : c;
+              return (
+                <th scope="col" class:list={[col.num && 'num']}>
+                  {col.sr ? <span class="sr-only">{col.label}</span> : col.label}
+                </th>
+              );
+            })
+          }
+        </tr>
+      </thead>
+      <tbody data-rows></tbody>
+    </table>
+  </div>
+  <template data-row><slot name="row" /></template>
+</section>
+
+<style>
+  .skel {
+    display: grid;
+    gap: var(--space-3);
+    max-width: 24rem;
+    margin: 0 auto var(--space-4);
+  }
+  .skel span:nth-child(2) {
+    width: 80%;
+  }
+  .skel span:nth-child(3) {
+    width: 60%;
+  }
+  .adm-state p {
+    margin: 0 0 var(--space-3);
+  }
+</style>

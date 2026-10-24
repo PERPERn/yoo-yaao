@@ -1,0 +1,533 @@
+---
+import Base from '../layouts/Base.astro';
+import Section from '../components/ui/Section.astro';
+import PriceCard from '../components/ui/PriceCard.astro';
+import Button from '../components/ui/Button.astro';
+import Badge from '../components/ui/Badge.astro';
+import Callout from '../components/ui/Callout.astro';
+import Icon from '../components/ui/Icon.astro';
+import Accordion from '../components/ui/Accordion.astro';
+import PayNotice from '../components/money/PayNotice.astro';
+import '../components/money/money.css';
+import { SITE } from '../config/site';
+import {
+  PRO_MONTHLY,
+  PRO_YEARLY,
+  YEARLY_SAVING_PCT,
+  YEARLY_PER_MONTH,
+  FEE_PCT,
+  BUDDY_KEEP_PCT,
+  BUDDY_MIN,
+  BUDDY_MAX,
+  BUDDY_SESSION,
+  feeFor,
+  FREE_FEATURES,
+} from '../components/money/plans';
+
+const proFeatures = [...PRO_MONTHLY.features, ...PRO_YEARLY.features.filter((f) => !/^Everything|^Save/.test(f))];
+const example = BUDDY_SESSION.priceUsd;
+const exampleFee = feeFor(example);
+const fmt = (n: number) => (Number.isInteger(n) ? `$${n}` : `$${n.toFixed(2)}`);
+
+const priceData = JSON.stringify({
+  month: { price: PRO_MONTHLY.priceUsd, period: '/mo', note: `or ${fmt(PRO_YEARLY.priceUsd)}/yr and save ${YEARLY_SAVING_PCT}%` },
+  year: { price: PRO_YEARLY.priceUsd, period: '/yr', note: `${fmt(YEARLY_PER_MONTH)}/mo, billed yearly. Save ${YEARLY_SAVING_PCT}%` },
+});
+
+const faq = [
+  {
+    question: 'Can I cancel Pro any time?',
+    answer: `Yes. Pro renews each ${'month or year'} until you cancel, and you keep Pro until the end of the period you paid for. Your stays stay saved if you go back to Free.`,
+  },
+  {
+    question: 'Do you offer refunds?',
+    answer: `If Pro wasn't useful, email <a href="mailto:${SITE.supportEmail}">${SITE.supportEmail}</a> within 14 days of paying and we refund you in full. Buddy sessions are refunded in full if the buddy cancels, and free to cancel up to 24 hours before.`,
+  },
+  {
+    question: 'What happens to my data on Free?',
+    answer:
+      'Free tools keep everything in this browser only. Nothing is uploaded unless you log in and save. Pro syncs your stays to your account so reminders can reach you, and you can delete your data at any time from your account.',
+  },
+  {
+    question: `Why is ${SITE.name} cheaper than a visa agent?`,
+    answer:
+      "Because we don't file visas. We give you the checklist, dates and reminders so you can do it yourself. For complex cases we refer you to a licensed agent, who charges separately.",
+  },
+  {
+    question: 'Is this a real payment?',
+    answer:
+      'This demo runs Stripe in test mode, so no real money moves. Use the test card 4242 4242 4242 4242 with any future expiry date and any CVC. Each test payment shows up on the <a href="/revenue">live revenue dashboard</a>.',
+  },
+];
+---
+
+<Base
+  title="Pricing"
+  description={`Free visa tools for everyone. ${SITE.name} Pro adds reminders and sync for $${PRO_MONTHLY.priceUsd}/mo or $${PRO_YEARLY.priceUsd}/yr. Featured listings for businesses and local buddy sessions too.`}
+>
+  <div class="container m-hero">
+    <h1 data-intro>Simple pricing</h1>
+    <p class="lead" data-intro>
+      Planning is free. Pro is for when you want us to remember your deadlines. Businesses and local buddies pay only for
+      what they use.
+    </p>
+    <nav class="jump cluster" aria-label="Pricing sections" data-intro>
+      <a href="#travellers" class="jump__link"><Icon name="passport" size={18} />Travellers</a>
+      <a href="#locals" class="jump__link"><Icon name="users" size={18} />Locals</a>
+    </nav>
+
+    <div class="notices" data-notices>
+      <Callout tone="info" title="Payment cancelled" live hidden data-cancel-notice>
+        You weren't charged. <span data-cancel-return hidden>You can <a href="/pricing" data-cancel-link>go back to where you were</a>.</span>
+      </Callout>
+      <PayNotice />
+    </div>
+  </div>
+
+  <section id="travellers" class="section seg-b2c" aria-labelledby="travellers-title">
+    <div class="container stack" style="--stack-gap: var(--space-8)">
+      <div class="trav-head">
+        <div class="stack" style="--stack-gap: var(--space-2)">
+          <h2 id="travellers-title">For travellers</h2>
+          <p class="muted">Everything you need to plan is free. Pro keeps you legal after you land.</p>
+        </div>
+        <fieldset class="seg" data-billing data-prices={priceData}>
+          <legend class="sr-only">Billing period</legend>
+          <span class="seg__pill" aria-hidden="true"></span>
+          <label><input type="radio" name="billing" value="month" /><span>Monthly</span></label>
+          <label>
+            <input type="radio" name="billing" value="year" checked />
+            <span>Yearly <Badge variant="accent">Save {YEARLY_SAVING_PCT}%</Badge></span>
+          </label>
+        </fieldset>
+      </div>
+
+      <div class="plans" data-reveal-stagger>
+        <PriceCard
+          class="plan-free"
+          name="Free"
+          price={0}
+          period=" forever"
+          description="For planning your move."
+          features={FREE_FEATURES}
+          ctaLabel="Start with Free"
+          ctaHref="/finder"
+          ctaVariant="secondary"
+        >
+          <div class="plan-free__adds">
+            <p class="plan-free__adds-title">Pro adds</p>
+            <ul>
+              {proFeatures.slice(0, 3).map((f) => (
+                <li><Icon name="lock" size={16} /><span>{f}</span></li>
+              ))}
+            </ul>
+          </div>
+        </PriceCard>
+        <PriceCard
+          class="plan-pro"
+          featured
+          ribbon="Best for long stays"
+          name="Stay Pro"
+          price={PRO_YEARLY.priceUsd}
+          period="/yr"
+          note={`${fmt(YEARLY_PER_MONTH)}/mo, billed yearly. Save ${YEARLY_SAVING_PCT}%`}
+          description="Everything in Free, plus:"
+          features={proFeatures}
+          ctaLabel="Go Pro"
+          ctaAttrs={{ 'data-go-pro': '', 'data-needs-network': '' }}
+          data-pro-card
+        >
+          <p class="plan-pro__small" data-pro-signed-out>You'll log in with your email first. No password needed.</p>
+        </PriceCard>
+      </div>
+      <p class="small muted">Prices in US dollars. Cancel any time. Secure payment by Stripe.</p>
+    </div>
+  </section>
+
+  <Section id="businesses" spacing="tight">
+    <p class="small muted">Run a coworking space, coliving or a licensed visa agency? Plans for partners are on <a href="/business">Yoo Yaao for Business</a>.</p>
+  </Section>
+
+  <section id="locals" class="section" aria-labelledby="locals-title">
+    <div class="container split locals">
+      <div class="stack" style="--stack-gap: var(--space-5)" data-reveal>
+        <h2 id="locals-title">For locals: Local Buddies</h2>
+        <p class="lead">
+          Sessions cost ${BUDDY_MIN}–{BUDDY_MAX} for 60 minutes. Buddies keep {BUDDY_KEEP_PCT}%. We keep {FEE_PCT}% to cover
+          payments, vetting and support.
+        </p>
+        <div class="cluster">
+          <Button href="/buddies" variant="secondary" iconRight="arrow-right">Book a buddy</Button>
+          <Button href="/buddies/join" variant="ghost">Become a buddy</Button>
+        </div>
+      </div>
+      <figure class="split-card" data-reveal aria-labelledby="split-caption">
+        <figcaption id="split-caption" class="split-card__title">Where a ${example} session goes</figcaption>
+        <div class="split-bar" aria-hidden="true">
+          <span class="split-bar__buddy" style={`flex: ${BUDDY_KEEP_PCT}`}>{BUDDY_KEEP_PCT}%</span>
+          <span class="split-bar__fee" style={`flex: ${FEE_PCT}`}>{FEE_PCT}%</span>
+        </div>
+        <dl class="facts">
+          <div><dt>Traveller pays</dt><dd>{fmt(example)}</dd></div>
+          <div><dt>Buddy receives ({BUDDY_KEEP_PCT}%)</dt><dd>{fmt(example - exampleFee)}</dd></div>
+          <div><dt>Platform fee ({FEE_PCT}%)</dt><dd>{fmt(exampleFee)}</dd></div>
+        </dl>
+      </figure>
+    </div>
+  </section>
+
+  <Section tone="tint" width="narrow" title="Pricing questions">
+    <Accordion items={faq} schema />
+    <p class="revenue-link">
+      <Icon name="wallet" size={20} />
+      <span>Curious where the money goes? <a href="/revenue">See live revenue (demo)</a>.</span>
+    </p>
+  </Section>
+
+  <div class="sticky-cta" data-sticky>
+    <p class="sticky-cta__meta"><strong data-sticky-price>${PRO_YEARLY.priceUsd}/yr</strong>Stay Pro</p>
+    <Button variant="accent" data-go-pro data-needs-network>Go Pro</Button>
+  </div>
+</Base>
+
+<style>
+  .jump {
+    margin-top: var(--space-6);
+  }
+  .jump__link {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-2);
+    min-height: var(--tap-min);
+    padding: 0 var(--space-4);
+    border-radius: var(--radius-pill);
+    background: var(--color-surface);
+    color: var(--color-ink);
+    font-size: var(--text-sm);
+    font-weight: var(--weight-semibold);
+    text-decoration: none;
+    transition: background-color var(--duration-base) var(--ease-out);
+  }
+  .jump__link:hover {
+    background: var(--color-surface-3);
+    color: var(--color-ink);
+    text-decoration: none;
+  }
+  .notices {
+    display: grid;
+    gap: var(--space-3);
+    margin-top: var(--space-6);
+  }
+  .notices:not(:has(:not([hidden]):not(.pay-notice))) {
+    margin-top: 0;
+  }
+  .seg-b2c {
+    background: var(--seg-b2c-bg);
+    color: var(--seg-ink);
+    padding-block: var(--space-16);
+  }
+  .seg-b2c :is(h2, .muted, .small) {
+    color: var(--seg-ink);
+  }
+  .trav-head {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-end;
+    justify-content: space-between;
+    gap: var(--space-5);
+  }
+  .plans {
+    display: grid;
+    gap: var(--space-5);
+    align-items: stretch;
+  }
+  @media (min-width: 48rem) {
+    .plans {
+      grid-template-columns: 1fr 1fr;
+    }
+  }
+  /* Phones: Pro first */
+  @media (max-width: 47.99rem) {
+    .plans :global(.plan-pro) {
+      order: -1;
+    }
+  }
+  .plan-free__adds {
+    display: grid;
+    gap: var(--space-3);
+    padding-top: var(--space-5);
+    border-top: 1px solid var(--color-border);
+    color: var(--color-ink-2);
+  }
+  .plan-free__adds-title {
+    font-size: var(--text-sm);
+    font-weight: var(--weight-semibold);
+  }
+  .plan-free__adds ul {
+    display: grid;
+    gap: var(--space-3);
+    padding: 0;
+    margin: 0;
+    list-style: none;
+    font-size: var(--text-sm);
+  }
+  .plan-free__adds li {
+    display: flex;
+    gap: var(--space-3);
+    align-items: flex-start;
+  }
+  .plan-free__adds :global(svg) {
+    flex-shrink: 0;
+    margin-top: 0.15em;
+  }
+  .plan-pro__small {
+    font-size: var(--text-sm);
+    opacity: 0.88;
+    margin-top: calc(var(--space-2) * -1);
+  }
+  :global(.plan-pro .price__num) {
+    display: inline-block;
+  }
+  :global(.plan-pro .price__num) {
+    font-variant-numeric: tabular-nums;
+  }
+  /* Bracket corners on the featured plan (from the 21st.dev ink-orbit pricing pattern). */
+  :global(.plan-pro) {
+    --bk: var(--color-accent);
+  }
+  .plans :global(.plan-pro)::after {
+    content: '';
+    position: absolute;
+    inset: -8px;
+    pointer-events: none;
+    background:
+      linear-gradient(var(--bk), var(--bk)) top left / 16px 2px,
+      linear-gradient(var(--bk), var(--bk)) top left / 2px 16px,
+      linear-gradient(var(--bk), var(--bk)) top right / 16px 2px,
+      linear-gradient(var(--bk), var(--bk)) top right / 2px 16px,
+      linear-gradient(var(--bk), var(--bk)) bottom left / 16px 2px,
+      linear-gradient(var(--bk), var(--bk)) bottom left / 2px 16px,
+      linear-gradient(var(--bk), var(--bk)) bottom right / 16px 2px,
+      linear-gradient(var(--bk), var(--bk)) bottom right / 2px 16px;
+    background-repeat: no-repeat;
+  }
+  /* Sliding billing pill: JS adds .seg--pill once it can measure; without JS the checked span keeps its own background. */
+  .seg {
+    position: relative;
+  }
+  .seg__pill {
+    position: absolute;
+    top: var(--space-1);
+    bottom: var(--space-1);
+    left: var(--space-1);
+    width: 0;
+    border-radius: var(--radius-pill);
+    background: var(--color-surface);
+    box-shadow: var(--shadow-raise);
+    transition:
+      transform 450ms cubic-bezier(0.2, 0.8, 0.2, 1),
+      width 450ms cubic-bezier(0.2, 0.8, 0.2, 1);
+  }
+  :global(.seg--pill) :global(input:checked + span) {
+    background: transparent;
+    box-shadow: none;
+  }
+  .seg :global(label) {
+    z-index: 1;
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .seg__pill {
+      transition: none;
+    }
+  }
+  .locals {
+    align-items: center;
+  }
+  .split-card {
+    display: grid;
+    gap: var(--space-5);
+    margin: 0;
+    padding: clamp(var(--space-5), 3vw, var(--space-8));
+    border-radius: var(--radius-xl);
+    background: var(--seg-c2c-bg);
+    color: var(--seg-ink);
+  }
+  .split-card__title {
+    font-family: var(--font-display);
+    font-size: var(--text-xl);
+    font-weight: var(--weight-semibold);
+  }
+  .split-card :global(.facts dt) {
+    color: var(--seg-ink);
+  }
+  .split-bar {
+    display: flex;
+    gap: var(--space-1);
+    height: 3rem;
+    font-weight: var(--weight-bold);
+    font-variant-numeric: tabular-nums;
+  }
+  .split-bar span {
+    display: flex;
+    align-items: center;
+    padding-inline: var(--space-3);
+    border-radius: var(--radius-md);
+    font-size: var(--text-sm);
+  }
+  .split-bar__buddy {
+    background: var(--seg-c2c-strong);
+    color: var(--color-surface);
+  }
+  .split-bar__fee {
+    background: var(--color-surface);
+    color: var(--seg-c2c-strong);
+    justify-content: center;
+    min-width: 3.5rem;
+  }
+  .revenue-link {
+    display: flex;
+    gap: var(--space-3);
+    align-items: center;
+    margin-top: var(--space-8);
+    color: var(--color-ink-2);
+  }
+</style>
+
+<script>
+  import { initMotion } from '../scripts/motion';
+  import { startCheckout, showPayNotice, setBusy, readPending, watchNetwork, setButtonLabel } from '../components/money/client';
+  import { supabase, getSession, getProfile } from '../lib/supabase';
+
+  initMotion();
+  watchNetwork();
+
+  type Interval = 'month' | 'year';
+  const params = new URLSearchParams(location.search);
+  const billing = document.querySelector<HTMLFieldSetElement>('[data-billing]');
+  const prices = JSON.parse(billing?.dataset.prices ?? '{}') as Record<Interval, { price: number; period: string; note: string }>;
+  const card = document.querySelector<HTMLElement>('[data-pro-card]');
+  const stickyPrice = document.querySelector<HTMLElement>('[data-sticky-price]');
+  const notices = document.querySelector<HTMLElement>('[data-notices]')!;
+
+  let interval: Interval =
+    params.get('interval') === 'month' || params.get('intent') === 'pro_monthly' ? 'month' : 'year';
+
+  function render(animate: boolean) {
+    const p = prices[interval];
+    if (!p || !card) return;
+    const num = card.querySelector<HTMLElement>('.price__num');
+    const period = card.querySelector<HTMLElement>('.price__period');
+    const note = card.querySelector<HTMLElement>('.price__note');
+    if (num) countTo(num, p.price, animate);
+    if (period) period.textContent = p.period;
+    if (note) note.textContent = p.note;
+    if (stickyPrice) stickyPrice.textContent = `$${p.price}${p.period}`;
+    billing?.querySelectorAll<HTMLInputElement>('input').forEach((i) => (i.checked = i.value === interval));
+    movePill();
+  }
+  // Price ticks to the new amount (pattern from 21st.dev "ink-orbit-pricing"); instant under reduced motion.
+  const still = matchMedia('(prefers-reduced-motion: reduce)').matches;
+  function countTo(el: HTMLElement, to: number, animate: boolean) {
+    const from = Number(el.textContent) || 0;
+    if (!animate || still || from === to) return void (el.textContent = String(to));
+    const t0 = performance.now();
+    const tick = (now: number) => {
+      const t = Math.min(1, (now - t0) / 500);
+      el.textContent = String(Math.round(from + (to - from) * (1 - (1 - t) ** 3)));
+      if (t < 1) requestAnimationFrame(tick);
+    };
+    requestAnimationFrame(tick);
+  }
+
+  // Sliding pill under the checked option (labels differ in width, so measure them).
+  const pill = billing?.querySelector<HTMLElement>('.seg__pill');
+  function movePill() {
+    const span = billing?.querySelector<HTMLElement>('input:checked + span');
+    if (!pill || !span || !billing) return;
+    billing.classList.add('seg--pill');
+    pill.style.width = `${span.offsetWidth}px`;
+    pill.style.transform = `translateX(${span.parentElement!.offsetLeft - pill.offsetLeft}px)`; // label is the positioned child of .seg
+  }
+  window.addEventListener('resize', movePill);
+
+  billing?.addEventListener('change', (e) => {
+    interval = (e.target as HTMLInputElement).value as Interval;
+    render(true);
+  });
+  render(false);
+
+  // Cancelled checkout: neutral notice + a way back to where the user started.
+  if (params.get('checkout') === 'cancel') {
+    const box = document.querySelector<HTMLElement>('[data-cancel-notice]');
+    if (box) box.hidden = false;
+    const pending = readPending();
+    if (pending && pending.returnTo && pending.returnTo !== '/pricing') {
+      const link = document.querySelector<HTMLAnchorElement>('[data-cancel-link]');
+      const wrap = document.querySelector<HTMLElement>('[data-cancel-return]');
+      if (link && wrap) {
+        link.href = pending.returnTo;
+        link.textContent = `go back to ${pending.label}`;
+        wrap.hidden = false;
+      }
+    }
+  }
+
+  const proButtons = Array.from(document.querySelectorAll<HTMLButtonElement>('[data-go-pro]'));
+  let isPro = false;
+
+  async function goPro(btn: HTMLButtonElement) {
+    if (btn.getAttribute('aria-disabled') === 'true') {
+      showPayNotice(notices, { ok: false, code: 'offline' });
+      return;
+    }
+    if (isPro) {
+      location.href = '/account';
+      return;
+    }
+    const productId = interval === 'year' ? 'pro_yearly' : 'pro_monthly';
+    const session = supabase ? await getSession() : null;
+    // Pro is tied to an account: log in first (magic link), then come back and continue.
+    if (supabase && !session) {
+      location.href = `/account?next=${encodeURIComponent('/pricing')}&intent=${productId}`;
+      return;
+    }
+    const restore = setBusy(btn, 'Opening checkout…');
+    showPayNotice(notices, null);
+    const result = await startCheckout(
+      { productId },
+      {
+        productId,
+        label: interval === 'year' ? 'Stay Pro, yearly' : 'Stay Pro, monthly',
+        amountUsd: prices[interval].price,
+        returnTo: '/pricing',
+        startedAt: new Date().toISOString(),
+      },
+    );
+    if (!result.ok) {
+      restore();
+      showPayNotice(notices, result);
+    }
+  }
+  proButtons.forEach((b) => b.addEventListener('click', () => goPro(b)));
+
+  // Signed-in state: Pro users see their status; returning from login with intent auto-continues.
+  (async () => {
+    const session = await getSession().catch(() => null);
+    if (!session) return;
+    document.querySelectorAll<HTMLElement>('[data-pro-signed-out]').forEach((el) => (el.hidden = true));
+    const profile = await getProfile().catch(() => null);
+    isPro = Boolean(profile?.isPro);
+    if (isPro) {
+      proButtons.forEach((b) => setButtonLabel(b, "You're on Pro ✓"));
+      return;
+    }
+    const intent = params.get('intent');
+    if (params.get('auto') === '1' && (intent === 'pro_monthly' || intent === 'pro_yearly')) {
+      interval = intent === 'pro_monthly' ? 'month' : 'year';
+      render(false);
+      history.replaceState(null, '', '/pricing');
+      const btn = proButtons[0];
+      if (btn) goPro(btn);
+    }
+  })();
+</script>

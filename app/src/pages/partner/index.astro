@@ -1,0 +1,223 @@
+---
+import PartnerShell from '../../components/partner/PartnerShell.astro';
+import Button from '../../components/ui/Button.astro';
+import Icon from '../../components/ui/Icon.astro';
+import PayNotice from '../../components/money/PayNotice.astro';
+import '../../components/money/money.css';
+import { LISTING } from '../../components/money/plans';
+---
+
+<PartnerShell
+  title="Partner portal"
+  heading="Your business on Yoo Yaao"
+  lede="Who is waiting to hear from you, what nomads see, and where your applications stand."
+  current="overview"
+>
+  <div class="pp-grid">
+    <div class="stack" style="--stack-gap: var(--space-6)">
+      <!-- Leads: the focal point -->
+      <section class="pp-panel" aria-labelledby="ov-leads">
+        <div class="pp-panel__row">
+          <h2 id="ov-leads" class="pp-h2">Leads</h2>
+          <Button href="/partner/leads" variant="ghost" size="sm" iconRight="arrow-right">All leads</Button>
+        </div>
+        <p class="pp-ov-focus">
+          <span class="pp-hero-num" data-ov-new>0</span>
+          <span class="pp-muted" data-ov-new-text></span>
+        </p>
+        <div class="pp-pipe">
+          {
+            ['new', 'sent', 'won', 'lost'].map((s) => (
+              <a class="pp-pipe__cell" href={`/partner/leads?status=${s}`} data-s={s}>
+                <span class="pp-pipe__num" data-ov-count={s}>0</span>
+                <span class="pp-label">{s === 'sent' ? 'replied' : s}</span>
+              </a>
+            ))
+          }
+        </div>
+        <p class="pp-small pp-muted" data-ov-rate></p>
+      </section>
+
+      <!-- Applications -->
+      <section class="pp-panel" aria-labelledby="ov-app">
+        <h2 id="ov-app" class="pp-h2">Applications</h2>
+        <ul class="pp-apps" data-ov-apps></ul>
+        <div data-ov-apps-none hidden class="stack" style="--stack-gap: var(--space-3)">
+          <p class="pp-muted">No application on file for this email.</p>
+          <div><Button href="/business/apply" variant="secondary" iconRight="arrow-right">Apply to be listed</Button></div>
+        </div>
+      </section>
+    </div>
+
+    <aside class="stack" style="--stack-gap: var(--space-6)">
+      <section class="pp-panel" aria-labelledby="ov-listing">
+        <div class="pp-panel__row">
+          <h2 id="ov-listing" class="pp-h2">My listings</h2>
+          <Button href="/partner/listing" variant="ghost" size="sm" data-ov-edit>Edit</Button>
+        </div>
+        <ul class="pp-cards" data-ov-listings></ul>
+        <p class="pp-muted pp-small" data-ov-listings-none hidden>
+          Your listing appears here once we approve your application.
+        </p>
+        <PayNotice />
+      </section>
+    </aside>
+  </div>
+
+  <template data-listing-tpl>
+    <li class="pp-listing">
+      <div class="pp-panel__row">
+        <p class="pp-listing__name" data-name></p>
+        <span class="pp-pill" data-pill></span>
+      </div>
+      <p class="pp-listing__meta" data-meta></p>
+      <p class="pp-listing__desc" data-desc></p>
+      <a class="pp-listing__url" data-url rel="noopener" target="_blank"></a>
+      <div class="pp-upsell" data-upsell hidden>
+        <p><strong>Get to the top of your city page</strong></p>
+        <p class="pp-upsell__price">${LISTING.priceUsd}<small>/{LISTING.interval}</small></p>
+        <ul>
+          {
+            LISTING.features.slice(0, 3).map((f) => (
+              <li>
+                <Icon name="check" size={18} /> {f}
+              </li>
+            ))
+          }
+        </ul>
+        <Button variant="accent" block data-feature data-needs-network>Feature this listing</Button>
+        <p class="pp-small" data-demo-note hidden>Demo: opens the no-charge demo checkout.</p>
+      </div>
+      <p class="pp-small pp-featured" data-featured hidden><Icon name="star" size={16} /> <span data-featured-text></span></p>
+    </li>
+  </template>
+</PartnerShell>
+
+<style>
+  .pp-ov-focus {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: var(--space-3);
+  }
+</style>
+
+<script>
+  import { boot, statusLabel, fmtDate, cityName, kindName, type PartnerData, type OpsListing } from '../../components/partner/portal';
+  import { startCheckout, showPayNotice, setBusy, watchNetwork } from '../../components/money/client';
+  import { LISTING } from '../../components/money/plans';
+
+  watchNetwork();
+  const $ = <T extends HTMLElement = HTMLElement>(s: string, root: ParentNode = document) => root.querySelector<T>(s)!;
+
+  // Application status → what happens next, in the partner's words.
+  const NEXT: Record<string, string> = {
+    new: 'We check your details and licence within 1 business day.',
+    approved: 'Approved. See your listing on the right.',
+    paid: 'Approved and featured.',
+    rejected: "We couldn't verify this one. Reply to our email or apply again with your licence number.",
+  };
+
+  function renderLeads(d: PartnerData) {
+    const c: Record<string, number> = { new: 0, sent: 0, won: 0, lost: 0 };
+    d.leads.forEach((l) => l.status in c && c[l.status]++);
+    for (const k in c) $(`[data-ov-count="${k}"]`).textContent = String(c[k]);
+    $('[data-ov-new]').textContent = String(c.new);
+    $('[data-ov-new-text]').textContent =
+      c.new === 1 ? 'new lead waiting for a reply' : c.new ? 'new leads waiting for a reply' : 'new leads. You are all caught up.';
+    const closed = c.won + c.lost;
+    $('[data-ov-rate]').textContent = !d.leads.length
+      ? 'No leads yet. When a nomad asks for help in your city, our team sends them to you here.'
+      : closed
+        ? `You won ${c.won} of ${closed} closed leads (${Math.round((c.won / closed) * 100)}%).`
+        : 'Mark leads won or lost to see your win rate.';
+  }
+
+  function renderApps(d: PartnerData) {
+    const rows = [
+      ...d.apps.listings.map((a) => ({ name: a.business_name, meta: [kindName(a.kind), cityName(a.city)], status: a.status, at: a.created_at })),
+      ...d.apps.buddies.map((a) => ({ name: a.full_name, meta: ['Local Buddy', cityName(a.city)], status: a.status, at: a.created_at })),
+    ];
+    $('[data-ov-apps-none]').hidden = rows.length > 0;
+    $('[data-ov-apps]').replaceChildren(
+      ...rows.map((r) => {
+        const li = document.createElement('li');
+        li.className = 'pp-app';
+        li.innerHTML =
+          '<div class="pp-panel__row"><p class="pp-app__name"></p><span class="pp-pill"></span></div><p class="pp-small pp-muted"></p><p class="pp-small"></p>';
+        const [name, pill, meta, next] = li.querySelectorAll<HTMLElement>('.pp-app__name, .pp-pill, p.pp-muted, p.pp-small:not(.pp-muted)');
+        name.textContent = r.name;
+        pill.dataset.s = r.status === 'new' ? 'review' : r.status;
+        pill.textContent = r.status === 'new' ? statusLabel('review') : statusLabel(r.status);
+        meta.textContent = [...r.meta, `applied ${fmtDate(r.at)}`].filter(Boolean).join(' · ');
+        next.textContent = NEXT[r.status] ?? '';
+        return li;
+      }),
+    );
+  }
+
+  const isFeatured = (l: OpsListing) => l.featured && (!l.featured_until || new Date(l.featured_until) > new Date());
+
+  function renderListings(d: PartnerData, demo: boolean) {
+    const tpl = $<HTMLTemplateElement>('[data-listing-tpl]');
+    $('[data-ov-listings-none]').hidden = d.listings.length > 0;
+    $('[data-ov-edit]').hidden = !d.listings.length;
+    $('[data-ov-listings]').replaceChildren(
+      ...d.listings.map((l) => {
+        const li = tpl.content.firstElementChild!.cloneNode(true) as HTMLElement;
+        $('[data-name]', li).textContent = l.name;
+        const pill = $('[data-pill]', li);
+        pill.dataset.s = l.active ? 'approved' : 'new';
+        pill.textContent = l.active ? 'Live' : 'Not published yet';
+        $('[data-meta]', li).textContent = [kindName(l.kind), cityName(l.city), l.price_from && `from ${l.price_from}`].filter(Boolean).join(' · ');
+        $('[data-desc]', li).textContent = l.description || 'No description yet. Add one so nomads know who you help.';
+        const a = $<HTMLAnchorElement>('[data-url]', li);
+        a.hidden = !l.url;
+        if (l.url) {
+          a.href = l.url;
+          a.textContent = l.url.replace(/^https?:\/\//, '').replace(/\/$/, '');
+        }
+        const f = isFeatured(l);
+        $('[data-featured]', li).hidden = !f;
+        if (f)
+          $('[data-featured-text]', li).textContent = `Featured on ${cityName(l.city) || 'your city'} page${l.featured_until ? ` until ${fmtDate(l.featured_until)}` : ''}.`;
+        $('[data-upsell]', li).hidden = f;
+        $('[data-demo-note]', li).hidden = !demo;
+        const btn = $<HTMLButtonElement>('[data-feature]', li);
+        btn.setAttribute('aria-label', `Feature ${l.name} for $${LISTING.priceUsd} a month`);
+        btn.addEventListener('click', () => feature(l, btn, d.email, demo));
+        return li;
+      }),
+    );
+  }
+
+  async function feature(l: OpsListing, btn: HTMLButtonElement, email: string, demo: boolean) {
+    const scope = btn.closest('section')!;
+    showPayNotice(scope, null);
+    // Demo never calls the real checkout: go to the labelled no-charge demo receipt instead.
+    if (demo) return void (location.href = '/checkout/status?demo=1&product=listing_featured');
+    const restore = setBusy(btn, 'Opening checkout…');
+    const result = await startCheckout(
+      { productId: 'listing_featured', email, listingName: l.name, listingKind: l.kind, listingCity: l.city ?? undefined },
+      {
+        productId: 'listing_featured',
+        label: 'your featured listing',
+        amountUsd: LISTING.priceUsd,
+        returnTo: '/partner',
+        listingName: l.name,
+        listingCity: l.city ?? undefined,
+        startedAt: new Date().toISOString(),
+      },
+    );
+    if (!result.ok) {
+      restore();
+      showPayNotice(scope, result);
+    }
+  }
+
+  boot((d, demo) => {
+    renderLeads(d);
+    renderApps(d);
+    renderListings(d, demo);
+  });
+</script>

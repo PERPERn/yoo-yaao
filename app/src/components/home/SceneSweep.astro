@@ -1,0 +1,68 @@
+---
+import Button from '../ui/Button.astro';
+---
+
+<section id="not-just-a-visa" class="scene scene--sweep overflow-clip" data-scene="sweep" aria-labelledby="sweep-title">
+  <div class="sweep__lines" aria-hidden="true">
+    <p class="text-sweep sweep__line" data-sweep="left">It's not just a visa.</p>
+    <p class="text-sweep text-outline text-outline--brand sweep__line sweep__line--end" data-sweep="right">It's months of your life.</p>
+  </div>
+  <div class="container sweep__copy stack" data-reveal>
+    <h2 id="sweep-title" class="sweep__title">It decides where you live and how long you stay.</h2>
+    <p class="lead">Your lease, your bank account and your work all hang on it. Get it right the first time.</p>
+    <div><Button href="/visas" variant="secondary" iconRight="arrow-right">See every visa</Button></div>
+  </div>
+</section>
+
+<style>
+  .scene--sweep {
+    position: relative;
+    min-height: 100svh;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    align-content: center;
+    gap: var(--space-10);
+    padding-block: var(--space-section);
+  }
+  .sweep__lines {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    gap: var(--space-2);
+    color: var(--color-ink);
+  }
+  .text-sweep.sweep__line {
+    margin: 0;
+    padding-inline: var(--gutter);
+    width: max-content;
+    max-width: 100%;
+    /* Each line fits the viewport once it lands (home-scroll.ts slides it in, never past the edge). */
+    font-size: clamp(2.5rem, 7vw, var(--text-sweep));
+    text-wrap: balance;
+  }
+  @media (min-width: 40rem) {
+    .text-sweep.sweep__line {
+      text-wrap: nowrap;
+    }
+  }
+  .sweep__line--end {
+    justify-self: end;
+  }
+  .sweep__title {
+    font-size: var(--text-3xl);
+    text-wrap: balance;
+  }
+  .sweep__copy {
+    max-width: calc(var(--container-narrow) + var(--gutter) * 2);
+    margin-inline: auto;
+    text-align: center;
+    align-items: center;
+  }
+  /* Story mode: one screen, the two lines over the copy. */
+  :global(html.home-story) .scene--sweep {
+    height: 100svh;
+    padding-block: var(--header-h) var(--space-8);
+  }
+  :global(html.home-story) .sweep__line {
+    will-change: transform;
+  }
+</style>

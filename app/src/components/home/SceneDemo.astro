@@ -1,0 +1,57 @@
+---
+import Button from '../ui/Button.astro';
+---
+
+<section class="section scene scene--demo" data-scene="demo" aria-labelledby="demo-title">
+  <div class="container demo">
+    <div class="demo__head stack" data-reveal>
+      <h2 id="demo-title" class="display-6xl">See it in action.</h2>
+      <p class="lead">One minute: find a visa, plan your 90-day reports, book a local buddy, pay.</p>
+    </div>
+    <figure class="demo__frame" data-reveal>
+      <video
+        src="/media/demo.webm#t=3"
+        controls
+        muted
+        playsinline
+        preload="metadata"
+        aria-describedby="demo-caption"
+      ></video>
+      <figcaption id="demo-caption" class="demo__caption">
+        Screen recording of the live product. Captions explain each step; the payment shown is a no-charge demo.
+      </figcaption>
+    </figure>
+    <div class="demo__cta"><Button href="/finder" iconRight="arrow-right">Try it yourself</Button></div>
+  </div>
+</section>
+
+<style>
+  .demo {
+    display: grid;
+    gap: var(--space-8);
+    justify-items: center;
+    text-align: center;
+  }
+  .demo__head .lead {
+    margin-inline: auto;
+  }
+  .demo__frame {
+    margin: 0;
+    width: min(100%, 64rem);
+    border-radius: var(--radius-xl);
+    overflow: hidden;
+    box-shadow: var(--elev-3);
+    background: #000;
+  }
+  .demo__frame video {
+    display: block;
+    width: 100%;
+    aspect-ratio: 16 / 9;
+  }
+  .demo__caption {
+    padding: 0.75rem 1rem;
+    font-size: 0.875rem;
+    color: var(--color-ink-2);
+    background: var(--color-surface);
+  }
+</style>

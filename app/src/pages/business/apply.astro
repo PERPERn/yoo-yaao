@@ -1,0 +1,224 @@
+---
+import Business from '../../layouts/Business.astro';
+import Input from '../../components/ui/Input.astro';
+import Select from '../../components/ui/Select.astro';
+import Field from '../../components/ui/Field.astro';
+import Button from '../../components/ui/Button.astro';
+import Callout from '../../components/ui/Callout.astro';
+import Icon from '../../components/ui/Icon.astro';
+import ApplySteps from '../../components/partner/ApplySteps.astro';
+import '../../components/money/money.css';
+import { LISTING, VERIFIED_AGENT, CITY_OPTIONS } from '../../components/money/plans';
+---
+
+<Business title="Apply" description="Apply to list your coworking, coliving or licensed visa agency. Every partner is verified before going live.">
+  <div class="container apply">
+    <div class="apply__intro stack" style="--stack-gap: var(--space-5)">
+      <h1>Apply to list your business</h1>
+      <p class="lead">Two minutes. No payment today: you pay only after we approve you.</p>
+      <h2 class="apply__h2">What happens next</h2>
+      <ApplySteps current={1} data-steps />
+      <p class="small muted"><a href="/business/verify">Why we verify every partner</a></p>
+    </div>
+
+    <div class="form-panel">
+      <form class="form" data-apply novalidate>
+        <div class="hp" aria-hidden="true">
+          <label for="website">Leave this empty</label>
+          <input type="text" id="website" name="website" tabindex="-1" autocomplete="off" />
+        </div>
+        <Field id="p-plan" label="Plan you're interested in" group required>
+          <div class="chips" data-group="p-plan">
+            <label class="chip"><input type="radio" name="plan" value="featured" checked /><span>Featured listing · ${LISTING.priceUsd}/mo</span></label>
+            <label class="chip"><input type="radio" name="plan" value="agent" /><span>Verified agent · ${VERIFIED_AGENT.priceUsd}/mo</span></label>
+          </div>
+        </Field>
+        <Input name="businessName" id="p-name" label="Business name" autocomplete="organization" required />
+        <div class="form-row">
+          <Select
+            name="kind"
+            id="p-kind"
+            label="Type"
+            placeholder="Choose a type"
+            options={[
+              { value: 'coworking', label: 'Coworking' },
+              { value: 'coliving', label: 'Coliving or condo' },
+              { value: 'agency', label: 'Visa agency' },
+            ]}
+            required
+          />
+          <Select name="city" id="p-city" label="City" placeholder="Choose a city" options={[...CITY_OPTIONS]} required />
+        </div>
+        <div data-licence hidden>
+          <Input
+            name="licenseNo"
+            id="p-licence"
+            label="Licence number"
+            hint="TAT licence or business registration number"
+            maxlength="80"
+            required
+          />
+        </div>
+        <Input name="url" id="p-url" type="url" label="Website" placeholder="https://" autocomplete="url" optional />
+        <div class="form-row">
+          <Input name="contactName" id="p-contact" label="Your name" autocomplete="name" optional />
+          <Input name="email" id="p-email" type="email" label="Contact email" autocomplete="email" inputmode="email" required hint="We send a confirmation link here." />
+        </div>
+        <Field id="p-consent" label="Verification consent" group hideLabel>
+          <label class="choice" data-group="p-consent">
+            <input type="checkbox" name="consent" value="yes" />
+            <span>We verify your identity and licence before your listing goes live</span>
+          </label>
+        </Field>
+        <div data-form-error hidden>
+          <Callout tone="danger" live title="Couldn't send your application"><span data-form-error-text></span></Callout>
+        </div>
+        <Button type="submit" size="lg" block data-submit>Send application</Button>
+        <p class="form-foot">No payment now. We reply within 1–2 business days.</p>
+      </form>
+
+      <div class="done stack" data-done hidden tabindex="-1" style="--stack-gap: var(--space-4)">
+        <span class="done__mark"><Icon name="check" size={28} strokeWidth={2.25} /></span>
+        <h2>Application received</h2>
+        <p data-confirm-text>Next, confirm your email. We sent a link to <strong data-done-email></strong>.</p>
+        <div class="cluster">
+          <Button variant="secondary" data-resend>Resend link</Button>
+          <Button href="/business/verify" variant="ghost">How we verify</Button>
+        </div>
+        <p class="small muted" aria-live="polite" data-resend-note></p>
+      </div>
+    </div>
+  </div>
+</Business>
+
+<style>
+  .apply {
+    display: grid;
+    gap: var(--space-10);
+    padding-block: clamp(var(--space-8), 5vw, var(--space-16)) var(--space-8);
+  }
+  @media (min-width: 60rem) {
+    .apply {
+      grid-template-columns: minmax(0, 0.9fr) minmax(0, 1.1fr);
+      align-items: start;
+    }
+  }
+  .apply h1 {
+    font-size: var(--text-4xl);
+    line-height: var(--leading-tight);
+    letter-spacing: var(--tracking-display);
+    text-wrap: balance;
+  }
+  .apply__h2 {
+    font-size: var(--text-xl);
+    margin-top: var(--space-2);
+  }
+  .form :global(fieldset) {
+    border: 0;
+    margin: 0;
+    padding: 0;
+  }
+</style>
+
+<script>
+  import { applyValidation, liveValidate, val, checkedValues, EMAIL_RE, setBusy, postJson, formErrorMessage, type Validator } from '../../components/money/client';
+  import { signInWithMagicLink } from '../../lib/supabase';
+
+  const form = document.querySelector<HTMLFormElement>('[data-apply]')!;
+  const kind = form.querySelector<HTMLSelectElement>('#p-kind')!;
+  const licence = form.querySelector<HTMLElement>('[data-licence]')!;
+  const submit = form.querySelector<HTMLButtonElement>('[data-submit]')!;
+  const errBox = form.querySelector<HTMLElement>('[data-form-error]')!;
+  const errText = form.querySelector<HTMLElement>('[data-form-error-text]')!;
+  const done = document.querySelector<HTMLElement>('[data-done]')!;
+
+  // Agencies need a licence number; picking the agent plan implies an agency.
+  const sync = () => {
+    if (val(form, 'plan') === 'agent' && !kind.value) kind.value = 'agency';
+    licence.hidden = kind.value !== 'agency';
+  };
+  form.addEventListener('change', (e) => {
+    if ((e.target as HTMLElement).matches('input[name="plan"], #p-kind')) sync();
+  });
+  const plan = new URLSearchParams(location.search).get('plan');
+  if (plan === 'agent' || plan === 'featured') form.querySelector<HTMLInputElement>(`input[name="plan"][value="${plan}"]`)!.checked = true;
+  sync();
+
+  const validate: Validator = (f) => {
+    const e: Record<string, string> = {};
+    if (!val(f, 'businessName')) e['p-name'] = 'Enter your business name.';
+    if (!val(f, 'kind')) e['p-kind'] = 'Choose what kind of business you run.';
+    if (!val(f, 'city')) e['p-city'] = 'Choose a city.';
+    if (val(f, 'kind') === 'agency' && !val(f, 'licenseNo')) e['p-licence'] = 'Agencies need a TAT licence or business registration number.';
+    const url = val(f, 'url');
+    if (url && !/^https?:\/\/[^\s.]+\.[^\s]+$/i.test(url)) e['p-url'] = 'Enter the full address, starting with https://';
+    const email = val(f, 'email');
+    if (!email) e['p-email'] = 'Enter an email address.';
+    else if (!EMAIL_RE.test(email)) e['p-email'] = "That doesn't look like an email. Check for typos.";
+    if (!checkedValues(f, 'consent').length) e['p-consent'] = 'Please agree to verification so we can review your application.';
+    return e;
+  };
+  liveValidate(form, validate);
+
+  // Step 2 of the stepper: confirm the email through a magic link that lands in the portal.
+  const steps = document.querySelectorAll<HTMLElement>('[data-steps] [data-step]');
+  const setStep = (n: number) =>
+    steps.forEach((li) => {
+      const i = Number(li.dataset.step);
+      li.dataset.state = i < n ? 'done' : i === n ? 'current' : 'todo';
+      if (i === n) li.setAttribute('aria-current', 'step');
+      else li.removeAttribute('aria-current');
+      li.querySelector('.as__sr')!.textContent = i < n ? ' (done)' : i === n ? ' (in progress)' : '';
+    });
+
+  const note = document.querySelector<HTMLElement>('[data-resend-note]')!;
+  const resend = document.querySelector<HTMLButtonElement>('[data-resend]')!;
+  let email = '';
+  async function sendLink() {
+    const restore = setBusy(resend, 'Sending…');
+    try {
+      await signInWithMagicLink(email, `${location.origin}/partner`);
+      note.textContent = `Link sent to ${email}. It expires in 1 hour.`;
+    } catch {
+      // Supabase not configured (preview) or rate-limited: the team confirms by email instead.
+      document.querySelector('[data-confirm-text]')!.textContent =
+        "We couldn't send the confirmation link right now. We'll email you within 1 business day instead.";
+      note.textContent = '';
+    } finally {
+      restore();
+    }
+  }
+  resend.addEventListener('click', sendLink);
+
+  form.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    errBox.hidden = true;
+    if (!applyValidation(form, validate)) return;
+    const restore = setBusy(submit, 'Sending…');
+    const isAgency = val(form, 'kind') === 'agency';
+    const r = await postJson('/api/listing-apply', {
+      businessName: val(form, 'businessName'),
+      kind: val(form, 'kind'),
+      city: val(form, 'city') || undefined,
+      url: val(form, 'url') || undefined,
+      contactName: val(form, 'contactName') || undefined,
+      email: val(form, 'email'),
+      licenseNo: isAgency ? val(form, 'licenseNo') : undefined,
+      message: `Plan: ${val(form, 'plan') === 'agent' ? 'Verified Agent' : 'Featured Listing'}. Consented to verification.`,
+      website: val(form, 'website'),
+    });
+    restore();
+    if (!r.ok) {
+      errText.textContent = formErrorMessage(r);
+      errBox.hidden = false;
+      return;
+    }
+    email = val(form, 'email');
+    document.querySelector('[data-done-email]')!.textContent = email;
+    form.hidden = true;
+    done.hidden = false;
+    done.focus();
+    setStep(2);
+    sendLink();
+  });
+</script>

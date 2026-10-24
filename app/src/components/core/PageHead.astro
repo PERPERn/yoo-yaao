@@ -1,0 +1,105 @@
+---
+/**
+ * Page opener for inner pages: breadcrumbs (with BreadcrumbList JSON-LD), the page's one h1,
+ * a lead sentence and an optional slot for badges/actions under it.
+ *   <PageHead title="Visas" crumbs={[{ label: 'Visas' }]} lead="…" />
+ */
+import { SITE } from '../../config/site';
+
+interface Crumb {
+  label: string;
+  href?: string;
+}
+interface Props {
+  title: string;
+  lead?: string;
+  crumbs?: Crumb[]; // trail after "Home"; the last one is the current page
+  narrow?: boolean;
+  class?: string;
+}
+const { title, lead, crumbs = [], narrow = false, class: className } = Astro.props;
+const trail: Crumb[] = [{ label: 'Home', href: '/' }, ...crumbs];
+const jsonLd = JSON.stringify({
+  '@context': 'https://schema.org',
+  '@type': 'BreadcrumbList',
+  itemListElement: trail.map((c, i) => ({
+    '@type': 'ListItem',
+    position: i + 1,
+    name: c.label,
+    ...(c.href ? { item: new URL(c.href, SITE.url).href } : {}),
+  })),
+});
+---
+
+<header class:list={['phead', className]}>
+  <div class={narrow ? 'container-narrow' : 'container'}>
+    {
+      crumbs.length > 0 && (
+        <nav aria-label="Breadcrumb" class="crumbs" data-intro>
+          <ol>
+            {trail.map((c, i) => (
+              <li>
+                {i < trail.length - 1 && c.href ? <a href={c.href}>{c.label}</a> : <span aria-current="page">{c.label}</span>}
+              </li>
+            ))}
+          </ol>
+        </nav>
+      )
+    }
+    <h1 class="phead__title" data-intro>{title}</h1>
+    {lead && <p class="phead__lead" data-intro>{lead}</p>}
+    {Astro.slots.has('default') && <div class="phead__extra" data-intro><slot /></div>}
+  </div>
+  {crumbs.length > 0 && <script type="application/ld+json" set:html={jsonLd} />}
+</header>
+
+<style>
+  .phead {
+    padding-block: var(--space-12) var(--space-10);
+  }
+  .crumbs ol {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-2);
+    list-style: none;
+    padding: 0;
+    margin: 0 0 var(--space-6);
+    font-size: var(--text-sm);
+    color: var(--color-ink-2);
+  }
+  .crumbs li + li::before {
+    content: '›';
+    margin-right: var(--space-2);
+    color: var(--color-ink-3);
+  }
+  .crumbs a {
+    color: var(--color-ink-2);
+    text-decoration: underline;
+    text-decoration-color: var(--color-border-strong);
+    text-underline-offset: 3px;
+  }
+  .crumbs a:hover {
+    color: var(--color-brand);
+  }
+  .crumbs [aria-current] {
+    color: var(--color-ink);
+    font-weight: var(--weight-medium);
+  }
+  .phead__title {
+    font-size: var(--text-4xl);
+    line-height: var(--leading-tight);
+    letter-spacing: var(--tracking-display);
+    text-wrap: balance;
+    max-width: 20ch;
+  }
+  .phead__lead {
+    margin-top: var(--space-4);
+    font-size: var(--text-lg);
+    color: var(--color-ink-2);
+    max-width: 60ch;
+    text-wrap: pretty;
+  }
+  .phead__extra {
+    margin-top: var(--space-6);
+  }
+</style>

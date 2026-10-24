@@ -1,0 +1,124 @@
+---
+import Business from '../../layouts/Business.astro';
+import Button from '../../components/ui/Button.astro';
+import Icon from '../../components/ui/Icon.astro';
+import ApplySteps from '../../components/partner/ApplySteps.astro';
+import { SITE } from '../../config/site';
+
+const checks = [
+  { icon: 'users' as const, title: 'Identity, for everyone', body: 'The contact email must be confirmed, and the person who applies must be able to act for the business.' },
+  { icon: 'shield' as const, title: 'Licence, for visa agencies', body: 'A TAT licence or Thai business registration number, checked against the official record before any lead reaches you.' },
+  { icon: 'globe' as const, title: 'A real place, for spaces', body: 'Coworking and coliving must have a working address and website or map listing that match the application.' },
+];
+---
+
+<Business title="How we verify" description={`How ${SITE.name} checks every business before it appears to travellers: identity, licence and a real address.`}>
+  <div class="container-narrow v">
+    <header class="stack" style="--stack-gap: var(--space-4)">
+      <p class="v-eyebrow"><Icon name="shield" size={16} /> Trust and safety</p>
+      <h1>How we verify partners</h1>
+      <p class="lead">
+        Travellers use {SITE.name} to make visa decisions with real fines and deadlines. So no business goes live until a
+        person on our team has checked it.
+      </p>
+    </header>
+
+    <section class="stack" style="--stack-gap: var(--space-5)" aria-labelledby="v-steps">
+      <h2 id="v-steps">The four steps</h2>
+      <ApplySteps />
+    </section>
+
+    <section class="stack" style="--stack-gap: var(--space-5)" aria-labelledby="v-what">
+      <h2 id="v-what">What we check</h2>
+      <ul class="v-checks">
+        {
+          checks.map((c) => (
+            <li>
+              <span class="v-icon"><Icon name={c.icon} size={20} /></span>
+              <div>
+                <h3>{c.title}</h3>
+                <p class="muted">{c.body}</p>
+              </div>
+            </li>
+          ))
+        }
+      </ul>
+    </section>
+
+    <section class="stack" style="--stack-gap: var(--space-4)" aria-labelledby="v-why">
+      <h2 id="v-why">Why it matters</h2>
+      <ul class="v-list">
+        <li>Unlicensed "visa services" and border-run touts are common. A wrong referral can cost a traveller an overstay fine or a ban.</li>
+        <li>We never file visas ourselves. Sending someone to an agency is a recommendation, so it has to be one we can stand behind.</li>
+        <li>Verified partners get better leads: people trust a badge they know means something.</li>
+      </ul>
+    </section>
+
+    <section class="stack" style="--stack-gap: var(--space-4)" aria-labelledby="v-data">
+      <h2 id="v-data">Your data</h2>
+      <p>
+        We keep only what we need to verify you: your contact details and licence number. Licence numbers are visible to our
+        team, never to travellers. Ask us to delete them any time at <a href={`mailto:${SITE.supportEmail}`}>{SITE.supportEmail}</a>.
+      </p>
+    </section>
+
+    <div class="cluster">
+      <Button href="/business/apply" size="lg" iconRight="arrow-right">Apply to list your business</Button>
+      <Button href="/business#plans" variant="secondary" size="lg">See plans</Button>
+    </div>
+  </div>
+</Business>
+
+<style>
+  .v {
+    display: grid;
+    gap: var(--space-12);
+    padding-block: clamp(var(--space-8), 5vw, var(--space-16)) var(--space-8);
+  }
+  .v h1 {
+    font-size: var(--text-4xl);
+    line-height: var(--leading-tight);
+    letter-spacing: var(--tracking-display);
+    text-wrap: balance;
+  }
+  .v h2 {
+    font-size: var(--text-2xl);
+  }
+  .v-eyebrow {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-2);
+    font-size: var(--text-sm);
+    font-weight: var(--weight-semibold);
+    color: var(--seg-b2b-strong);
+  }
+  .v-checks {
+    display: grid;
+    gap: var(--space-5);
+    padding: 0;
+    list-style: none;
+  }
+  .v-checks li {
+    display: flex;
+    gap: var(--space-4);
+  }
+  .v-checks h3 {
+    font-size: var(--text-lg);
+    margin-bottom: var(--space-1);
+  }
+  .v-icon {
+    display: grid;
+    place-items: center;
+    flex-shrink: 0;
+    width: 2.5rem;
+    height: 2.5rem;
+    border-radius: 50%;
+    background: var(--seg-b2b-bg);
+    color: var(--seg-b2b-strong);
+  }
+  .v-list {
+    display: grid;
+    gap: var(--space-3);
+    padding-left: 1.25rem;
+  }
+</style>

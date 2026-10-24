@@ -1,0 +1,70 @@
+---
+import Field from './Field.astro';
+
+/**
+ * Native <select> (keeps platform keyboard + screen-reader behaviour).
+ * `options` accepts strings or { value, label, disabled }. Or pass <option>s in the slot.
+ * Pass `label` for the full Field wrapper.
+ */
+type Option = string | { value: string; label: string; disabled?: boolean };
+interface Props {
+  name: string;
+  id?: string;
+  label?: string;
+  hint?: string;
+  error?: string;
+  options?: Option[];
+  value?: string;
+  placeholder?: string; // renders a first, empty, disabled option
+  required?: boolean;
+  optional?: boolean;
+  hideLabel?: boolean;
+  class?: string;
+  [key: string]: unknown;
+}
+
+const {
+  name,
+  id = name,
+  label,
+  hint,
+  error,
+  options = [],
+  value,
+  placeholder,
+  required = false,
+  optional = false,
+  hideLabel = false,
+  class: className,
+  ...rest
+} = Astro.props;
+
+const opts = options.map((o) => (typeof o === 'string' ? { value: o, label: o, disabled: false } : o));
+const describedBy = label ? [hint && `${id}-hint`, `${id}-error`].filter(Boolean).join(' ') : undefined;
+---
+
+{
+  label ? (
+    <Field id={id} label={label} hint={hint} error={error} required={required} optional={optional} hideLabel={hideLabel}>
+      <select
+        id={id}
+        name={name}
+        required={required}
+        aria-invalid={error ? 'true' : undefined}
+        aria-describedby={describedBy}
+        class:list={['control', className]}
+        {...rest}
+      >
+        {placeholder && <option value="" disabled selected={!value}>{placeholder}</option>}
+        {opts.map((o) => <option value={o.value} disabled={o.disabled} selected={o.value === value}>{o.label}</option>)}
+        <slot />
+      </select>
+    </Field>
+  ) : (
+    <select id={id} name={name} required={required} class:list={['control', className]} {...rest}>
+      {placeholder && <option value="" disabled selected={!value}>{placeholder}</option>}
+      {opts.map((o) => <option value={o.value} disabled={o.disabled} selected={o.value === value}>{o.label}</option>)}
+      <slot />
+    </select>
+  )
+}

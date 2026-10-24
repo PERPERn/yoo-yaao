@@ -1,0 +1,415 @@
+---
+import type { GetStaticPaths } from 'astro';
+import Base from '../../layouts/Base.astro';
+import Avatar from '../../components/ui/Avatar.astro';
+import Rating from '../../components/ui/Rating.astro';
+import Badge from '../../components/ui/Badge.astro';
+import Callout from '../../components/ui/Callout.astro';
+import Button from '../../components/ui/Button.astro';
+import Icon from '../../components/ui/Icon.astro';
+import Input from '../../components/ui/Input.astro';
+import Select from '../../components/ui/Select.astro';
+import Field from '../../components/ui/Field.astro';
+import Steps from '../../components/ui/Steps.astro';
+import PayNotice from '../../components/money/PayNotice.astro';
+import '../../components/money/money.css';
+import { buddies, DEMO_NOTICE } from '../../data/buddies';
+import { cityLabel, feeFor, FEE_PCT, BUDDY_KEEP_PCT } from '../../components/money/plans';
+import type { Buddy } from '../../types/contracts';
+
+export const getStaticPaths = (() => buddies.map((b) => ({ params: { id: b.id }, props: { buddy: b } }))) satisfies GetStaticPaths;
+
+const { buddy } = Astro.props as { buddy: Buddy };
+const name = buddy.displayName.replace(/\s*\(demo\)\s*$/i, '');
+const city = cityLabel(buddy.city);
+const fee = feeFor(buddy.priceUsd);
+const money = (n: number) => (Number.isInteger(n) ? `$${n}` : `$${n.toFixed(2)}`);
+const others = buddies.filter((b) => b.city === buddy.city && b.id !== buddy.id).slice(0, 2);
+
+const TIMES = [
+  { value: '09:00', label: 'Morning (9:00)' },
+  { value: '13:00', label: 'Afternoon (13:00)' },
+  { value: '17:00', label: 'Evening (17:00)' },
+];
+---
+
+<Base
+  title={`${name}, Local Buddy in ${city}`}
+  description={`Book a 60-minute session with ${name} in ${city}: ${buddy.services.join(', ').toLowerCase()}. ${money(buddy.priceUsd)} per session.`}
+>
+  <div class="container">
+    <nav aria-label="Breadcrumb" class="crumbs">
+      <ol>
+        <li><a href="/">Home</a></li>
+        <li><a href="/buddies">Local Buddies</a></li>
+        <li><a href={`/buddies?city=${buddy.city}`}>{city}</a></li>
+        <li aria-current="page">{name}</li>
+      </ol>
+    </nav>
+  </div>
+
+  <div class="container profile">
+    <div class="profile__main stack" style="--stack-gap: var(--space-10)">
+      <header class="head" data-intro>
+        <Avatar name={name} src={buddy.avatarUrl ?? `/images/buddies/${buddy.id}.svg`} size="xl" />
+        <div class="stack" style="--stack-gap: var(--space-2)">
+          <div class="cluster" style="--cluster-gap: var(--space-2)">
+            <Badge variant="demo">Demo profile</Badge>
+          </div>
+          <h1>{name}</h1>
+          <p class="head__meta"><span><Icon name="map-pin" size={18} />{city}</span><span><Icon name="globe" size={18} />{buddy.languages.join(', ')}</span></p>
+          <Rating value={buddy.rating} count={buddy.sessions} />
+        </div>
+      </header>
+
+      <Callout tone="warning" title="Fictional profile">{DEMO_NOTICE}</Callout>
+
+      <section aria-labelledby="about-title" class="stack" style="--stack-gap: var(--space-3)" data-reveal>
+        <h2 id="about-title">About {name}</h2>
+        <p class="bio">{buddy.bio}</p>
+      </section>
+
+      <section aria-labelledby="help-title" class="stack" style="--stack-gap: var(--space-4)" data-reveal>
+        <h2 id="help-title">I can help with</h2>
+        <ul class="helps">
+          {buddy.services.map((s) => <li><Icon name="check" size={20} strokeWidth={2.25} />{s}</li>)}
+        </ul>
+      </section>
+
+      <section aria-labelledby="next-title" class="stack" style="--stack-gap: var(--space-5)" data-reveal>
+        <h2 id="next-title">What happens next</h2>
+        <Steps
+          items={[
+            { title: 'Pay securely', body: 'Stripe takes the payment. Your card details never touch our servers.' },
+            { title: `${name} confirms within 24 hours`, body: 'You get an email with the meeting point or video link.' },
+            { title: 'Meet and get it done', body: 'Free to cancel up to 24 hours before. Full refund if your buddy cancels.' },
+          ]}
+        />
+      </section>
+
+      <Callout tone="info" title="Practical help only">
+        Buddies don't file visas, fill in immigration forms for you or give legal or tax advice. For that, talk to a
+        <a href="/experts">licensed visa expert</a>.
+      </Callout>
+    </div>
+
+    <aside class="profile__book" aria-labelledby="book-title">
+      <form class="book" id="book" data-book novalidate data-buddy-id={buddy.id} data-buddy-name={name} data-price={buddy.priceUsd} data-city={city}>
+        <div class="stack" style="--stack-gap: var(--space-1)">
+          <h2 id="book-title" class="book__title">Book a session</h2>
+          <p class="muted small">60 minutes · {city} or video call</p>
+        </div>
+
+        <Select name="service" id="b-service" label="Service" options={buddy.services} required />
+        <div class="form-row">
+          <Input name="date" id="b-date" type="date" label="Preferred date" required data-date />
+          <Select name="time" id="b-time" label="Time" placeholder="Pick a time" options={TIMES} required />
+        </div>
+        <Field id="b-meeting" label="Meeting" group>
+          <div class="chips" data-group="b-meeting">
+            <label class="chip"><input type="radio" name="meeting" value="in-person" checked /><span>In person in {city}</span></label>
+            <label class="chip"><input type="radio" name="meeting" value="video" /><span>Video call</span></label>
+          </div>
+        </Field>
+        <Input
+          name="note"
+          id="b-note"
+          label="What do you need help with?"
+          optional
+          multiline
+          rows={3}
+          maxlength="300"
+          placeholder="e.g. viewing two condos near BTS On Nut"
+        />
+        <Input
+          name="email"
+          id="b-email"
+          type="email"
+          label="Your email"
+          hint="So your buddy can confirm. Stripe also asks for it."
+          autocomplete="email"
+          required
+        />
+
+        <dl class="facts" aria-label="Price summary">
+          <div><dt>60-min session</dt><dd>{money(buddy.priceUsd)}</dd></div>
+          <div><dt>Platform fee {FEE_PCT}% included</dt><dd>{money(fee)}</dd></div>
+          <div><dt>{name} receives ({BUDDY_KEEP_PCT}%)</dt><dd>{money(buddy.priceUsd - fee)}</dd></div>
+          <div class="facts__total"><dt>Total</dt><dd>{money(buddy.priceUsd)}</dd></div>
+        </dl>
+
+        <PayNotice />
+        <Button type="submit" variant="accent" size="lg" block icon="lock" data-needs-network>Book &amp; pay {money(buddy.priceUsd)}</Button>
+        <p class="small muted">
+          Secure payment by Stripe. No account needed. Free cancellation up to 24 hours before. Full refund if your buddy cancels.
+        </p>
+      </form>
+    </aside>
+  </div>
+
+  {
+    others.length > 0 && (
+      <section class="section more" aria-labelledby="more-title">
+        <div class="container stack" style="--stack-gap: var(--space-5)">
+          <h2 id="more-title">More buddies in {city}</h2>
+          <ul class="more__list">
+            {others.map((o) => (
+              <li>
+                <a href={`/buddies/${o.id}`} class="more__link">
+                  <Avatar name={o.displayName.replace(/\s*\(demo\)\s*$/i, '')} src={o.avatarUrl ?? `/images/buddies/${o.id}.svg`} size="md" />
+                  <span>
+                    <strong>{o.displayName.replace(/\s*\(demo\)\s*$/i, '')}</strong>
+                    <span class="muted small">{o.services.slice(0, 2).join(' · ')}</span>
+                  </span>
+                  <span class="more__price">${o.priceUsd}</span>
+                </a>
+              </li>
+            ))}
+          </ul>
+        </div>
+      </section>
+    )
+  }
+
+  <div class="sticky-cta" data-sticky>
+    <p class="sticky-cta__meta"><strong>{money(buddy.priceUsd)}</strong>60 min with {name}</p>
+    <Button href="#book" variant="accent" data-jump-book>Book &amp; pay</Button>
+  </div>
+</Base>
+
+<style>
+  .crumbs ol {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-2);
+    padding: var(--space-6) 0 0;
+    list-style: none;
+    font-size: var(--text-sm);
+    color: var(--color-ink-2);
+  }
+  .crumbs li + li::before {
+    content: '›';
+    margin-right: var(--space-2);
+  }
+  .profile {
+    display: grid;
+    gap: var(--space-10);
+    padding-block: var(--space-8) var(--space-section);
+  }
+  @media (min-width: 64rem) {
+    .profile {
+      grid-template-columns: minmax(0, 1fr) 26rem;
+      gap: var(--space-16);
+      align-items: start;
+    }
+    .profile__book {
+      position: sticky;
+      top: calc(var(--header-h) + var(--space-6));
+    }
+  }
+  .head {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-6);
+    align-items: center;
+  }
+  .head h1 {
+    font-size: var(--text-4xl);
+    line-height: var(--leading-tight);
+    letter-spacing: var(--tracking-display);
+  }
+  .head__meta {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--space-2);
+    color: var(--color-ink-2);
+  }
+  .profile__main h2 {
+    font-size: var(--text-2xl);
+  }
+  .head__meta span {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-1);
+    margin-right: var(--space-3);
+  }
+  .bio {
+    font-size: var(--text-lg);
+    max-width: 60ch;
+    text-wrap: pretty;
+  }
+  .helps {
+    display: grid;
+    gap: var(--space-3);
+    padding: 0;
+    list-style: none;
+  }
+  .helps li {
+    display: flex;
+    gap: var(--space-3);
+    align-items: center;
+    font-weight: var(--weight-medium);
+  }
+  .helps :global(svg) {
+    color: var(--color-brand);
+  }
+  .book {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-5);
+    padding: clamp(var(--space-5), 3vw, var(--space-8));
+    border-radius: var(--radius-xl);
+    background: var(--color-surface);
+    scroll-margin-top: calc(var(--header-h) + var(--space-4));
+  }
+  .book__title {
+    font-size: var(--text-2xl);
+  }
+  .book .form-row {
+    grid-template-columns: 1fr 1fr;
+  }
+  .book fieldset {
+    border: 0;
+    margin: 0;
+    padding: 0;
+  }
+  .more {
+    background: var(--color-surface-2);
+  }
+  .more__list {
+    display: grid;
+    gap: var(--space-3);
+    padding: 0;
+    list-style: none;
+    grid-template-columns: repeat(auto-fill, minmax(min(22rem, 100%), 1fr));
+  }
+  .more__link {
+    display: flex;
+    align-items: center;
+    gap: var(--space-4);
+    padding: var(--space-4);
+    border-radius: var(--radius-lg);
+    background: var(--color-surface);
+    color: var(--color-ink);
+    text-decoration: none;
+    transition: transform var(--duration-base) var(--ease-out);
+  }
+  .more__link:hover {
+    transform: translateY(-2px);
+    color: var(--color-ink);
+    text-decoration: none;
+  }
+  .more__link > span:nth-child(2) {
+    display: grid;
+    flex: 1;
+  }
+  .more__price {
+    font-family: var(--font-display);
+    font-weight: var(--weight-bold);
+    font-size: var(--text-xl);
+  }
+  @media (min-width: 64rem) {
+    .sticky-cta {
+      display: none;
+    }
+  }
+</style>
+
+<script>
+  import { initMotion } from '../../scripts/motion';
+  import {
+    applyValidation,
+    liveValidate,
+    val,
+    EMAIL_RE,
+    setBusy,
+    startCheckout,
+    showPayNotice,
+    watchNetwork,
+    type Validator,
+  } from '../../components/money/client';
+  import { getSession } from '../../lib/supabase';
+
+  initMotion();
+  watchNetwork();
+
+  const form = document.querySelector<HTMLFormElement>('[data-book]')!;
+  const dateInput = form.querySelector<HTMLInputElement>('[data-date]')!;
+  const iso = (d: Date) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+  const day = (offset: number) => {
+    const d = new Date();
+    d.setHours(0, 0, 0, 0);
+    d.setDate(d.getDate() + offset);
+    return d;
+  };
+  dateInput.min = iso(day(1));
+  dateInput.max = iso(day(60));
+
+  const validate: Validator = (f) => {
+    const e: Record<string, string> = {};
+    const date = val(f, 'date');
+    if (!date || date < dateInput.min) e['b-date'] = 'Choose a date from tomorrow onwards.';
+    else if (date > dateInput.max) e['b-date'] = 'Choose a date within the next 60 days.';
+    if (!val(f, 'time')) e['b-time'] = 'Pick a time of day.';
+    const email = val(f, 'email');
+    if (!email) e['b-email'] = 'Enter your email so your buddy can reach you.';
+    else if (!EMAIL_RE.test(email)) e['b-email'] = "That doesn't look like an email. Check for typos.";
+    return e;
+  };
+  liveValidate(form, validate);
+
+  // Prefill the email when logged in.
+  getSession()
+    .then((s) => {
+      const email = s?.user.email;
+      const input = form.querySelector<HTMLInputElement>('#b-email');
+      if (email && input && !input.value) input.value = email;
+    })
+    .catch(() => undefined);
+
+  form.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    if (!applyValidation(form, validate)) return;
+    const btn = form.querySelector<HTMLButtonElement>('button[type="submit"]');
+    if (btn?.getAttribute('aria-disabled') === 'true') {
+      showPayNotice(form, { ok: false, code: 'offline' });
+      return;
+    }
+    const buddyId = form.dataset.buddyId!;
+    const buddyName = form.dataset.buddyName!;
+    const date = val(form, 'date');
+    const time = val(form, 'time');
+    const sessionAt = `${date}T${time}:00+07:00`; // Thailand time
+    const timeSelect = form.querySelector<HTMLSelectElement>('#b-time');
+    const restore = setBusy(btn, 'Opening checkout…');
+    showPayNotice(form, null);
+    const result = await startCheckout(
+      { productId: 'buddy_session', buddyId, sessionAt, email: val(form, 'email') },
+      {
+        productId: 'buddy_session',
+        label: `your session with ${buddyName}`,
+        amountUsd: Number(form.dataset.price),
+        returnTo: location.pathname,
+        buddyId,
+        buddyName,
+        service: val(form, 'service'),
+        sessionAt,
+        timeLabel: timeSelect?.selectedOptions[0]?.textContent ?? time,
+        meeting: val(form, 'meeting') === 'video' ? 'Video call' : `In person in ${form.dataset.city}`,
+        startedAt: new Date().toISOString(),
+      },
+    );
+    if (!result.ok) {
+      restore();
+      showPayNotice(form, result);
+    }
+  });
+
+  // Sticky bar on phones jumps to the form and focuses its first field.
+  document.querySelector('[data-jump-book]')?.addEventListener('click', (e) => {
+    e.preventDefault();
+    form.scrollIntoView({ behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth' });
+    form.querySelector<HTMLElement>('select, input')?.focus({ preventScroll: true });
+  });
+</script>

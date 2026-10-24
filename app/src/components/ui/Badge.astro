@@ -1,0 +1,119 @@
+---
+import Icon, { type IconName } from './Icon.astro';
+
+/**
+ * Small status label. Presets carry their own icon + default text:
+ *   verified → "Verified" (facts checked against an official source)
+ *   demo     → "Demo" (sample data, not a real person/listing)
+ *   pro      → "Pro" (feature needs Pro)
+ *   paid     → "Paid link" (affiliate or sponsored; required disclosure)
+ * Plain tones: neutral | brand | accent | info | success | warning | danger.
+ * Slot text overrides the preset label.
+ */
+type Preset = 'verified' | 'demo' | 'pro' | 'paid';
+type Tone = 'neutral' | 'brand' | 'accent' | 'info' | 'success' | 'warning' | 'danger';
+interface Props {
+  variant?: Preset | Tone;
+  icon?: IconName;
+  title?: string; // tooltip/extra explanation
+  class?: string;
+  [key: string]: unknown;
+}
+
+const PRESETS: Record<Preset, { tone: Tone; icon: IconName; label: string; title: string }> = {
+  verified: { tone: 'success', icon: 'shield', label: 'Verified', title: 'Checked against an official source' },
+  demo: { tone: 'neutral', icon: 'info', label: 'Demo', title: 'Sample data for demonstration' },
+  pro: { tone: 'accent', icon: 'star', label: 'Pro', title: 'Included with Pro' },
+  paid: { tone: 'warning', icon: 'wallet', label: 'Paid link', title: 'We may earn a commission from this link' },
+};
+
+const { variant = 'neutral', icon, title, class: className, ...rest } = Astro.props;
+const preset = (PRESETS as Record<string, (typeof PRESETS)[Preset]>)[variant];
+const tone = preset ? preset.tone : (variant as Tone);
+const iconName = icon ?? preset?.icon;
+const hasSlot = Astro.slots.has('default');
+---
+
+<span
+  class:list={['badge', `badge--${tone}`, className]}
+  title={title ?? preset?.title}
+  {...rest}
+>
+  {iconName && <Icon name={iconName} size={14} strokeWidth={2} />}
+  {hasSlot ? <slot /> : preset?.label}
+</span>
+
+<style>
+  .badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.3em;
+    padding: 0.2em 0.6em;
+    border-radius: var(--radius-pill);
+    font-family: var(--font-body);
+    font-size: var(--text-xs);
+    font-weight: var(--weight-semibold);
+    line-height: 1.4;
+    white-space: nowrap;
+    width: fit-content;
+    background: var(--badge-bg);
+    color: var(--badge-fg);
+  }
+  .badge--neutral {
+    --badge-bg: var(--color-surface-3);
+    --badge-fg: var(--color-ink-2);
+  }
+  .badge--brand {
+    --badge-bg: var(--color-brand-tint);
+    --badge-fg: var(--color-brand);
+  }
+  .badge--accent {
+    --badge-bg: var(--color-accent);
+    --badge-fg: var(--color-on-accent);
+  }
+  .badge--info {
+    --badge-bg: var(--color-info-tint);
+    --badge-fg: var(--color-info);
+  }
+  .badge--success {
+    --badge-bg: var(--color-success-tint);
+    --badge-fg: var(--color-success);
+  }
+  .badge--warning {
+    --badge-bg: var(--color-warning-tint);
+    --badge-fg: var(--color-warning);
+  }
+  .badge--danger {
+    --badge-bg: var(--color-danger-tint);
+    --badge-fg: var(--color-danger);
+  }
+  /* Badge wrapped in a link (paid-link disclosure): 44px hit area, hover and press */
+  :global(a:has(> .badge)) {
+    position: relative;
+    display: inline-flex;
+    border-radius: var(--radius-pill);
+    text-decoration: none;
+  }
+  :global(a:has(> .badge))::after {
+    content: '';
+    position: absolute;
+    inset: -12px -4px;
+  }
+  .badge {
+    transition:
+      background-color var(--duration-fast) var(--ease-out),
+      transform var(--duration-fast) var(--ease-out);
+  }
+  :global(a:hover) > .badge {
+    background: color-mix(in srgb, var(--badge-fg) 18%, var(--badge-bg));
+    text-decoration: underline;
+  }
+  :global(a:active) > .badge {
+    transform: scale(0.95);
+  }
+  @media (forced-colors: active) {
+    .badge {
+      border: 1px solid CanvasText;
+    }
+  }
+</style>

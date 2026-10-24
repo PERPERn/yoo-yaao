@@ -1,0 +1,131 @@
+---
+/**
+ * Page section with an optional header (eyebrow + title + lead) and an `actions` slot
+ * that sits to the right of the header on wide screens.
+ * The eyebrow is sentence case in teal, never tiny tracked caps.
+ */
+interface Props {
+  id?: string;
+  eyebrow?: string;
+  title?: string;
+  lead?: string;
+  titleLevel?: 1 | 2 | 3;
+  align?: 'start' | 'center';
+  tone?: 'default' | 'tint' | 'brand' | 'night';
+  width?: 'default' | 'narrow';
+  spacing?: 'default' | 'tight' | 'none';
+  class?: string;
+  [key: string]: unknown;
+}
+
+const {
+  id,
+  eyebrow,
+  title,
+  lead,
+  titleLevel = 2,
+  align = 'start',
+  tone = 'default',
+  width = 'default',
+  spacing = 'default',
+  class: className,
+  ...rest
+} = Astro.props;
+
+const H = `h${titleLevel}` as 'h1' | 'h2' | 'h3';
+const titleId = id ? `${id}-title` : undefined;
+const hasActions = Astro.slots.has('actions');
+const hasHeader = Boolean(eyebrow || title || lead || hasActions);
+---
+
+<section
+  id={id}
+  aria-labelledby={title && titleId ? titleId : undefined}
+  class:list={[
+    'sec',
+    tone !== 'default' && `section--${tone}`,
+    `sec--${spacing}`,
+    className,
+  ]}
+  {...rest}
+>
+  <div class={width === 'narrow' ? 'container-narrow' : 'container'}>
+    {
+      hasHeader && (
+        <header class:list={['sec__head', `sec__head--${align}`, hasActions && 'sec__head--actions']}>
+          <div class="sec__text">
+            {eyebrow && <p class="sec__eyebrow">{eyebrow}</p>}
+            {title && <H id={titleId} class="sec__title">{title}</H>}
+            {lead && <p class="sec__lead">{lead}</p>}
+          </div>
+          {hasActions && <div class="sec__actions"><slot name="actions" /></div>}
+        </header>
+      )
+    }
+    <slot />
+  </div>
+</section>
+
+<style>
+  .sec--default {
+    padding-block: var(--space-section);
+  }
+  .sec--tight {
+    padding-block: var(--space-12);
+  }
+  .sec--none {
+    padding-block: 0;
+  }
+  .sec__head {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-6);
+    margin-bottom: clamp(var(--space-8), 4vw, var(--space-12));
+  }
+  .sec__head--center {
+    align-items: center;
+    text-align: center;
+  }
+  .sec__head--center .sec__lead {
+    margin-inline: auto;
+  }
+  @media (min-width: 52rem) {
+    .sec__head--actions.sec__head--start {
+      flex-direction: row;
+      align-items: flex-end;
+      justify-content: space-between;
+    }
+  }
+  .sec__text {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-3);
+    max-width: 48rem;
+  }
+  .sec__eyebrow {
+    font-size: var(--text-sm);
+    font-weight: var(--weight-semibold);
+    color: var(--color-brand);
+  }
+  .sec__title {
+    max-width: 22ch;
+  }
+  .sec__head--center .sec__title {
+    max-width: 24ch;
+  }
+  .sec__lead {
+    font-size: var(--text-lg);
+    color: var(--color-ink-2);
+    max-width: 60ch;
+  }
+  .sec__actions {
+    flex-shrink: 0;
+  }
+  :global(.section--brand) .sec__eyebrow,
+  :global(.section--brand) .sec__lead {
+    color: inherit;
+  }
+  :global(.section--brand) .sec__lead {
+    opacity: 0.92;
+  }
+</style>

@@ -1,0 +1,28 @@
+---
+import Section from '../ui/Section.astro';
+import Accordion from '../ui/Accordion.astro';
+import Button from '../ui/Button.astro';
+import { faq } from '../../data/faq';
+
+const items = faq.slice(0, 6).map((f) => ({ question: f.q, answer: f.a }));
+---
+
+<Section
+  id="faq"
+  tone="tint"
+  width="narrow"
+  title="Questions people ask us"
+  lead="Short answers, checked against the same official sources."
+  data-scene="faq"
+>
+  <Accordion items={items} schema data-reveal />
+  <p class="faq__more" data-reveal>
+    <Button href="/finder" variant="secondary" iconRight="arrow-right">Still unsure? Take the finder</Button>
+  </p>
+</Section>
+
+<style>
+  .faq__more {
+    margin-top: var(--space-8);
+  }
+</style>

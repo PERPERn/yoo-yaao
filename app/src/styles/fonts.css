@@ -1,0 +1,9 @@
+/* Self-hosted via @fontsource (CSP is 'self' only; works offline in the PWA).
+   Display: Bricolage Grotesque, variable weight + optical size, so huge scene type tightens up on its own.
+   Body/UI: Public Sans, variable, a sturdy public-service sans with tabular and fractional figures.
+   Neither has Thai, so Anuphan (Cadson Demak, Bangkok) stays as the Thai fallback in both stacks;
+   its unicode-range files only download when Thai text (or ฿) is on the page. */
+@import '@fontsource-variable/bricolage-grotesque/opsz.css';
+@import '@fontsource-variable/public-sans/wght.css';
+@import '@fontsource-variable/public-sans/wght-italic.css';
+@import '@fontsource-variable/anuphan';

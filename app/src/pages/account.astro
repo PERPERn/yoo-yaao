@@ -1,0 +1,1225 @@
+---
+import Base from '../layouts/Base.astro';
+import Input from '../components/ui/Input.astro';
+import Select from '../components/ui/Select.astro';
+import Button from '../components/ui/Button.astro';
+import Badge from '../components/ui/Badge.astro';
+import Callout from '../components/ui/Callout.astro';
+import Icon from '../components/ui/Icon.astro';
+import PayNotice from '../components/money/PayNotice.astro';
+import '../components/money/money.css';
+import { SITE } from '../config/site';
+import { visas } from '../data/visas';
+import { PRO_MONTHLY, PRO_YEARLY, CITY_OPTIONS } from '../components/money/plans';
+
+const visaOptions = [...visas.map((v) => ({ value: v.slug, label: v.shortName })), { value: 'other', label: 'Other' }];
+const visaNames = JSON.stringify(Object.fromEntries(visas.map((v) => [v.slug, v.shortName])));
+---
+
+<Base title="Your account" description={`Log in to ${SITE.name} with a magic link to save your stays and get deadline reminders.`} noindex>
+  <div class="container acct" data-acct data-visas={visaNames} data-pro-price={PRO_MONTHLY.priceUsd} data-pro-yearly={PRO_YEARLY.priceUsd}>
+    <!-- Payment return -->
+    <section class="ret" data-ret hidden aria-live="polite" tabindex="-1">
+      <div data-ret-state="confirming" hidden class="ret__card">
+        <span class="ret__spin" aria-hidden="true"></span>
+        <div>
+          <h2>Confirming your payment…</h2>
+          <p class="muted">Stripe has your payment. We're waiting for it to reach your account. This usually takes a few seconds.</p>
+        </div>
+      </div>
+      <div data-ret-state="pro" hidden class="ret__card ret__card--win">
+        <span class="done__mark"><Icon name="check" size={28} strokeWidth={2.25} /></span>
+        <div class="stack" style="--stack-gap: var(--space-3)">
+          <h2>Welcome to Pro! Your reminders are on.</h2>
+          <p>Next step: add your stay so we can work out every deadline.</p>
+          <div class="cluster">
+            <Button href="#stays" data-add-from-ret icon="plus">Add a stay</Button>
+            <Button href="/revenue" variant="ghost" iconRight="arrow-right">See it on the revenue dashboard</Button>
+          </div>
+        </div>
+      </div>
+      <div data-ret-state="slow" hidden class="ret__card">
+        <span class="done__mark"><Icon name="check" size={28} strokeWidth={2.25} /></span>
+        <div class="stack" style="--stack-gap: var(--space-3)">
+          <h2>Payment received</h2>
+          <p>It can take a minute to show on your account. <a href="" data-reload>Refresh</a> in a moment.</p>
+          <Button href="/revenue" variant="ghost" iconRight="arrow-right">See it on the revenue dashboard</Button>
+        </div>
+      </div>
+      <div data-ret-state="buddy" hidden class="ret__card ret__card--win">
+        <span class="done__mark"><Icon name="check" size={28} strokeWidth={2.25} /></span>
+        <div class="stack" style="--stack-gap: var(--space-4)">
+          <h2 data-buddy-title>You're booked!</h2>
+          <p data-buddy-lead>Your buddy will confirm by email within 24 hours.</p>
+          <dl class="facts summary" data-buddy-summary></dl>
+          <div class="cluster">
+            <Button variant="secondary" icon="calendar" data-ics>Add to calendar</Button>
+            <Button href="/buddies" variant="ghost">Back to buddies</Button>
+            <Button href="/revenue" variant="ghost" iconRight="arrow-right">See it on the revenue dashboard</Button>
+          </div>
+        </div>
+      </div>
+      <div data-ret-state="listing" hidden class="ret__card ret__card--win">
+        <span class="done__mark"><Icon name="check" size={28} strokeWidth={2.25} /></span>
+        <div class="stack" style="--stack-gap: var(--space-3)">
+          <h2>Payment received — your listing is now featured</h2>
+          <p>It goes live within 1 business day. Your invoice and monthly clicks report arrive by email.</p>
+          <div class="cluster">
+            <Button href="/partner" data-listing-link>See your listing</Button>
+            <Button href="/revenue" variant="ghost" iconRight="arrow-right">See it on the revenue dashboard</Button>
+          </div>
+        </div>
+      </div>
+      <div data-ret-state="generic" hidden class="ret__card ret__card--win">
+        <span class="done__mark"><Icon name="check" size={28} strokeWidth={2.25} /></span>
+        <div class="stack" style="--stack-gap: var(--space-3)">
+          <h2>Payment received</h2>
+          <p>Thank you. Your receipt is on its way from Stripe.</p>
+          <Button href="/revenue" variant="ghost" iconRight="arrow-right">See it on the revenue dashboard</Button>
+        </div>
+      </div>
+    </section>
+
+    <!-- Loading -->
+    <div data-view="loading" class="loading" aria-busy="true">
+      <h1 class="sr-only">Your account</h1>
+      <span class="skel" style="height: 3rem; width: 55%"></span>
+      <span class="skel" style="height: 1.25rem; width: 35%"></span>
+      <span class="skel" style="height: 12rem; width: 100%"></span>
+    </div>
+
+    <!-- Sign-in unavailable (no Supabase env) -->
+    <div data-view="unavailable" hidden class="narrow stack" style="--stack-gap: var(--space-5)">
+      <h1>Your account</h1>
+      <Callout tone="info" title="Sign-in isn't available on this preview">
+        Accounts need the database connection, which isn't set up here. The free tools still work and keep your data in
+        this browser.
+      </Callout>
+      <Button href="/tools" variant="secondary">Open Stay Tools</Button>
+    </div>
+
+    <!-- Logged out -->
+    <div data-view="login" hidden class="login">
+      <div class="login__intro stack" style="--stack-gap: var(--space-4)">
+        <h1>Log in or sign up</h1>
+        <p class="lead">No password needed. We'll email you a secure link.</p>
+        <p class="muted" data-intent-note hidden></p>
+      </div>
+      <div class="form-panel">
+        <div data-login-expired hidden>
+          <Callout tone="warning" title="That link has expired">Enter your email and we'll send a new one.</Callout>
+        </div>
+        <form class="form" data-login novalidate>
+          <Input
+            name="email"
+            id="l-email"
+            type="email"
+            label="Email"
+            placeholder="you@example.com"
+            autocomplete="email"
+            inputmode="email"
+            required
+          />
+          <p class="suggest" data-suggest hidden>
+            Did you mean <button type="button" class="linkish" data-suggest-btn></button>?
+          </p>
+          <div data-login-error hidden>
+            <Callout tone="danger" live><span data-login-error-text></span></Callout>
+          </div>
+          <Button type="submit" size="lg" block>Email me a login link</Button>
+          <p class="form-foot">New here? The same link creates your free account.</p>
+          <p class="form-foot">By continuing you agree to our <a href="/legal#terms">Terms</a> and <a href="/legal#privacy">Privacy Policy</a>.</p>
+        </form>
+
+        <div class="sent stack" data-sent hidden tabindex="-1" style="--stack-gap: var(--space-4)">
+          <span class="done__mark"><Icon name="check" size={28} strokeWidth={2.25} /></span>
+          <h2>Check your inbox</h2>
+          <p>We sent a link to <strong data-sent-email></strong>. It expires in 1 hour.</p>
+          <div class="cluster">
+            <Button variant="secondary" data-resend disabled>Resend link</Button>
+            <Button variant="ghost" data-other-email>Use a different email</Button>
+          </div>
+          <p class="small muted" aria-live="polite" data-resend-note></p>
+          <p class="small muted">Can't find it? Check spam or Promotions.</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Logged in -->
+    <div data-view="app" hidden class="app">
+      <header class="app__head">
+        <div class="stack" style="--stack-gap: var(--space-2)">
+          <h1 class="app__hi">Hi <span data-hi-email></span></h1>
+          <p class="cluster" style="--cluster-gap: var(--space-2)">
+            <span data-plan-free><Badge variant="neutral">Free plan</Badge></span>
+            <span data-plan-pro hidden><Badge variant="pro">Pro</Badge></span>
+            <span class="small muted" data-plan-renew></span>
+          </p>
+        </div>
+        <Button variant="ghost" data-logout>Log out</Button>
+      </header>
+
+      <div class="app__grid">
+        <div class="stack" style="--stack-gap: var(--space-6)">
+          <!-- Onboarding checklist -->
+          <section class="panel onboard" data-onboard aria-labelledby="onboard-title">
+            <div class="onboard__head">
+              <h2 id="onboard-title" class="panel__title">Get set up (<span data-onboard-count>1</span> of 4 done)</h2>
+              <button type="button" class="linkish" data-onboard-hide>Hide</button>
+            </div>
+            <div class="progress" aria-hidden="true"><span data-onboard-bar style="transform: scaleX(0.25)"></span></div>
+            <ol class="checklist">
+              <li data-step="account" data-done="true">
+                <span class="tick" aria-hidden="true"><Icon name="check" size={16} strokeWidth={2.5} /></span>
+                <span><strong>Create your account</strong><span class="sr-only" data-step-sr> (done)</span></span>
+              </li>
+              <li data-step="finder">
+                <span class="tick" aria-hidden="true"><Icon name="check" size={16} strokeWidth={2.5} /></span>
+                <span><a href="/finder"><strong>Find your visa</strong></a><span class="small muted"> Six questions, two minutes.</span><span class="sr-only" data-step-sr></span></span>
+              </li>
+              <li data-step="stay">
+                <span class="tick" aria-hidden="true"><Icon name="check" size={16} strokeWidth={2.5} /></span>
+                <span><a href="#stays" data-open-stay><strong>Add your stay</strong></a><span class="small muted"> Entry date plus visa gives every deadline.</span><span class="sr-only" data-step-sr></span></span>
+              </li>
+              <li data-step="reminders">
+                <span class="tick" aria-hidden="true"><Icon name="check" size={16} strokeWidth={2.5} /></span>
+                <span><a href="#reminders"><strong>Turn on reminders</strong></a><span class="small muted" data-rem-note> Go Pro to turn on.</span><span class="sr-only" data-step-sr></span></span>
+              </li>
+            </ol>
+            <p class="small" data-onboard-done hidden>You're all set. We'll remind you before every deadline.</p>
+          </section>
+
+          <!-- Stays -->
+          <section class="panel" id="stays" aria-labelledby="stays-title">
+            <div class="panel__row">
+              <h2 id="stays-title" class="panel__title">My stays</h2>
+              <Button size="sm" icon="plus" data-add-stay data-pro-only>Add a stay</Button>
+            </div>
+
+            <div class="locked" data-stays-locked hidden>
+              <span class="locked__icon"><Icon name="lock" size={22} /></span>
+              <div class="stack" style="--stack-gap: var(--space-2)">
+                <p><strong>Pro feature.</strong> Save your stays and see every 90-day report and expiry date in one place.</p>
+                <p class="small muted">Free alternative: the <a href="/tools/90-day">90-day calculator</a> exports dates to your calendar.</p>
+              </div>
+            </div>
+
+            <form class="form stay-form" data-stay-form hidden novalidate>
+              <h3 class="stay-form__title" data-stay-form-title>Add a stay</h3>
+              <div class="form-row">
+                <Select name="visaType" id="s-visa" label="Visa" placeholder="Choose a visa" options={visaOptions} required />
+                <Select name="city" id="s-city" label="City" optional options={[{ value: '', label: 'Not set' }, ...CITY_OPTIONS]} />
+              </div>
+              <div class="form-row">
+                <Input name="entryDate" id="s-entry" type="date" label="Entry date" required />
+                <Input name="expiryDate" id="s-expiry" type="date" label="Permitted to stay until" optional />
+              </div>
+              <Input name="lastReportDate" id="s-report" type="date" label="Last 90-day report" optional hint="Leave empty if you haven't filed one on this entry." />
+              <Input name="note" id="s-note" label="Note" optional maxlength="200" />
+              <div data-stay-error hidden><Callout tone="danger" live><span data-stay-error-text></span></Callout></div>
+              <div class="cluster">
+                <Button type="submit" data-stay-save>Save stay</Button>
+                <Button variant="ghost" data-stay-cancel>Cancel</Button>
+              </div>
+            </form>
+
+            <ul class="stays" data-stays aria-live="polite"></ul>
+            <div class="empty-mini" data-stays-empty hidden>
+              <p>No stays saved yet. Add your entry date and we'll track every deadline.</p>
+            </div>
+          </section>
+
+          <!-- Reminders -->
+          <section class="panel" id="reminders" aria-labelledby="rem-title">
+            <div class="panel__row">
+              <h2 id="rem-title" class="panel__title">Reminders</h2>
+              <span data-rem-lock><Badge variant="pro" /></span>
+            </div>
+            <fieldset class="toggles" data-reminders disabled>
+              <legend class="sr-only">Email reminders</legend>
+              <label class="choice"><input type="checkbox" name="r90" /><span>90-day report <span class="muted small">(15 days and 1 day before)</span></span></label>
+              <label class="choice"><input type="checkbox" name="rexp" /><span>Visa expiry <span class="muted small">(30 and 7 days before)</span></span></label>
+              <label class="choice"><input type="checkbox" name="rtm30" /><span>TM30 after travel</span></label>
+              <label class="choice"><input type="checkbox" name="r180" /><span>180-day tax residency warning</span></label>
+            </fieldset>
+            <p class="small muted" data-rem-free>Reminders are part of Pro. Your free tools keep working without them.</p>
+          </section>
+
+          <!-- Messages -->
+          <section class="panel" aria-labelledby="msg-title">
+            <h2 id="msg-title" class="panel__title">Messages</h2>
+            <p class="small muted">Chat with the licensed agency handling your visa request.</p>
+            <p><a href="/messages">Open messages</a></p>
+          </section>
+
+          <!-- Bookings -->
+          <section class="panel" aria-labelledby="book-title">
+            <h2 id="book-title" class="panel__title">Bookings</h2>
+            <ul class="bookings" data-bookings></ul>
+            <p class="empty-mini" data-bookings-empty>No sessions booked. <a href="/buddies">Meet a Local Buddy</a>.</p>
+          </section>
+        </div>
+
+        <aside class="stack" style="--stack-gap: var(--space-6)">
+          <!-- Upgrade / plan -->
+          <section class="upgrade" data-upgrade aria-labelledby="up-title">
+            <h2 id="up-title">Unlock reminders — ${PRO_MONTHLY.priceUsd}/mo</h2>
+            <p>Never miss a 90-day report or visa expiry. Save every stay and get an email before each deadline.</p>
+            <div class="stack" style="--stack-gap: var(--space-2)">
+              <Button variant="accent" block data-upgrade-btn="pro_yearly" data-needs-network>Go Pro — ${PRO_YEARLY.priceUsd}/yr</Button>
+              <Button variant="secondary" block data-upgrade-btn="pro_monthly" data-needs-network>${PRO_MONTHLY.priceUsd}/mo, cancel any time</Button>
+            </div>
+            <PayNotice />
+          </section>
+          <section class="panel" data-manage hidden aria-labelledby="manage-title">
+            <h2 id="manage-title" class="panel__title">Your plan</h2>
+            <p>You're on Pro<span data-manage-until></span>.</p>
+            <p class="small muted">To cancel, use the link in your Stripe receipt email or write to <a href={`mailto:${SITE.supportEmail}`}>{SITE.supportEmail}</a>.</p>
+          </section>
+
+          <section class="panel" aria-labelledby="data-title">
+            <h2 id="data-title" class="panel__title">Your data</h2>
+            <p class="small muted">We store your email, plan and the stays you save, in Supabase (Singapore region).</p>
+            <a class="small" href={`mailto:${SITE.supportEmail}?subject=${encodeURIComponent('Delete my data (PDPA)')}`}>Delete my data</a>
+          </section>
+        </aside>
+      </div>
+    </div>
+  </div>
+</Base>
+
+<style>
+  .acct {
+    padding-block: clamp(var(--space-8), 5vw, var(--space-16)) var(--space-section);
+    display: grid;
+    gap: var(--space-8);
+  }
+  .narrow {
+    max-width: var(--container-narrow);
+  }
+  .loading {
+    display: grid;
+    gap: var(--space-4);
+  }
+  .ret:focus {
+    outline: none;
+  }
+  .ret__card {
+    display: flex;
+    gap: var(--space-5);
+    align-items: flex-start;
+    padding: clamp(var(--space-5), 3vw, var(--space-8));
+    border-radius: var(--radius-xl);
+    background: var(--color-surface);
+  }
+  .ret__card--win {
+    background: var(--color-success-tint);
+  }
+  .ret__card h2 {
+    font-size: var(--text-2xl);
+  }
+  .ret__spin {
+    flex-shrink: 0;
+    width: 2.5rem;
+    height: 2.5rem;
+    border-radius: 50%;
+    border: 3px solid var(--color-brand-tint);
+    border-top-color: var(--color-brand);
+    animation: spin 0.9s linear infinite;
+  }
+  @keyframes spin {
+    to {
+      transform: rotate(360deg);
+    }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .ret__spin {
+      animation-duration: 3s;
+    }
+  }
+  .summary {
+    max-width: 28rem;
+  }
+  .login {
+    display: grid;
+    gap: var(--space-8);
+    max-width: 64rem;
+  }
+  @media (min-width: 56rem) {
+    .login {
+      grid-template-columns: 1fr 1fr;
+      align-items: start;
+    }
+  }
+  .login h1,
+  .narrow h1,
+  .app__hi {
+    font-size: var(--text-4xl);
+    line-height: var(--leading-tight);
+    letter-spacing: var(--tracking-display);
+  }
+  .app__hi {
+    font-size: var(--text-3xl);
+    overflow-wrap: anywhere;
+  }
+  .suggest {
+    margin-top: calc(var(--space-3) * -1);
+    font-size: var(--text-sm);
+  }
+  .linkish {
+    padding: 0;
+    border: 0;
+    background: none;
+    color: var(--color-brand);
+    font: inherit;
+    font-weight: var(--weight-semibold);
+    text-decoration: underline;
+    cursor: pointer;
+    min-height: 0;
+  }
+  .sent:focus {
+    outline: none;
+  }
+  .app {
+    display: grid;
+    gap: var(--space-8);
+  }
+  .app__head {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-4);
+    justify-content: space-between;
+    align-items: flex-start;
+  }
+  .app__grid {
+    display: grid;
+    gap: var(--space-6);
+  }
+  @media (min-width: 60rem) {
+    .app__grid {
+      grid-template-columns: minmax(0, 1fr) 22rem;
+      align-items: start;
+    }
+  }
+  .panel {
+    display: grid;
+    gap: var(--space-4);
+    padding: var(--space-6);
+    border-radius: var(--radius-xl);
+    background: var(--color-surface);
+  }
+  .panel__title {
+    font-size: var(--text-xl);
+  }
+  .panel__row,
+  .onboard__head {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: var(--space-3);
+  }
+  .onboard__head .linkish {
+    min-height: var(--tap-min);
+    padding-inline: var(--space-2);
+  }
+  .progress {
+    height: 0.5rem;
+    border-radius: var(--radius-pill);
+    background: var(--color-surface-3);
+    overflow: hidden;
+  }
+  .progress span {
+    display: block;
+    height: 100%;
+    background: var(--color-brand);
+    transform-origin: left;
+    transition: transform 600ms var(--ease-out);
+  }
+  .checklist {
+    display: grid;
+    gap: var(--space-3);
+    padding: 0;
+    list-style: none;
+  }
+  .checklist li {
+    display: flex;
+    gap: var(--space-3);
+    align-items: flex-start;
+  }
+  .checklist a {
+    color: var(--color-ink);
+  }
+  .tick {
+    display: grid;
+    place-items: center;
+    flex-shrink: 0;
+    width: 1.5rem;
+    height: 1.5rem;
+    margin-top: 0.1em;
+    border-radius: 50%;
+    border: 2px solid var(--color-border-strong);
+    color: transparent;
+    transition:
+      background-color var(--duration-slow) var(--ease-out),
+      transform var(--duration-slow) var(--ease-out);
+  }
+  [data-done='true'] .tick {
+    background: var(--color-brand);
+    border-color: var(--color-brand);
+    color: var(--color-on-brand);
+  }
+  [data-done='true'] strong {
+    text-decoration: line-through;
+    text-decoration-color: var(--color-ink-3);
+  }
+  .locked {
+    display: flex;
+    gap: var(--space-4);
+    padding: var(--space-5);
+    border-radius: var(--radius-lg);
+    background: var(--color-surface-2);
+  }
+  .locked__icon {
+    color: var(--color-accent-text);
+  }
+  .stay-form {
+    padding: var(--space-5);
+    border-radius: var(--radius-lg);
+    background: var(--color-surface-2);
+  }
+  .stay-form__title {
+    font-size: var(--text-lg);
+  }
+  .stays,
+  .bookings {
+    display: grid;
+    gap: var(--space-3);
+    padding: 0;
+    list-style: none;
+  }
+  .stays :global(li) {
+    display: grid;
+    gap: var(--space-3);
+    padding: var(--space-4) var(--space-5);
+    border-radius: var(--radius-lg);
+    background: var(--color-surface-2);
+  }
+  .stays :global(.st-head) {
+    display: flex;
+    justify-content: space-between;
+    gap: var(--space-3);
+    align-items: baseline;
+    flex-wrap: wrap;
+  }
+  .stays :global(.st-visa) {
+    font-family: var(--font-display);
+    font-size: var(--text-xl);
+    font-weight: var(--weight-semibold);
+  }
+  .stays :global(.st-next) {
+    font-size: var(--text-sm);
+  }
+  .stays :global(.st-next strong) {
+    font-size: var(--text-lg);
+    font-variant-numeric: tabular-nums;
+  }
+  .stays :global(.st-dates) {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-1) var(--space-5);
+    font-size: var(--text-sm);
+    color: var(--color-ink-2);
+  }
+  .stays :global(.st-actions) {
+    display: flex;
+    gap: var(--space-2);
+  }
+  .stays :global(.st-actions button) {
+    min-height: var(--tap-min);
+    padding: 0 var(--space-3);
+    border: 0;
+    border-radius: var(--radius-pill);
+    background: transparent;
+    color: var(--color-brand);
+    font: inherit;
+    font-size: var(--text-sm);
+    font-weight: var(--weight-semibold);
+    cursor: pointer;
+  }
+  .stays :global(.st-actions button:hover) {
+    background: var(--color-brand-tint);
+  }
+  .stays :global(.st-actions .st-del) {
+    color: var(--color-danger);
+  }
+  .stays :global(.st-actions .st-del:hover) {
+    background: var(--color-danger-tint);
+  }
+  .stays :global(.st-warn) {
+    color: var(--color-danger);
+    font-weight: var(--weight-semibold);
+  }
+  .bookings :global(li) {
+    display: flex;
+    justify-content: space-between;
+    gap: var(--space-3);
+    padding-block: var(--space-2);
+    font-size: var(--text-sm);
+  }
+  .empty-mini {
+    color: var(--color-ink-2);
+  }
+  .toggles {
+    border: 0;
+    margin: 0;
+    padding: 0;
+    display: grid;
+  }
+  .toggles:disabled {
+    opacity: 0.55;
+  }
+  .upgrade {
+    display: grid;
+    gap: var(--space-4);
+    padding: var(--space-6);
+    border-radius: var(--radius-xl);
+    background: var(--color-brand);
+    color: var(--color-on-brand);
+  }
+  .upgrade h2 {
+    font-size: var(--text-xl);
+    color: inherit;
+  }
+  .upgrade :global(.btn--secondary) {
+    --btn-fg: var(--color-on-brand);
+    --btn-border: currentColor;
+    --btn-bg-hover: var(--color-brand-strong);
+  }
+</style>
+
+<script>
+  import { initMotion } from '../scripts/motion';
+  import {
+    supabase,
+    getSession,
+    getProfile,
+    signInWithMagicLink,
+    signOut,
+    onAuthChange,
+    listStays,
+    saveStay,
+    deleteStay,
+    type Profile,
+    type Stay,
+  } from '../lib/supabase';
+  import {
+    applyValidation,
+    liveValidate,
+    val,
+    EMAIL_RE,
+    suggestEmail,
+    setBusy,
+    startCheckout,
+    showPayNotice,
+    readPending,
+    clearPending,
+    downloadIcs,
+    fmtDate,
+    usd,
+    watchNetwork,
+    type Validator,
+  } from '../components/money/client';
+  import { rankVisas } from '../data/finder';
+  import type { FinderInput } from '../types/contracts';
+
+  initMotion();
+  watchNetwork();
+
+  const root = document.querySelector<HTMLElement>('[data-acct]')!;
+  const VISA_NAMES = JSON.parse(root.dataset.visas ?? '{}') as Record<string, string>;
+  const params = new URLSearchParams(location.search);
+  const hash = new URLSearchParams(location.hash.replace(/^#/, ''));
+  const RETURN_KEY = 'yy:auth-return';
+  const ONBOARD_KEY = 'yy:onboarding-hidden';
+  const REM_KEY = 'yy:reminders';
+
+  const $ = <T extends HTMLElement = HTMLElement>(sel: string, scope: ParentNode = document) => scope.querySelector<T>(sel)!;
+  const show = (view: 'loading' | 'unavailable' | 'login' | 'app') => {
+    document.querySelectorAll<HTMLElement>('[data-view]').forEach((el) => (el.hidden = el.dataset.view !== view));
+  };
+
+  // Remember where the user was going (?next=/pricing&intent=pro_yearly) across the magic-link round trip.
+  const safePath = (p: string | null) => (p && p.startsWith('/') && !p.startsWith('//') ? p : null);
+  let next = safePath(params.get('next'));
+  let intent = params.get('intent');
+  if (next || intent) {
+    try {
+      localStorage.setItem(RETURN_KEY, JSON.stringify({ next, intent, at: Date.now() }));
+    } catch {}
+  } else {
+    try {
+      const saved = JSON.parse(localStorage.getItem(RETURN_KEY) ?? 'null') as { next: string | null; intent: string | null; at: number } | null;
+      if (saved && Date.now() - saved.at < 2 * 3600_000) {
+        next = safePath(saved.next);
+        intent = saved.intent;
+      }
+    } catch {}
+  }
+  const clearReturn = () => {
+    try {
+      localStorage.removeItem(RETURN_KEY);
+    } catch {}
+  };
+
+  // ------------------------------------------------------------------ payment return
+  const isReturn = params.get('checkout') === 'success';
+  const ret = $('[data-ret]');
+  const retState = (name: string) => {
+    ret.hidden = false;
+    ret.querySelectorAll<HTMLElement>('[data-ret-state]').forEach((el) => (el.hidden = el.dataset.retState !== name));
+  };
+
+  async function handleReturn(session: boolean) {
+    const pending = readPending();
+    const product = pending?.productId;
+    history.replaceState(null, '', '/account');
+    if (product === 'buddy_session' && pending) {
+      $('[data-buddy-title]').textContent = "You're booked!";
+      $('[data-buddy-lead]').textContent = `${pending.buddyName ?? 'Your buddy'} will confirm by email within 24 hours.`;
+      const start = pending.sessionAt ? new Date(pending.sessionAt) : null;
+      const rows: [string, string][] = [
+        ['Service', pending.service ?? 'Local Buddy session'],
+        ['Date', start ? fmtDate(start) : '—'],
+        ['Time', pending.timeLabel ?? '—'],
+        ['Meeting', pending.meeting ?? '—'],
+        ['Total paid', usd(pending.amountUsd)],
+      ];
+      const dl = $('[data-buddy-summary]');
+      dl.replaceChildren(
+        ...rows.map(([k, v]) => {
+          const d = document.createElement('div');
+          const dt = document.createElement('dt');
+          const dd = document.createElement('dd');
+          dt.textContent = k;
+          dd.textContent = v;
+          d.append(dt, dd);
+          return d;
+        }),
+      );
+      const ics = $<HTMLButtonElement>('[data-ics]');
+      if (start) {
+        ics.addEventListener('click', () =>
+          downloadIcs({
+            title: `Local Buddy session with ${pending.buddyName ?? 'your buddy'}`,
+            start,
+            minutes: 60,
+            description: `${pending.service ?? ''}. Your buddy confirms the meeting point by email.`,
+            location: pending.meeting,
+          }),
+        );
+      } else ics.hidden = true;
+      retState('buddy');
+      clearPending();
+    } else if (product === 'listing_featured') {
+      retState('listing');
+      // The partners page reads the same pending record to show the preview, then clears it.
+    } else if (session || product === 'pro_monthly' || product === 'pro_yearly') {
+      retState('confirming');
+      const deadline = Date.now() + 20_000;
+      let profile: Profile | null = null;
+      while (Date.now() < deadline) {
+        profile = await getProfile().catch(() => null);
+        if (profile?.isPro) break;
+        await new Promise((r) => setTimeout(r, 2000));
+      }
+      retState(profile?.isPro ? 'pro' : 'slow');
+      clearPending();
+      if (profile?.isPro) await renderApp();
+    } else {
+      retState('generic');
+      clearPending();
+    }
+    ret.focus({ preventScroll: true });
+  }
+
+  // ------------------------------------------------------------------ login
+  const loginForm = $<HTMLFormElement>('[data-login]');
+  const emailInput = $<HTMLInputElement>('#l-email');
+  const suggestBox = $('[data-suggest]');
+  const suggestBtn = $<HTMLButtonElement>('[data-suggest-btn]');
+  const loginErr = $('[data-login-error]');
+  const loginErrText = $('[data-login-error-text]');
+  const sent = $('[data-sent]');
+  const resendBtn = $<HTMLButtonElement>('[data-resend]');
+  const resendNote = $('[data-resend-note]');
+
+  const validateLogin: Validator = (f): Record<string, string> => {
+    const email = val(f, 'email');
+    if (!email) return { 'l-email': 'Enter an email address.' };
+    if (!EMAIL_RE.test(email)) return { 'l-email': "That doesn't look like an email — check for typos." };
+    return {};
+  };
+  liveValidate(loginForm, validateLogin);
+  emailInput.addEventListener('blur', () => {
+    const s = suggestEmail(emailInput.value.trim());
+    suggestBox.hidden = !s;
+    if (s) suggestBtn.textContent = s;
+  });
+  suggestBtn.addEventListener('click', () => {
+    emailInput.value = suggestBtn.textContent ?? '';
+    suggestBox.hidden = true;
+    emailInput.focus();
+  });
+
+  const redirectTo = () => {
+    const q = new URLSearchParams();
+    if (next) q.set('next', next);
+    if (intent) q.set('intent', intent);
+    const qs = q.toString();
+    return `${location.origin}/account${qs ? `?${qs}` : ''}`;
+  };
+
+  let countdown = 0;
+  function startCountdown() {
+    let left = 30;
+    resendBtn.disabled = true;
+    clearInterval(countdown);
+    resendNote.textContent = `You can resend in ${left}s.`;
+    countdown = window.setInterval(() => {
+      left -= 1;
+      if (left <= 0) {
+        clearInterval(countdown);
+        resendBtn.disabled = false;
+        resendNote.textContent = '';
+      } else if (left % 10 === 0) resendNote.textContent = `You can resend in ${left}s.`;
+    }, 1000);
+  }
+
+  async function send(email: string, btn: HTMLButtonElement | null) {
+    const restore = setBusy(btn, 'Sending…');
+    loginErr.hidden = true;
+    try {
+      await signInWithMagicLink(email, redirectTo());
+      restore();
+      $('[data-sent-email]').textContent = email;
+      loginForm.hidden = true;
+      $('[data-login-expired]').hidden = true;
+      sent.hidden = false;
+      sent.focus();
+      startCountdown();
+    } catch (err) {
+      restore();
+      const msg = String((err as { message?: string })?.message ?? '');
+      const status = (err as { status?: number })?.status;
+      loginErrText.textContent =
+        status === 429 || /rate|limit|security purposes/i.test(msg)
+          ? 'Too many tries. Wait a minute and try again.'
+          : navigator.onLine === false
+            ? "You're offline. Connect to the internet and try again."
+            : 'Something went wrong on our side. Try again — your email is still here.';
+      loginErr.hidden = false;
+      if (!loginForm.hidden) return;
+      loginForm.hidden = false;
+      sent.hidden = true;
+    }
+  }
+
+  loginForm.addEventListener('submit', (e) => {
+    e.preventDefault();
+    if (!applyValidation(loginForm, validateLogin)) return;
+    send(val(loginForm, 'email'), loginForm.querySelector('button[type="submit"]'));
+  });
+  resendBtn.addEventListener('click', () => send($('[data-sent-email]').textContent ?? '', resendBtn));
+  $('[data-other-email]').addEventListener('click', () => {
+    sent.hidden = true;
+    loginForm.hidden = false;
+    emailInput.select();
+    emailInput.focus();
+  });
+
+  // ------------------------------------------------------------------ app
+  let profile: Profile | null = null;
+  let stays: Stay[] = [];
+  let editing: string | null = null;
+
+  const addDays = (d: Date, n: number) => {
+    const x = new Date(d);
+    x.setDate(x.getDate() + n);
+    return x;
+  };
+  const parse = (s: string) => new Date(`${s}T00:00:00`);
+  const today = () => {
+    const d = new Date();
+    d.setHours(0, 0, 0, 0);
+    return d;
+  };
+  function next90(s: Stay): Date {
+    let due = addDays(parse(s.lastReportDate ?? s.entryDate), 90);
+    const t = today();
+    // If a report was missed we still show the overdue one first.
+    if (s.lastReportDate) while (addDays(due, 7) < t) due = addDays(due, 90);
+    return due;
+  }
+
+  function renderStays() {
+    const list = $('[data-stays]');
+    const pro = Boolean(profile?.isPro);
+    $('[data-stays-locked]').hidden = pro;
+    document.querySelectorAll<HTMLElement>('[data-pro-only]').forEach((b) => (b.hidden = !pro));
+    $('[data-stays-empty]').hidden = !pro || stays.length > 0;
+    list.replaceChildren(
+      ...stays.map((s) => {
+        const li = document.createElement('li');
+        const head = document.createElement('div');
+        head.className = 'st-head';
+        const visa = document.createElement('span');
+        visa.className = 'st-visa';
+        visa.textContent = VISA_NAMES[s.visaType] ?? s.visaType;
+        const nextEl = document.createElement('span');
+        nextEl.className = 'st-next';
+        const due = next90(s);
+        const overdue = due < today();
+        nextEl.innerHTML = '';
+        nextEl.append(overdue ? 'Overdue 90-day report: ' : 'Next 90-day report: ');
+        const strong = document.createElement('strong');
+        strong.textContent = fmtDate(due);
+        if (overdue) strong.className = 'st-warn';
+        nextEl.append(strong);
+        head.append(visa, nextEl);
+
+        const dates = document.createElement('div');
+        dates.className = 'st-dates';
+        const add = (t: string) => {
+          const sp = document.createElement('span');
+          sp.textContent = t;
+          dates.append(sp);
+        };
+        add(`Entered ${fmtDate(s.entryDate)}`);
+        if (s.expiryDate) {
+          const days = Math.round((parse(s.expiryDate).getTime() - today().getTime()) / 86_400_000);
+          add(`Stay until ${fmtDate(s.expiryDate)} (${days >= 0 ? `${days} days left` : 'expired'})`);
+        }
+        if (s.city) add(s.city.replace('-', ' ').replace(/\b\w/g, (c) => c.toUpperCase()));
+        if (s.note) add(s.note);
+
+        const actions = document.createElement('div');
+        actions.className = 'st-actions';
+        const edit = document.createElement('button');
+        edit.type = 'button';
+        edit.textContent = 'Edit';
+        edit.setAttribute('aria-label', `Edit ${visa.textContent} stay from ${fmtDate(s.entryDate)}`);
+        edit.addEventListener('click', () => openStayForm(s));
+        const del = document.createElement('button');
+        del.type = 'button';
+        del.className = 'st-del';
+        del.textContent = 'Delete';
+        del.setAttribute('aria-label', `Delete ${visa.textContent} stay from ${fmtDate(s.entryDate)}`);
+        del.addEventListener('click', async () => {
+          if (!confirm(`Delete this ${visa.textContent} stay? This can't be undone.`)) return;
+          del.disabled = true;
+          try {
+            await deleteStay(s.id);
+            stays = stays.filter((x) => x.id !== s.id);
+            renderStays();
+            renderOnboarding();
+            $<HTMLButtonElement>('[data-add-stay]').focus();
+          } catch {
+            del.disabled = false;
+            alert("Couldn't delete that stay. Try again.");
+          }
+        });
+        actions.append(edit, del);
+        li.append(head, dates, actions);
+        return li;
+      }),
+    );
+  }
+
+  const stayForm = $<HTMLFormElement>('[data-stay-form]');
+  const validateStay: Validator = (f) => {
+    const e: Record<string, string> = {};
+    if (!val(f, 'visaType')) e['s-visa'] = 'Choose your visa.';
+    const entry = val(f, 'entryDate');
+    if (!entry) e['s-entry'] = 'Enter the date you entered Thailand.';
+    else if (parse(entry) > today()) e['s-entry'] = "Entry date can't be in the future.";
+    const exp = val(f, 'expiryDate');
+    if (exp && entry && exp <= entry) e['s-expiry'] = 'Permitted-until must be after the entry date.';
+    const rep = val(f, 'lastReportDate');
+    if (rep && entry && rep < entry) e['s-report'] = 'The last report must be after your entry date.';
+    return e;
+  };
+  liveValidate(stayForm, validateStay);
+
+  function finderVisa(): string | null {
+    try {
+      const a = JSON.parse(sessionStorage.getItem('finder:answers') ?? 'null') as Partial<FinderInput> | null;
+      if (!a || !a.purpose) return null;
+      const top = rankVisas(a as FinderInput)[0];
+      return top && top.verdict !== 'not-eligible' ? top.slug : null;
+    } catch {
+      return null;
+    }
+  }
+
+  function openStayForm(s?: Stay) {
+    if (!profile?.isPro) {
+      $('[data-stays-locked]').scrollIntoView({ block: 'center' });
+      return;
+    }
+    editing = s?.id ?? null;
+    stayForm.reset();
+    $('[data-stay-form-title]').textContent = s ? 'Edit stay' : 'Add a stay';
+    const set = (name: string, v: string | null | undefined) => {
+      const el = stayForm.elements.namedItem(name) as HTMLInputElement | null;
+      if (el) el.value = v ?? '';
+    };
+    if (s) {
+      set('visaType', s.visaType);
+      set('city', s.city);
+      set('entryDate', s.entryDate);
+      set('expiryDate', s.expiryDate);
+      set('lastReportDate', s.lastReportDate);
+      set('note', s.note);
+    } else {
+      const fv = finderVisa();
+      if (fv) set('visaType', fv);
+    }
+    $<HTMLInputElement>('#s-entry').max = new Date().toISOString().slice(0, 10);
+    stayForm.hidden = false;
+    $('[data-stay-error]').hidden = true;
+    stayForm.querySelector<HTMLElement>('select, input')?.focus();
+  }
+  document.querySelectorAll('[data-add-stay], [data-open-stay], [data-add-from-ret]').forEach((el) =>
+    el.addEventListener('click', (e) => {
+      e.preventDefault();
+      $('#stays').scrollIntoView({ block: 'start', behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth' });
+      openStayForm();
+    }),
+  );
+  $('[data-stay-cancel]').addEventListener('click', () => {
+    stayForm.hidden = true;
+    editing = null;
+    $<HTMLButtonElement>('[data-add-stay]').focus();
+  });
+  stayForm.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    if (!applyValidation(stayForm, validateStay)) return;
+    const restore = setBusy($<HTMLButtonElement>('[data-stay-save]'), 'Saving…');
+    try {
+      const saved = await saveStay({
+        id: editing ?? undefined,
+        visaType: val(stayForm, 'visaType'),
+        entryDate: val(stayForm, 'entryDate'),
+        expiryDate: val(stayForm, 'expiryDate') || null,
+        lastReportDate: val(stayForm, 'lastReportDate') || null,
+        city: val(stayForm, 'city') || null,
+        note: val(stayForm, 'note') || null,
+      });
+      stays = editing ? stays.map((s) => (s.id === saved.id ? saved : s)) : [saved, ...stays];
+      stays.sort((a, b) => b.entryDate.localeCompare(a.entryDate));
+      restore();
+      stayForm.hidden = true;
+      editing = null;
+      renderStays();
+      renderOnboarding();
+    } catch {
+      restore();
+      $('[data-stay-error-text]').textContent = "Couldn't save your stay. Check your connection and try again.";
+      $('[data-stay-error]').hidden = false;
+    }
+  });
+
+  // Reminders: preferences kept on this device until reminder emails ship (backend has no table yet).
+  const remSet = $<HTMLFieldSetElement>('[data-reminders]');
+  function loadReminders() {
+    let prefs: Record<string, boolean> = {};
+    try {
+      prefs = JSON.parse(localStorage.getItem(REM_KEY) ?? '{}');
+    } catch {}
+    remSet.querySelectorAll<HTMLInputElement>('input').forEach((i) => (i.checked = prefs[i.name] ?? Boolean(profile?.isPro)));
+  }
+  remSet.addEventListener('change', () => {
+    const prefs: Record<string, boolean> = {};
+    remSet.querySelectorAll<HTMLInputElement>('input').forEach((i) => (prefs[i.name] = i.checked));
+    try {
+      localStorage.setItem(REM_KEY, JSON.stringify(prefs));
+    } catch {}
+    renderOnboarding();
+  });
+
+  function renderOnboarding() {
+    const box = $('[data-onboard]');
+    let hidden = false;
+    try {
+      hidden = localStorage.getItem(ONBOARD_KEY) === '1';
+    } catch {}
+    const finderDone = (() => {
+      try {
+        return Boolean(sessionStorage.getItem('finder:answers'));
+      } catch {
+        return false;
+      }
+    })();
+    const remDone = Boolean(profile?.isPro) && Array.from(remSet.querySelectorAll<HTMLInputElement>('input')).some((i) => i.checked);
+    const done: Record<string, boolean> = { account: true, finder: finderDone, stay: stays.length > 0, reminders: remDone };
+    let n = 0;
+    box.querySelectorAll<HTMLElement>('[data-step]').forEach((li) => {
+      const ok = done[li.dataset.step!];
+      if (ok) n++;
+      li.dataset.done = String(ok);
+      const sr = li.querySelector('[data-step-sr]');
+      if (sr) sr.textContent = ok ? ' (done)' : ' (to do)';
+    });
+    $('[data-rem-note]').hidden = Boolean(profile?.isPro);
+    $('[data-onboard-count]').textContent = String(n);
+    $('[data-onboard-bar]').style.transform = `scaleX(${n / 4})`;
+    $('[data-onboard-done]').hidden = n < 4;
+    box.hidden = hidden;
+  }
+  $('[data-onboard-hide]').addEventListener('click', () => {
+    try {
+      localStorage.setItem(ONBOARD_KEY, '1');
+    } catch {}
+    $('[data-onboard]').hidden = true;
+    $('#stays-title').focus?.();
+  });
+
+  async function renderBookings() {
+    if (!supabase) return;
+    try {
+      const { data, error } = await supabase
+        .from('bookings')
+        .select('buddy_id, session_at, amount_usd, status')
+        .order('session_at', { ascending: false })
+        .limit(10);
+      if (error || !data?.length) return;
+      $('[data-bookings-empty]').hidden = true;
+      const STATUS: Record<string, string> = { pending: 'Pending confirmation', confirmed: 'Confirmed', completed: 'Completed' };
+      $('[data-bookings]').replaceChildren(
+        ...data.map((b) => {
+          const li = document.createElement('li');
+          const left = document.createElement('span');
+          left.textContent = `${String(b.buddy_id).replace(/^demo-/, '').split('-')[0].replace(/^\w/, (c: string) => c.toUpperCase())} · ${b.session_at ? fmtDate(b.session_at) : 'Date to confirm'}`;
+          const right = document.createElement('span');
+          right.textContent = `${usd(Number(b.amount_usd))} · ${STATUS[b.status] ?? b.status}`;
+          li.append(left, right);
+          return li;
+        }),
+      );
+    } catch {
+      /* bookings are optional on this page */
+    }
+  }
+
+  async function renderApp() {
+    const session = await getSession();
+    if (!session) return;
+    profile = await getProfile().catch(() => null);
+    const pro = Boolean(profile?.isPro);
+    $('[data-hi-email]').textContent = session.user.email ?? 'there';
+    $('[data-plan-free]').hidden = pro;
+    $('[data-plan-pro]').hidden = !pro;
+    $('[data-plan-renew]').textContent = pro && profile?.proUntil ? `Renews ${fmtDate(profile.proUntil)}` : '';
+    $('[data-upgrade]').hidden = pro;
+    $('[data-manage]').hidden = !pro;
+    $('[data-manage-until]').textContent = pro && profile?.proUntil ? ` until ${fmtDate(profile.proUntil)}` : '';
+    remSet.disabled = !pro;
+    $('[data-rem-lock]').hidden = pro;
+    $('[data-rem-free]').hidden = pro;
+    loadReminders();
+    stays = pro ? await listStays().catch(() => []) : [];
+    renderStays();
+    renderOnboarding();
+    renderBookings();
+    show('app');
+  }
+
+  async function upgrade(productId: 'pro_monthly' | 'pro_yearly', btn: HTMLButtonElement | null) {
+    const scope = $('[data-upgrade]');
+    if (btn?.getAttribute('aria-disabled') === 'true') {
+      showPayNotice(scope, { ok: false, code: 'offline' });
+      return;
+    }
+    const restore = setBusy(btn, 'Opening checkout…');
+    showPayNotice(scope, null);
+    const result = await startCheckout(
+      { productId },
+      {
+        productId,
+        label: productId === 'pro_yearly' ? 'Stay Pro, yearly' : 'Stay Pro, monthly',
+        amountUsd: Number(productId === 'pro_yearly' ? root.dataset.proYearly : root.dataset.proPrice),
+        returnTo: '/account',
+        startedAt: new Date().toISOString(),
+      },
+    );
+    if (!result.ok) {
+      restore();
+      showPayNotice(scope, result);
+    }
+  }
+  document.querySelectorAll<HTMLButtonElement>('[data-upgrade-btn]').forEach((b) =>
+    b.addEventListener('click', () => upgrade(b.dataset.upgradeBtn as 'pro_monthly' | 'pro_yearly', b)),
+  );
+
+  $('[data-logout]').addEventListener('click', async () => {
+    await signOut().catch(() => undefined);
+    location.href = '/account';
+  });
+  $('[data-reload]').addEventListener('click', (e) => {
+    e.preventDefault();
+    location.reload();
+  });
+
+  // ------------------------------------------------------------------ boot
+  async function boot() {
+    const expired = hash.get('error_code') === 'otp_expired' || /expired/i.test(hash.get('error_description') ?? '');
+    if (!supabase) {
+      show('unavailable');
+      if (isReturn) handleReturn(false);
+      return;
+    }
+    const session = await getSession().catch(() => null);
+    if (!session) {
+      show('login');
+      if (expired) {
+        $('[data-login-expired]').hidden = false;
+        history.replaceState(null, '', location.pathname + location.search);
+      }
+      if (intent === 'pro_monthly' || intent === 'pro_yearly') {
+        const note = $('[data-intent-note]');
+        note.textContent = 'Log in first, then we take you straight to secure checkout for Pro.';
+        note.hidden = false;
+      }
+      if (isReturn) handleReturn(false);
+      return;
+    }
+
+    // Signed in and arrived with an intent: finish what the user started.
+    if (!isReturn && (intent === 'pro_monthly' || intent === 'pro_yearly')) {
+      clearReturn();
+      const p = await getProfile().catch(() => null);
+      if (!p?.isPro) {
+        location.replace(`/pricing?intent=${intent}&auto=1`);
+        return;
+      }
+    } else if (!isReturn && next && next !== '/account') {
+      clearReturn();
+      const dest = new URL(next, location.origin);
+      // Absolute href: a bare pathname like "//evil.com" (from "/.//evil.com") would be protocol-relative.
+      if (dest.origin === location.origin) {
+        if (intent) dest.searchParams.set('intent', intent);
+        location.replace(dest.href);
+        return;
+      }
+    }
+    clearReturn();
+    await renderApp();
+    if (isReturn) handleReturn(true);
+  }
+
+  // Magic-link arrivals: the session lands a moment after load.
+  onAuthChange((s) => {
+    if (s && document.querySelector<HTMLElement>('[data-view="login"]')?.hidden === false) boot();
+  });
+  boot();
+</script>

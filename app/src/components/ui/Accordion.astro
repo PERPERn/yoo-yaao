@@ -1,0 +1,144 @@
+---
+/**
+ * FAQ accordion built on native <details>/<summary>: keyboard, screen reader and find-in-page
+ * work with no JS. `exclusive` makes it one-open-at-a-time (native `name` grouping).
+ *
+ *   <Accordion items={faq.map(f => ({ question: f.q, answer: f.a }))} />
+ *
+ * `answer` may contain simple HTML (links). Or pass `id` per item to deep-link (#faq-pro).
+ * Optional `schema` emits FAQPage JSON-LD for SEO.
+ */
+interface Item {
+  question: string;
+  answer: string;
+  id?: string;
+}
+interface Props {
+  items: Item[];
+  exclusive?: boolean;
+  open?: number;          // index open by default
+  name?: string;          // group name (needed when two exclusive accordions share a page)
+  schema?: boolean;
+  class?: string;
+  [key: string]: unknown;
+}
+const { items, exclusive = false, open, name = 'faq', schema = false, class: className, ...rest } = Astro.props;
+const strip = (s: string) => s.replace(/<[^>]+>/g, '');
+const jsonLd = schema
+  ? JSON.stringify({
+      '@context': 'https://schema.org',
+      '@type': 'FAQPage',
+      mainEntity: items.map((i) => ({
+        '@type': 'Question',
+        name: i.question,
+        acceptedAnswer: { '@type': 'Answer', text: strip(i.answer) },
+      })),
+    })
+  : null;
+---
+
+<div class:list={['accordion', className]} {...rest}>
+  {
+    items.map((item, i) => (
+      <details class="accordion__item" id={item.id} name={exclusive ? name : undefined} open={open === i}>
+        <summary class="accordion__q">
+          <span>{item.question}</span>
+          <svg class="accordion__icon" viewBox="0 0 24 24" width="22" height="22" aria-hidden="true">
+            <path d="M12 5v14M5 12h14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" />
+          </svg>
+        </summary>
+        <div class="accordion__a" set:html={item.answer} />
+      </details>
+    ))
+  }
+</div>
+{jsonLd && <script type="application/ld+json" set:html={jsonLd} />}
+
+<style>
+  .accordion {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-2);
+  }
+  .accordion__item {
+    background: var(--color-surface);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--elev-1);
+    transition: box-shadow var(--duration-base) var(--ease-out);
+  }
+  .accordion__item[open] {
+    box-shadow: var(--elev-2);
+  }
+  .accordion__q {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-4);
+    min-height: 64px;
+    padding: var(--space-4) var(--space-6);
+    font-family: var(--font-display);
+    font-size: var(--text-lg);
+    font-weight: var(--weight-semibold);
+    line-height: 1.35;
+    cursor: pointer;
+    list-style: none;
+    border-radius: var(--radius-lg);
+    transition: background-color var(--duration-base) var(--ease-out);
+  }
+  .accordion__q::-webkit-details-marker {
+    display: none;
+  }
+  .accordion__q:hover {
+    color: var(--color-brand);
+    background: color-mix(in srgb, var(--color-brand) 6%, transparent);
+  }
+  .accordion__q:active .accordion__icon {
+    scale: 0.82;
+    transition-duration: var(--duration-fast);
+  }
+  .accordion__q:focus-visible {
+    outline-offset: -3px;
+  }
+  .accordion__icon {
+    flex-shrink: 0;
+    color: var(--color-brand);
+    transition:
+      transform var(--duration-slow) var(--ease-out),
+      scale var(--duration-fast) var(--ease-out);
+  }
+  .accordion__item[open] .accordion__icon {
+    transform: rotate(45deg);
+  }
+  .accordion__a {
+    padding: 0 var(--space-6) var(--space-6);
+    color: var(--color-ink-2);
+    max-width: 68ch;
+  }
+  .accordion__a :global(* + *) {
+    margin-top: var(--space-3);
+  }
+  .accordion__a :global(a) {
+    font-weight: var(--weight-medium);
+  }
+  /* Smooth open where supported (progressive) */
+  @supports (interpolate-size: allow-keywords) {
+    .accordion {
+      interpolate-size: allow-keywords;
+    }
+    .accordion__item::details-content {
+      block-size: 0;
+      overflow: clip;
+      transition:
+        block-size var(--duration-slow) var(--ease-out),
+        content-visibility var(--duration-slow) allow-discrete;
+    }
+    .accordion__item[open]::details-content {
+      block-size: auto;
+    }
+  }
+  @media (forced-colors: active) {
+    .accordion__item {
+      border: 1px solid CanvasText;
+    }
+  }
+</style>

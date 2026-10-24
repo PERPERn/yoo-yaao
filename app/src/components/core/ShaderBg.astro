@@ -1,0 +1,140 @@
+---
+/**
+ * Subtle animated background (WebGPU via `shaders/js`): a slow mesh gradient in the page's own
+ * tokens plus fine grain, optionally over an image or video layer. Decorative only.
+ *
+ *   <section style="position:relative; isolation:isolate">
+ *     <ShaderBg />                       // or <ShaderBg image="/img/x.webp" /> / video="/v.mp4"
+ *     …content…
+ *   </section>
+ *
+ * Sits at z-index -1, so the parent needs `isolation: isolate` (and position). A static CSS
+ * gradient in the same tokens is always painted first; the canvas fades in over it only when
+ * WebGPU starts. Nothing loads under reduced motion or without WebGPU. The library pauses the
+ * loop while the canvas is off-screen (its built-in IntersectionObserver).
+ * shortcut: `shaders/js` bundles its whole effect registry (~700 KB gzip, lazy chunk loaded at idle
+ * after `load`); upgrade to a hand-written WebGPU/WebGL gradient if that weight starts to matter.
+ */
+interface Props {
+  image?: string; // optional image layer under the gradient
+  video?: string; // optional muted looping video layer (wins over image)
+  class?: string;
+}
+const { image, video, class: className } = Astro.props;
+---
+
+<div
+  class:list={['shader-bg', className]}
+  data-shader-bg
+  data-image={image}
+  data-video={video}
+  style={image ? `--shader-image:url("${image}")` : undefined}
+  aria-hidden="true"
+>
+  <!-- inline sizes: createShader pins a canvas without them to its first pixel size -->
+  <canvas class="shader-bg__canvas" style="width:100%;height:100%"></canvas>
+</div>
+
+<style>
+  .shader-bg {
+    position: absolute;
+    inset: 0;
+    z-index: -1;
+    pointer-events: none;
+    overflow: hidden;
+    /* Static fallback: same tokens as the shader, so the switch-over is invisible */
+    background:
+      radial-gradient(60% 55% at 18% 20%, color-mix(in srgb, var(--color-brand) 14%, transparent), transparent 70%),
+      radial-gradient(50% 50% at 85% 75%, color-mix(in srgb, var(--color-accent) 9%, transparent), transparent 70%),
+      var(--shader-image, none) center / cover no-repeat,
+      var(--color-bg);
+    /* Fade top and bottom edges into the neighbouring sections */
+    -webkit-mask-image: linear-gradient(transparent, #000 12%, #000 82%, transparent);
+    mask-image: linear-gradient(transparent, #000 12%, #000 82%, transparent);
+  }
+  .shader-bg__canvas {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    opacity: 0;
+    transition: opacity 1.2s var(--ease-out);
+  }
+  .shader-bg[data-ready='true'] .shader-bg__canvas {
+    opacity: 1;
+  }
+</style>
+
+<script>
+  // Read a token as a hex string for the GPU (tokens are plain hex, also in dark mode / night scope).
+  const token = (el: Element, name: string) => getComputedStyle(el).getPropertyValue(name).trim();
+
+  async function mount(el: HTMLElement) {
+    const canvas = el.querySelector<HTMLCanvasElement>('canvas');
+    if (!canvas) return;
+    const { createShader, isWebGPUSupported } = await import('shaders/js');
+    if (!(await isWebGPUSupported())) return; // keep the CSS gradient
+    const { image, video } = el.dataset;
+    const media = video
+      ? [{ type: 'VideoTexture', props: { url: video, objectFit: 'cover', loop: true } }]
+      : image
+        ? [{ type: 'ImageTexture', props: { url: image, objectFit: 'cover' } }]
+        : [];
+    const bg = token(el, '--color-bg');
+    await createShader(
+      canvas,
+      {
+        components: [
+          ...media,
+          {
+            type: 'MeshGradient',
+            props: {
+              stops: [
+                { color: bg, position: 0 },
+                { color: token(el, '--color-brand-tint'), position: 0.35 },
+                { color: bg, position: 0.6 },
+                { color: token(el, '--color-accent-tint'), position: 0.85 },
+                { color: bg, position: 1 },
+              ],
+              count: 4,
+              smoothness: 3,
+              swirl: 0.2,
+              speed: 0.25,
+              // over a picture the gradient becomes a tinted veil that keeps text contrast
+              opacity: media.length ? 0.78 : 1,
+            },
+          },
+          { type: 'FilmGrain', props: { strength: 0.04, animated: false } },
+        ],
+      },
+      {
+        disableTelemetry: true,
+        onReady: () => (el.dataset.ready = 'true'),
+        onError: () => delete el.dataset.ready, // terminal or recovering: CSS fallback shows through
+      },
+    );
+  }
+
+  const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const els = document.querySelectorAll<HTMLElement>('[data-shader-bg]');
+  const start = () => {
+    // Load the WebGPU bundle only when a background is about to scroll into view.
+    const io = new IntersectionObserver(
+      (entries) => {
+        for (const e of entries) {
+          if (!e.isIntersecting) continue;
+          io.unobserve(e.target);
+          mount(e.target as HTMLElement).catch(() => {});
+        }
+      },
+      { rootMargin: '200px' },
+    );
+    els.forEach((el) => io.observe(el));
+  };
+  if (!reduce && 'gpu' in navigator && els.length) {
+    // Never compete with first paint or the 3D hero: wait for load, then an idle moment.
+    const idle = () => ('requestIdleCallback' in window ? requestIdleCallback(start, { timeout: 2000 }) : setTimeout(start, 600));
+    if (document.readyState === 'complete') idle();
+    else window.addEventListener('load', idle, { once: true });
+  }
+</script>

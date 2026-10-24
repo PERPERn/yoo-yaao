@@ -1,0 +1,297 @@
+---
+import Base from '../../layouts/Base.astro';
+import Callout from '../../components/ui/Callout.astro';
+import Button from '../../components/ui/Button.astro';
+import Icon from '../../components/ui/Icon.astro';
+import Select from '../../components/ui/Select.astro';
+import BuddyCard from '../../components/money/BuddyCard.astro';
+import '../../components/money/money.css';
+import { buddies, DEMO_NOTICE } from '../../data/buddies';
+import { CITY_OPTIONS, BUDDY_MIN, BUDDY_MAX, BUDDY_KEEP_PCT } from '../../components/money/plans';
+
+const services = [...new Set(buddies.flatMap((b) => b.services))].sort();
+const languages = [...new Set(buddies.flatMap((b) => b.languages))].sort();
+const priceCaps = [30, 40, 50].filter((p) => p >= BUDDY_MIN && p < BUDDY_MAX);
+const sorted = [...buddies].sort((a, b) => b.rating - a.rating || b.sessions - a.sessions);
+---
+
+<Base
+  title="Local Buddies"
+  description={`Book a 60-minute session with a vetted local in Bangkok, Chiang Mai or Phuket: apartment viewings, bank accounts, SIM cards and city orientation. From $${BUDDY_MIN}.`}
+>
+  <div class="container m-hero hero">
+    <div class="stack" style="--stack-gap: var(--space-4)">
+      <h1 data-intro>Local Buddies</h1>
+      <p class="lead" data-intro>
+        Practical help from vetted locals: apartment viewings, bank accounts, SIM cards and finding your way around.
+        60-minute sessions from ${BUDDY_MIN}.
+      </p>
+    </div>
+    <Callout tone="warning" title="These are demo profiles" class="demo-note" data-intro>
+      {DEMO_NOTICE}
+    </Callout>
+  </div>
+
+  <section class="section browse" aria-labelledby="browse-title">
+    <div class="container stack" style="--stack-gap: var(--space-6)">
+      <h2 id="browse-title" class="sr-only">Browse buddies</h2>
+      <form class="filters" data-filters role="search" aria-label="Filter buddies">
+        <fieldset class="filters__cities">
+          <legend class="sr-only">City</legend>
+          <div class="chips">
+            <label class="chip"><input type="radio" name="city" value="" checked /><span>All cities</span></label>
+            {
+              CITY_OPTIONS.map((c) => (
+                <label class="chip">
+                  <input type="radio" name="city" value={c.value} />
+                  <span>{c.label}</span>
+                </label>
+              ))
+            }
+          </div>
+        </fieldset>
+        <div class="filters__selects">
+          <Select name="service" id="f-service" label="Service" options={[{ value: '', label: 'Any service' }, ...services]} />
+          <Select name="lang" id="f-lang" label="Language" options={[{ value: '', label: 'Any language' }, ...languages]} />
+          <Select
+            name="max"
+            id="f-max"
+            label="Price"
+            options={[{ value: '', label: 'Any price' }, ...priceCaps.map((p) => ({ value: String(p), label: `Up to $${p}` }))]}
+          />
+          <Select
+            name="sort"
+            id="f-sort"
+            label="Sort by"
+            options={[
+              { value: 'rating', label: 'Top rated' },
+              { value: 'price', label: 'Price: low to high' },
+            ]}
+          />
+        </div>
+      </form>
+
+      <p class="count" aria-live="polite" data-count>Showing {buddies.length} buddies</p>
+
+      <ul class="results" data-results>
+        {sorted.map((b) => <BuddyCard buddy={b} />)}
+      </ul>
+
+      <div class="none" data-none hidden>
+        <span class="none__icon"><Icon name="users" size={28} /></span>
+        <h3>No buddies match these filters</h3>
+        <p class="muted">Try another city or service, or widen the price.</p>
+        <Button variant="secondary" data-clear>Clear filters</Button>
+      </div>
+
+      <p class="scope">
+        <Icon name="shield" size={20} />
+        <span>
+          Buddies give practical help only. They don't file visas or give legal advice. For that, talk to a
+          <a href="/experts">licensed visa expert</a>.
+        </span>
+      </p>
+    </div>
+  </section>
+
+  <section class="section join" aria-labelledby="join-title">
+    <div class="container join__inner" data-reveal>
+      <div class="stack" style="--stack-gap: var(--space-3)">
+        <h2 id="join-title">Live in Thailand? Earn by helping newcomers.</h2>
+        <p>Set your own price between ${BUDDY_MIN} and ${BUDDY_MAX} an hour and keep {BUDDY_KEEP_PCT}% of every session.</p>
+      </div>
+      <Button href="/buddies/join" size="lg" iconRight="arrow-right">Become a buddy</Button>
+    </div>
+  </section>
+</Base>
+
+<style>
+  .hero {
+    display: grid;
+    gap: var(--space-8);
+    padding-bottom: 0;
+  }
+  @media (min-width: 64rem) {
+    .hero {
+      grid-template-columns: 1.1fr 1fr;
+      align-items: end;
+    }
+  }
+  .browse {
+    padding-top: var(--space-10);
+  }
+  .filters {
+    display: grid;
+    gap: var(--space-5);
+    padding: var(--space-5);
+    border-radius: var(--radius-xl);
+    background: var(--color-surface-2);
+  }
+  .filters fieldset {
+    min-width: 0; /* fieldsets default to min-content, which let the chip row widen the page */
+    border: 0;
+    margin: 0;
+    padding: 0;
+  }
+  .filters__cities .chips {
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    scrollbar-width: none;
+    margin-inline: calc(var(--space-5) * -1);
+    padding-inline: var(--space-5);
+  }
+  .filters__cities .chip {
+    flex-shrink: 0;
+  }
+  .filters__selects {
+    display: grid;
+    gap: var(--space-4);
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  @media (min-width: 64rem) {
+    .filters__selects {
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+    }
+  }
+  .count {
+    color: var(--color-ink-2);
+    font-size: var(--text-sm);
+    font-variant-numeric: tabular-nums;
+  }
+  .results {
+    display: grid;
+    gap: var(--space-5);
+    padding: 0;
+    list-style: none;
+    grid-template-columns: repeat(auto-fill, minmax(min(19rem, 100%), 1fr));
+  }
+  .results :global([data-buddy][hidden]) {
+    display: none;
+  }
+  .results :global(.is-entering) {
+    animation: card-in var(--duration-slow) var(--ease-out) both;
+  }
+  @keyframes card-in {
+    from {
+      opacity: 0;
+      transform: translateY(12px);
+    }
+  }
+  .none {
+    display: grid;
+    justify-items: start;
+    gap: var(--space-3);
+    padding: var(--space-8);
+    border-radius: var(--radius-xl);
+    background: var(--color-surface-2);
+  }
+  .none__icon {
+    display: grid;
+    place-items: center;
+    width: 3.5rem;
+    height: 3.5rem;
+    border-radius: 50%;
+    background: var(--color-brand-tint);
+    color: var(--color-brand);
+  }
+  .scope {
+    display: flex;
+    gap: var(--space-3);
+    align-items: flex-start;
+    max-width: 60ch;
+    color: var(--color-ink-2);
+  }
+  .join {
+    background: var(--seg-c2c-bg);
+    color: var(--seg-ink);
+  }
+  .join h2,
+  .join p {
+    color: var(--seg-ink);
+  }
+  .join__inner {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-6);
+    align-items: center;
+    justify-content: space-between;
+  }
+</style>
+
+<script>
+  import { initMotion } from '../../scripts/motion';
+  import { prefersReducedMotion } from '../../components/money/client';
+  initMotion();
+
+  const form = document.querySelector<HTMLFormElement>('[data-filters]')!;
+  const list = document.querySelector<HTMLElement>('[data-results]')!;
+  const cards = Array.from(list.querySelectorAll<HTMLElement>('[data-buddy]'));
+  const count = document.querySelector<HTMLElement>('[data-count]')!;
+  const none = document.querySelector<HTMLElement>('[data-none]')!;
+  const KEYS = ['city', 'service', 'lang', 'max', 'sort'] as const;
+
+  // Read filters from the URL so a filtered view can be shared (e.g. /buddies?city=chiang-mai).
+  const params = new URLSearchParams(location.search);
+  for (const key of KEYS) {
+    const v = params.get(key);
+    if (v == null) continue;
+    const el = form.elements.namedItem(key);
+    if (el instanceof RadioNodeList) {
+      Array.from(el).forEach((r) => ((r as HTMLInputElement).checked = (r as HTMLInputElement).value === v));
+    } else if (el instanceof HTMLSelectElement && Array.from(el.options).some((o) => o.value === v)) {
+      el.value = v;
+    }
+  }
+
+  function read() {
+    const fd = new FormData(form);
+    return Object.fromEntries(KEYS.map((k) => [k, String(fd.get(k) ?? '')])) as Record<(typeof KEYS)[number], string>;
+  }
+
+  function apply(animate: boolean) {
+    const f = read();
+    let shown = 0;
+    const visible: HTMLElement[] = [];
+    for (const c of cards) {
+      const ok =
+        (!f.city || c.dataset.city === f.city) &&
+        (!f.service || (c.dataset.services ?? '').split('|').includes(f.service)) &&
+        (!f.lang || (c.dataset.languages ?? '').split('|').includes(f.lang)) &&
+        (!f.max || Number(c.dataset.price) <= Number(f.max));
+      const wasHidden = c.hidden;
+      c.hidden = !ok;
+      if (ok) {
+        shown++;
+        visible.push(c);
+        if (animate && wasHidden && !prefersReducedMotion()) {
+          c.classList.remove('is-entering');
+          void c.offsetWidth;
+          c.classList.add('is-entering');
+        }
+      }
+    }
+    const sorted = [...cards].sort((a, b) =>
+      f.sort === 'price'
+        ? Number(a.dataset.price) - Number(b.dataset.price)
+        : Number(b.dataset.rating) - Number(a.dataset.rating),
+    );
+    sorted.forEach((c) => list.appendChild(c));
+    count.textContent = shown === 1 ? 'Showing 1 buddy' : `Showing ${shown} buddies`;
+    none.hidden = shown > 0;
+    list.hidden = shown === 0;
+
+    const q = new URLSearchParams();
+    for (const k of KEYS) if (f[k] && !(k === 'sort' && f[k] === 'rating')) q.set(k, f[k]);
+    const qs = q.toString();
+    history.replaceState(null, '', qs ? `?${qs}` : location.pathname);
+  }
+
+  form.addEventListener('change', () => apply(true));
+  form.addEventListener('submit', (e) => e.preventDefault());
+  document.querySelector('[data-clear]')?.addEventListener('click', () => {
+    form.reset();
+    apply(true);
+    form.querySelector<HTMLInputElement>('input[name="city"]')?.focus();
+  });
+  apply(false);
+</script>

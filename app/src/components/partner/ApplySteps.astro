@@ -1,0 +1,122 @@
+---
+/**
+ * The partner path: Apply → Confirm email → We verify → Approved. Used on /business/apply,
+ * /business/verify and the portal's "under review" state.
+ * `current` = the step in progress (1–4); earlier steps show as done. 0 = nothing started.
+ * Scripts can move it by setting data-state (done | current | todo) on each <li data-step>.
+ */
+interface Props {
+  current?: number;
+  class?: string;
+  [key: string]: unknown;
+}
+const { current = 0, class: className, ...rest } = Astro.props;
+const APPLY_STEPS = [
+  { title: 'Apply', body: 'Two minutes: your business, city and contact email.' },
+  { title: 'Confirm email', body: 'Click the link we send, so we know the address is yours.' },
+  { title: 'We verify identity & licence', body: 'A person on our team checks your documents. 1–2 business days.' },
+  { title: 'Approved: portal access', body: 'Your listing goes live and you can manage leads in the partner portal.' },
+];
+const state = (i: number) => (i + 1 < current ? 'done' : i + 1 === current ? 'current' : 'todo');
+---
+
+<ol class:list={['as', className]} data-apply-steps {...rest}>
+  {
+    APPLY_STEPS.map((s, i) => (
+      <li class="as__step" data-step={i + 1} data-state={state(i)} aria-current={state(i) === 'current' ? 'step' : undefined}>
+        <span class="as__dot" aria-hidden="true">
+          <span class="as__n">{i + 1}</span>
+          <svg class="as__tick" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.5 4.5L19 7.5" /></svg>
+        </span>
+        <span class="as__text">
+          <strong class="as__title">{s.title}</strong>
+          <span class="sr-only as__sr">{state(i) === 'done' ? ' (done)' : state(i) === 'current' ? ' (in progress)' : ''}</span>
+          <span class="as__body">{s.body}</span>
+        </span>
+      </li>
+    ))
+  }
+</ol>
+
+<style>
+  .as {
+    display: grid;
+    gap: 0;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+  .as__step {
+    position: relative;
+    display: grid;
+    grid-template-columns: 2rem 1fr;
+    gap: var(--space-3);
+    padding-bottom: var(--space-5);
+  }
+  .as__step:last-child {
+    padding-bottom: 0;
+  }
+  /* connector line */
+  .as__step:not(:last-child)::before {
+    content: '';
+    position: absolute;
+    left: calc(1rem - 1px);
+    top: 2.1rem;
+    bottom: 0.25rem;
+    width: 2px;
+    background: var(--color-border);
+  }
+  .as__step[data-state='done']:not(:last-child)::before {
+    background: var(--color-success);
+  }
+  .as__dot {
+    display: grid;
+    place-items: center;
+    width: 2rem;
+    height: 2rem;
+    border-radius: 50%;
+    border: 2px solid var(--color-border-strong);
+    background: var(--color-surface);
+    color: var(--color-ink-2);
+    font-size: var(--text-sm);
+    font-weight: var(--weight-bold);
+    font-variant-numeric: tabular-nums;
+  }
+  .as__tick {
+    display: none;
+  }
+  .as__step[data-state='done'] .as__dot {
+    border-color: var(--color-success);
+    background: var(--color-success);
+    color: var(--color-surface);
+  }
+  .as__step[data-state='done'] .as__n {
+    display: none;
+  }
+  .as__step[data-state='done'] .as__tick {
+    display: block;
+  }
+  .as__step[data-state='current'] .as__dot {
+    border-color: var(--color-brand);
+    background: var(--color-brand);
+    color: var(--color-on-brand);
+    box-shadow: 0 0 0 4px var(--color-brand-tint);
+  }
+  .as__text {
+    display: grid;
+    gap: var(--space-1);
+    padding-top: 0.2rem;
+    min-width: 0;
+  }
+  .as__title {
+    font-weight: var(--weight-semibold);
+  }
+  .as__step[data-state='todo'] .as__title {
+    color: var(--color-ink-2);
+  }
+  .as__body {
+    font-size: var(--text-sm);
+    color: var(--color-ink-2);
+    text-wrap: pretty;
+  }
+</style>

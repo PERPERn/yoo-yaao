@@ -1,0 +1,191 @@
+---
+import Base from '../../layouts/Base.astro';
+import Section from '../../components/ui/Section.astro';
+import Button from '../../components/ui/Button.astro';
+import Select from '../../components/ui/Select.astro';
+import EmptyState from '../../components/ui/EmptyState.astro';
+import SourceTag from '../../components/ui/SourceTag.astro';
+import PageHeader from '../../components/core/PageHeader.astro';
+import DocChecklist from '../../components/core/DocChecklist.astro';
+import ProHint from '../../components/core/ProHint.astro';
+import LegalNote from '../../components/core/LegalNote.astro';
+import Motion from '../../components/core/Motion.astro';
+import { visas } from '../../data/visas';
+
+---
+
+<Base
+  title="Visa document checklist"
+  description="Tick off every document your Thai visa application needs: DTV, LTR, Privilege, visa exemption or retirement. Saved in your browser; Pro syncs it."
+>
+  <PageHeader
+    title="Document checklist"
+    lead="Pick your visa and tick each document as it's ready. Your ticks and notes are saved on this device."
+    crumbs={[{ label: 'Stay Tools', href: '/tools' }, { label: 'Document checklist' }]}
+  >
+    <div class="picker">
+      <Select
+        name="visa"
+        label="Which visa are you applying for?"
+        placeholder="Choose a visa"
+        options={visas.map((v) => ({ value: v.slug, label: v.name }))}
+        data-picker
+      />
+    </div>
+  </PageHeader>
+
+  <Section spacing="none" aria-label="Checklist">
+    <div class="wrap">
+      <div class="main">
+        <div data-empty>
+          <EmptyState
+            title="Pick a visa to load its checklist."
+            description="Every list comes from the visa's official requirements. Not sure which visa? The Visa Finder ranks them for you in about 2 minutes."
+            icon="passport"
+            actionLabel="Find my visa"
+            actionHref="/finder"
+          />
+        </div>
+
+        {
+          visas.map((v) => (
+            <section class="panel" data-panel={v.slug} hidden aria-labelledby={`p-${v.slug}`}>
+              <h2 id={`p-${v.slug}`} class="panel__title">{v.shortName} documents</h2>
+              <DocChecklist slug={v.slug} documents={v.documents} withNotes doneHref={`/visas/${v.slug}#steps`} />
+              <SourceTag source={v.sources.find((s) => s.tier === 'primary') ?? v.sources[0]} verifiedAt={v.verifiedAt} />
+              <p class="panel__guide"><a href={`/visas/${v.slug}`}>Read the full {v.shortName} guide</a></p>
+            </section>
+          ))
+        }
+      </div>
+
+      <aside class="side" aria-label="Save and sync">
+        <div class="side__card">
+          <h2 class="side__title">Take it with you</h2>
+          <p class="small">Free: saved in this browser. Pro syncs your list to your phone and laptop.</p>
+          <div class="side__actions">
+            <Button href="/pricing" variant="accent" data-sync-cta>Sync across devices — Go Pro</Button>
+            <Button variant="secondary" icon="arrow-up-right" data-pdf>Download PDF</Button>
+          </div>
+          <ProHint data-pdf-hint />
+        </div>
+        <LegalNote />
+      </aside>
+    </div>
+  </Section>
+</Base>
+
+<Motion />
+
+<script>
+  import { bindChecklist } from '../../components/core/checklist-client';
+  import { getProState, upgradeHref } from '../../components/core/pro';
+
+  const picker = document.querySelector<HTMLSelectElement>('[data-picker]')!;
+  const panels = Array.from(document.querySelectorAll<HTMLElement>('[data-panel]'));
+  const empty = document.querySelector<HTMLElement>('[data-empty]')!;
+  const bound = new Set<string>();
+
+  function show(slug: string) {
+    const panel = panels.find((p) => p.dataset.panel === slug);
+    panels.forEach((p) => (p.hidden = p !== panel));
+    empty.hidden = Boolean(panel);
+    if (!panel) return;
+    if (!bound.has(slug)) {
+      bindChecklist(panel.querySelector<HTMLElement>('[data-checklist]')!, slug);
+      bound.add(slug);
+    }
+    const url = new URL(location.href);
+    url.searchParams.set('visa', slug);
+    history.replaceState(null, '', url);
+  }
+
+  const initial = new URLSearchParams(location.search).get('visa') ?? '';
+  if (panels.some((p) => p.dataset.panel === initial)) picker.value = initial;
+  show(picker.value);
+  picker.addEventListener('change', () => show(picker.value));
+
+  // Pro: PDF export (print to PDF) and a sync label instead of an upsell.
+  const pdfHint = document.querySelector<HTMLElement>('[data-pdf-hint]')!;
+  const syncCta = document.querySelector<HTMLAnchorElement>('[data-sync-cta]')!;
+  getProState().then((s) => {
+    if (s.isPro) syncCta.hidden = true;
+    else syncCta.href = upgradeHref(s, `/tools/checklist${location.search}`);
+  });
+  document.querySelector('[data-pdf]')!.addEventListener('click', async () => {
+    const s = await getProState();
+    if (s.isPro) {
+      if (!picker.value) {
+        picker.focus();
+        return;
+      }
+      window.print();
+      return;
+    }
+    const text = pdfHint.querySelector<HTMLElement>('[data-hint-text]')!;
+    text.textContent = 'PDF export comes with Pro. Your checklist is still saved here, and you can print this page from your browser.';
+    pdfHint.querySelector<HTMLAnchorElement>('[data-hint-link]')!.href = upgradeHref(s, `/tools/checklist${location.search}`);
+    pdfHint.querySelector<HTMLElement>('[data-hint-login]')!.hidden = s.loggedIn;
+    pdfHint.hidden = false;
+  });
+</script>
+
+<style>
+  .picker {
+    max-width: 28rem;
+  }
+  .wrap {
+    display: grid;
+    gap: var(--space-10);
+    padding-bottom: var(--space-section);
+  }
+  @media (min-width: 60rem) {
+    .wrap {
+      grid-template-columns: minmax(0, 2fr) minmax(0, 1fr);
+      align-items: start;
+    }
+  }
+  .panel {
+    display: grid;
+    gap: var(--space-6);
+  }
+  .panel__title {
+    font-size: var(--text-2xl);
+  }
+  .panel__guide a {
+    display: inline-flex;
+    align-items: center;
+    min-height: var(--tap-min);
+    font-weight: var(--weight-semibold);
+  }
+  .side {
+    display: grid;
+    gap: var(--space-6);
+    position: sticky;
+    top: calc(var(--header-h) + var(--space-6));
+  }
+  .side__card {
+    display: grid;
+    gap: var(--space-4);
+    padding: var(--space-6);
+    border-radius: var(--radius-xl);
+    background: var(--color-accent-tint);
+  }
+  .side__title {
+    font-size: var(--text-xl);
+  }
+  .side__actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-3);
+  }
+  @media print {
+    :global(.site-header),
+    :global(.site-footer),
+    .side,
+    .picker,
+    :global(.crumbs) {
+      display: none !important;
+    }
+  }
+</style>

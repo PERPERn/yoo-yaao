@@ -1,0 +1,1086 @@
+---
+import Base from '../layouts/Base.astro';
+import PageHead from '../components/core/PageHead.astro';
+import Button from '../components/ui/Button.astro';
+import Icon, { type IconName } from '../components/ui/Icon.astro';
+import Callout from '../components/ui/Callout.astro';
+import { COUNTRIES, FINDER_DEFAULTS } from '../data/finder';
+import { getProduct } from '../data/products';
+import type { Purpose } from '../types/contracts';
+
+const proMonthly = getProduct('pro_monthly')?.priceUsd;
+
+const purposes: { value: Purpose; label: string; hint: string; icon: IconName }[] = [
+  { value: 'remote-work', label: 'Remote work', hint: 'Employer or clients outside Thailand', icon: 'briefcase' },
+  { value: 'tourism', label: 'Long holiday', hint: 'Travel, rest, explore', icon: 'map-pin' },
+  { value: 'retire', label: 'Retirement', hint: 'Settle down for the long term', icon: 'clock' },
+  { value: 'invest', label: 'Investing / wealth', hint: 'Assets, property or business', icon: 'wallet' },
+  { value: 'study', label: 'Study', hint: 'A school or university course', icon: 'passport' },
+  { value: 'soft-power', label: 'Learn Thai skills', hint: 'Muay Thai, cooking, culture', icon: 'star' },
+];
+const stayChips = [
+  { days: 60, label: 'Up to 2 months' },
+  { days: 180, label: '3–6 months' },
+  { days: 365, label: '6–12 months' },
+  { days: 1825, label: '1–5 years' },
+  { days: 3650, label: '5+ years' },
+];
+const incomeChips = [
+  { v: 30000, label: 'Under $40k' },
+  { v: 60000, label: '$40–80k' },
+  { v: 100000, label: '$80k+' },
+];
+const savingsChips = [
+  { v: 300000, label: 'Under 500k' },
+  { v: 650000, label: '500k–800k' },
+  { v: 1000000, label: '800k+' },
+];
+const d = FINDER_DEFAULTS;
+---
+
+<Base title="Visa Finder" description="Answer 6 quick questions and see which Thai long-stay visa fits you, ranked with plain reasons. Free, about 2 minutes.">
+  <PageHead
+    title="Which Thai visa fits you?"
+    lead="6 quick questions, about 2 minutes. Your answers stay in this browser unless you choose to save them."
+    crumbs={[{ label: 'Visa Finder' }]}
+    narrow
+  />
+
+  <div class="container-narrow finder" data-finder>
+    <ul class="f-trust">
+      <li><Icon name="clock" size={16} /> About 2 minutes</li>
+      <li><Icon name="shield" size={16} /> Rules checked against official Thai sources</li>
+      <li><Icon name="lock" size={16} /> Nothing is saved unless you log in</li>
+    </ul>
+
+    <!-- Wizard -->
+    <form class="f-wizard" data-wizard novalidate>
+      <div class="f-progress">
+        <p class="f-progress__label" aria-live="polite" data-step-label>Step 1 of 6</p>
+        <div class="f-progress__track" aria-hidden="true"><span class="f-progress__bar" data-step-bar></span></div>
+      </div>
+
+      <!-- 1 purpose -->
+      <section class="f-step" data-step="1" aria-labelledby="q1">
+        <h2 id="q1" class="f-q" tabindex="-1">What brings you to Thailand?</h2>
+        <p class="f-help" id="q1-hint">Pick the main reason. You can change it later.</p>
+        <fieldset class="f-cards" aria-labelledby="q1" aria-describedby="q1-hint q1-error">
+          {
+            purposes.map((p) => (
+              <label class="f-card">
+                <input type="radio" name="purpose" value={p.value} />
+                <span class="f-card__icon"><Icon name={p.icon} size={22} /></span>
+                <span class="f-card__text">
+                  <span class="f-card__label">{p.label}</span>
+                  <span class="f-card__hint">{p.hint}</span>
+                </span>
+              </label>
+            ))
+          }
+        </fieldset>
+        <p class="f-error" id="q1-error" aria-live="polite"></p>
+      </section>
+
+      <!-- 2 countries -->
+      <section class="f-step" data-step="2" aria-labelledby="q2" hidden>
+        <h2 id="q2" class="f-q" tabindex="-1">Which passport will you travel on?</h2>
+        <p class="f-help" id="nationality-hint">Visa-exempt rules depend on your passport.</p>
+        <label class="f-label" for="nationality">Passport country</label>
+        <select id="nationality" name="nationality" class="control" aria-describedby="nationality-hint">
+          {COUNTRIES.map((c) => <option value={c.code} selected={c.code === d.nationality}>{c.name}</option>)}
+        </select>
+
+        <h3 class="f-q f-q--sub">Where do you live now?</h3>
+        <label class="choice">
+          <input type="checkbox" name="same" checked data-same />
+          <span>Same as my passport country</span>
+        </label>
+        <div data-residence-wrap hidden>
+          <label class="f-label" for="residence">Country you live in</label>
+          <select id="residence" name="residence" class="control" aria-describedby="residence-hint">
+            {COUNTRIES.map((c) => <option value={c.code} selected={c.code === d.residenceCountry}>{c.name}</option>)}
+          </select>
+        </div>
+        <p class="f-help" id="residence-hint">DTV applications must be filed at the Thai embassy for your nationality or where you hold permanent residence.</p>
+      </section>
+
+      <!-- 3 stay -->
+      <section class="f-step" data-step="3" aria-labelledby="q3" hidden>
+        <h2 id="q3" class="f-q" tabindex="-1">How long do you want to stay?</h2>
+        <p class="f-help">Rough is fine.</p>
+        <div class="f-chips" role="group" aria-label="Quick picks">
+          {stayChips.map((c) => <button type="button" class="f-chip" data-fill="days" data-value={c.days}>{c.label}</button>)}
+        </div>
+        <label class="f-label" for="days">Or exact days</label>
+        <div class="f-num">
+          <input id="days" name="days" class="control" type="number" inputmode="numeric" min="1" max="3650" value={d.stayDays} aria-describedby="days-error" />
+          <span class="f-num__suffix">days</span>
+        </div>
+        <p class="f-error" id="days-error" aria-live="polite"></p>
+      </section>
+
+      <!-- 4 age -->
+      <section class="f-step" data-step="4" aria-labelledby="q4" hidden>
+        <h2 id="q4" class="f-q" tabindex="-1">How old are you?</h2>
+        <p class="f-help" id="age-hint">Some visas have age rules (Retirement is 50+).</p>
+        <label class="f-label" for="age">Age in years</label>
+        <div class="f-num">
+          <input id="age" name="age" class="control" type="number" inputmode="numeric" min="18" max="100" value={d.age} aria-describedby="age-hint age-error" />
+          <span class="f-num__suffix">years</span>
+        </div>
+        <p class="f-error" id="age-error" aria-live="polite"></p>
+      </section>
+
+      <!-- 5 income -->
+      <section class="f-step" data-step="5" aria-labelledby="q5" hidden>
+        <h2 id="q5" class="f-q" tabindex="-1">What's your yearly income before tax?</h2>
+        <p class="f-help" id="income-hint">In US dollars. Used only to check visa thresholds — never stored unless you save.</p>
+        <div class="f-chips" role="group" aria-label="Quick picks">
+          {incomeChips.map((c) => <button type="button" class="f-chip" data-fill="income" data-value={c.v}>{c.label}</button>)}
+        </div>
+        <label class="f-label" for="income">Yearly income</label>
+        <div class="f-num f-num--prefix">
+          <span class="f-num__prefix">USD</span>
+          <input id="income" name="income" class="control" type="number" inputmode="numeric" min="0" step="1000" value={d.incomeUsdYear} aria-describedby="income-hint income-error" />
+        </div>
+        <p class="f-error" id="income-error" aria-live="polite"></p>
+      </section>
+
+      <!-- 6 savings -->
+      <section class="f-step" data-step="6" aria-labelledby="q6" hidden>
+        <h2 id="q6" class="f-q" tabindex="-1">How much savings could you show in a bank account?</h2>
+        <p class="f-help" id="savings-hint">DTV asks for 500,000 THB; Retirement asks for 800,000 THB.</p>
+        <div class="f-chips" role="group" aria-label="Quick picks">
+          {savingsChips.map((c) => <button type="button" class="f-chip" data-fill="savings" data-value={c.v}>{c.label} THB</button>)}
+        </div>
+        <label class="f-label" for="savings">Savings</label>
+        <div class="f-num f-num--prefix">
+          <span class="f-num__prefix">THB</span>
+          <input id="savings" name="savings" class="control" type="number" inputmode="numeric" min="0" step="10000" value={d.savingsThb} aria-describedby="savings-hint savings-usd savings-error" />
+        </div>
+        <p class="f-help tabular" id="savings-usd" aria-live="polite" data-usd></p>
+        <p class="f-error" id="savings-error" aria-live="polite"></p>
+      </section>
+
+      <div class="f-nav">
+        <Button variant="ghost" icon="arrow-right" class="f-back" data-back>Back</Button>
+        <Button type="submit" size="lg" iconRight="arrow-right" data-next>Next</Button>
+      </div>
+      <p class="f-help f-foot">Your answers stay in this browser. Press Enter to go on.</p>
+    </form>
+
+    <!-- Results -->
+    <div class="f-results" data-results hidden>
+      <div class="f-skeleton" data-skeleton aria-hidden="true"><span></span><span></span><span></span></div>
+      <div data-results-body hidden>
+        <div class="f-top">
+          <svg class="f-ring" viewBox="0 0 64 64" aria-hidden="true">
+            <circle cx="32" cy="32" r="27" class="f-ring__bg"></circle>
+            <circle cx="32" cy="32" r="27" class="f-ring__fg" data-ring></circle>
+            <text x="32" y="37" text-anchor="middle" class="f-ring__num" data-ring-num>0</text>
+          </svg>
+          <div class="f-top__text">
+            <h2 id="results-title" class="f-top__title" tabindex="-1" data-top-title>Your best fit</h2>
+            <p data-top-verdict></p>
+            <div class="cluster f-top__actions">
+              <Button href="/visas" size="lg" iconRight="arrow-right" data-top-guide>Read the guide</Button>
+              <Button variant="secondary" data-share icon="arrow-up-right">Copy share link</Button>
+            </div>
+            <p class="small muted" aria-live="polite" data-share-status></p>
+          </div>
+        </div>
+
+        <div data-empty hidden>
+          <Callout tone="warning" title="No long-stay visa fits yet">
+            <p>Visa-exempt entry may still work for short trips — or talk to an expert about your case.</p>
+            <div class="cluster f-gap">
+              <Button href="/visas/visa-exempt" variant="secondary">Visa-exempt guide</Button>
+              <Button href="/experts">Get expert help</Button>
+            </div>
+          </Callout>
+        </div>
+
+        <h2 class="f-h2">All 5 visas, ranked for you</h2>
+        <ol class="f-list" data-list></ol>
+        <details class="f-more" data-more hidden>
+          <summary><Icon name="chevron-down" size={18} /> <span data-more-label>Show visas you don't qualify for</span></summary>
+          <ol class="f-list" data-list-no></ol>
+        </details>
+
+        <div class="f-boxes">
+          <div class="f-box f-box--next">
+            <h3>Next steps</h3>
+            <ul class="f-steps-list">
+              <li><a href="/tools/checklist" data-checklist-link><Icon name="check" size={18} /> Get the document checklist</a></li>
+              <li><a href="/tools/90-day"><Icon name="calendar" size={18} /> Plan your 90-day reports</a></li>
+              <li><a href="/tools/stay-counter"><Icon name="clock" size={18} /> Count your days and tax residency</a></li>
+            </ul>
+          </div>
+          <div class="f-box f-box--pro">
+            <h3>Save this stay</h3>
+            <p>Keep this result and get reminders before every deadline.</p>
+            <button type="button" class="f-save" aria-expanded="false" aria-controls="save-hint" data-save>
+              <Icon name="lock" size={18} /> Save this stay
+            </button>
+            <div id="save-hint" class="f-save-hint" hidden>
+              <p>Saving stays and reminders are part of Pro. Your result is already in this page's link, so you can bookmark it for free.</p>
+              <Button href="/pricing" variant="accent">Go Pro — ${proMonthly}/mo</Button>
+            </div>
+          </div>
+          <div class="f-box">
+            <h3>Complex case?</h3>
+            <p>Previous overstay, a mixed income, or a family? Talk to a licensed visa agent.</p>
+            <a href="/experts" class="f-arrow" data-expert-link>Get expert help <Icon name="arrow-right" size={18} /></a>
+          </div>
+        </div>
+
+        <div class="cluster f-end">
+          <Button variant="secondary" data-edit>Edit answers</Button>
+          <Button variant="ghost" data-restart>Start over</Button>
+        </div>
+        <p class="small muted f-disclaimer">General information, not legal advice. Rules change — check the source and the embassy before you apply.</p>
+      </div>
+    </div>
+  </div>
+</Base>
+
+<script>
+  import { initMotion } from '../scripts/motion';
+  import { rankVisas, COUNTRIES } from '../data/finder';
+  import { visaBySlug, THB_PER_USD } from '../data/visas';
+  import type { FinderInput, FinderResult, Purpose } from '../types/contracts';
+  import { escapeHtml as esc } from '../components/core/dates';
+
+  initMotion();
+
+  const TOTAL = 6;
+  const KEY = 'finder:answers';
+  const PURPOSES: Purpose[] = ['remote-work', 'tourism', 'retire', 'invest', 'study', 'soft-power'];
+  const CODES = new Set(COUNTRIES.map((c) => c.code));
+  const $ = <T extends Element = HTMLElement>(s: string) => document.querySelector<T>(s)!;
+
+  const form = $<HTMLFormElement>('[data-wizard]');
+  const results = $('[data-results]');
+  const steps = Array.from(document.querySelectorAll<HTMLElement>('.f-step'));
+  const nextBtn = $<HTMLButtonElement>('[data-next]');
+  const backBtn = $<HTMLButtonElement>('[data-back]');
+  const same = $<HTMLInputElement>('[data-same]');
+  const resWrap = $('[data-residence-wrap]');
+  const field = (n: string) => form.elements.namedItem(n) as HTMLInputElement | HTMLSelectElement;
+  let step = 1;
+
+  // ---------- answers <-> form / URL ----------
+  function readForm(): Partial<FinderInput> {
+    const purpose = (form.querySelector<HTMLInputElement>('input[name=purpose]:checked')?.value ?? '') as Purpose;
+    const nationality = field('nationality').value;
+    return {
+      purpose: PURPOSES.includes(purpose) ? purpose : undefined,
+      nationality,
+      residenceCountry: same.checked ? nationality : field('residence').value,
+      stayDays: Number(field('days').value),
+      age: Number(field('age').value),
+      incomeUsdYear: Number(field('income').value),
+      savingsThb: Number(field('savings').value),
+    };
+  }
+
+  function fillForm(a: FinderInput) {
+    const r = form.querySelector<HTMLInputElement>(`input[name=purpose][value="${a.purpose}"]`);
+    if (r) r.checked = true;
+    field('nationality').value = a.nationality;
+    field('residence').value = a.residenceCountry;
+    same.checked = a.residenceCountry === a.nationality;
+    resWrap.hidden = same.checked;
+    field('days').value = String(a.stayDays);
+    field('age').value = String(a.age);
+    field('income').value = String(a.incomeUsdYear);
+    field('savings').value = String(a.savingsThb);
+    updateUsd();
+  }
+
+  const toQuery = (a: FinderInput) =>
+    new URLSearchParams({
+      purpose: a.purpose,
+      passport: a.nationality,
+      residence: a.residenceCountry,
+      days: String(a.stayDays),
+      age: String(a.age),
+      income: String(a.incomeUsdYear),
+      savings: String(a.savingsThb),
+    }).toString();
+
+  /** Validates untrusted input (URL or storage). Returns null unless every answer is in range. */
+  function validAnswers(a: Partial<Record<keyof FinderInput, unknown>>): FinderInput | null {
+    const n = (v: unknown) => (typeof v === 'number' ? v : Number(v));
+    const out = {
+      purpose: a.purpose as Purpose,
+      nationality: String(a.nationality ?? ''),
+      residenceCountry: String(a.residenceCountry ?? ''),
+      stayDays: n(a.stayDays),
+      age: n(a.age),
+      incomeUsdYear: n(a.incomeUsdYear),
+      savingsThb: n(a.savingsThb),
+    };
+    const ok =
+      PURPOSES.includes(out.purpose) &&
+      CODES.has(out.nationality) &&
+      CODES.has(out.residenceCountry) &&
+      Number.isInteger(out.stayDays) && out.stayDays >= 1 && out.stayDays <= 3650 &&
+      Number.isInteger(out.age) && out.age >= 18 && out.age <= 100 &&
+      Number.isFinite(out.incomeUsdYear) && out.incomeUsdYear >= 0 &&
+      Number.isFinite(out.savingsThb) && out.savingsThb >= 0;
+    return ok ? out : null;
+  }
+
+  function fromQuery(): FinderInput | null {
+    const q = new URLSearchParams(location.search);
+    if (!q.has('purpose')) return null;
+    return validAnswers({
+      purpose: q.get('purpose'),
+      nationality: q.get('passport'),
+      residenceCountry: q.get('residence'),
+      stayDays: q.get('days'),
+      age: q.get('age'),
+      incomeUsdYear: q.get('income'),
+      savingsThb: q.get('savings'),
+    });
+  }
+
+  function fromStorage(): FinderInput | null {
+    try {
+      return validAnswers(JSON.parse(sessionStorage.getItem(KEY) ?? 'null') ?? {});
+    } catch {
+      return null;
+    }
+  }
+
+  const save = (a: FinderInput) => {
+    try {
+      sessionStorage.setItem(KEY, JSON.stringify(a));
+    } catch {}
+  };
+
+  // ---------- validation ----------
+  function setError(id: string, msg: string) {
+    const el = document.getElementById(`${id}-error`);
+    if (el) el.textContent = msg;
+    const input = document.getElementById(id);
+    if (input) input.setAttribute('aria-invalid', msg ? 'true' : 'false');
+  }
+
+  function validateStep(s: number): HTMLElement | null {
+    const a = readForm();
+    const check = (id: string, bad: boolean, msg: string) => {
+      setError(id, bad ? msg : '');
+      return bad ? document.getElementById(id) : null;
+    };
+    switch (s) {
+      case 1: {
+        const el = document.getElementById('q1-error')!;
+        el.textContent = a.purpose ? '' : 'Pick the main reason for your stay.';
+        return a.purpose ? null : form.querySelector<HTMLElement>('input[name=purpose]');
+      }
+      case 3:
+        return check('days', !Number.isInteger(a.stayDays) || a.stayDays! < 1 || a.stayDays! > 3650, 'Enter a number of days from 1 to 3,650.');
+      case 4:
+        return check('age', !Number.isInteger(a.age) || a.age! < 18 || a.age! > 100, 'Enter an age from 18 to 100.');
+      case 5:
+        return check('income', field('income').value === '' || !(a.incomeUsdYear! >= 0), 'Enter your yearly income in USD (0 is fine).');
+      case 6:
+        return check('savings', field('savings').value === '' || !(a.savingsThb! >= 0), 'Enter your savings in THB (0 is fine).');
+    }
+    return null;
+  }
+
+  // ---------- views ----------
+  function show(view: 'wizard' | 'results') {
+    form.hidden = view !== 'wizard';
+    results.hidden = view !== 'results';
+  }
+
+  function goStep(n: number, push = true, focus = true) {
+    step = Math.min(Math.max(n, 1), TOTAL);
+    show('wizard');
+    steps.forEach((el) => (el.hidden = Number(el.dataset.step) !== step));
+    $('[data-step-label]').textContent = `Step ${step} of ${TOTAL}`;
+    $('[data-step-bar]').style.transform = `scaleX(${step / TOTAL})`;
+    backBtn.hidden = step === 1;
+    nextBtn.querySelector('.btn__label')!.textContent = step === TOTAL ? 'See my visas' : 'Next';
+    if (push && location.hash !== `#step-${step}`) history.pushState(null, '', `${location.pathname}${location.search}#step-${step}`);
+    if (focus) document.getElementById(`q${step}`)?.focus();
+  }
+
+  const VERDICT: Record<FinderResult['verdict'], { label: string; icon: string }> = {
+    'great-fit': { label: 'Great fit', icon: 'M5 12.5l4.5 4.5L19 7.5' },
+    possible: { label: 'Possible', icon: 'M12 7.5V12l3 2' },
+    'not-eligible': { label: 'Not eligible', icon: 'M6 6l12 12M18 6L6 18' },
+  };
+  const CAVEAT = /\b(only|needs?|must|but|if|unclear|grey area|expensive|can't|not|check|required|would|the most)\b/i;
+  const ALERT = 'M12 9v4M12 17h.01M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z';
+  const svg = (d: string) =>
+    `<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="${d}"/></svg>`;
+  const badge = (v: FinderResult['verdict']) => `<span class="f-verdict f-verdict--${v}">${svg(VERDICT[v].icon)}${VERDICT[v].label}</span>`;
+
+  function card(r: FinderResult, rank: number): string {
+    const v = visaBySlug(r.slug);
+    const mark = r.verdict === 'not-eligible' ? 'M6 6l12 12M18 6L6 18' : 'M5 12.5l4.5 4.5L19 7.5';
+    // shortcut: caveats are spotted by wording; upgrade to a typed reason in data/finder.ts if copy drifts.
+    const reason = (t: string) =>
+      r.verdict !== 'not-eligible' && CAVEAT.test(t)
+        ? `<li class="is-caveat">${svg(ALERT)}<span><span class="sr-only">Caveat: </span>${esc(t)}</span></li>`
+        : `<li>${svg(mark)}<span>${esc(t)}</span></li>`;
+    return `<li class="f-res f-res--${r.verdict}">
+      <div class="f-res__head">
+        <span class="f-res__rank tabular" aria-hidden="true">${rank}</span>
+        <h3 class="f-res__name">${esc(v.name)}</h3>
+        ${badge(r.verdict)}
+      </div>
+      <div class="f-score">
+        <div class="f-score__track" aria-hidden="true"><span class="f-score__bar" style="transform:scaleX(${r.score / 100})"></span></div>
+        <span class="f-score__num tabular">Fit score ${r.score} / 100</span>
+      </div>
+      <ul class="f-reasons">${r.reasons.map(reason).join('')}</ul>
+      <a class="f-arrow" href="/visas/${r.slug}">Read the ${esc(v.shortName)} guide ${svg('M4.5 12h15M13.5 6l6 6-6 6')}</a>
+    </li>`;
+  }
+
+  function renderResults(a: FinderInput, focus: boolean) {
+    const ranked = rankVisas(a);
+    const yes = ranked.filter((r) => r.verdict !== 'not-eligible');
+    const no = ranked.filter((r) => r.verdict === 'not-eligible');
+    const top = ranked[0];
+    const topVisa = visaBySlug(top.slug);
+    const allNo = yes.length === 0;
+
+    $('[data-top-title]').innerHTML = allNo ? 'No long-stay visa fits yet' : `Your best fit: <strong>${esc(topVisa.shortName)}</strong>`;
+    $('[data-top-verdict]').innerHTML = `${badge(top.verdict)} <span class="muted">${esc(topVisa.summary)}</span>`;
+    const ring = $<SVGCircleElement>('[data-ring]');
+    const C = 2 * Math.PI * 27;
+    ring.style.strokeDasharray = `${C}`;
+    ring.style.strokeDashoffset = `${C * (1 - top.score / 100)}`;
+    $('[data-ring-num]').textContent = String(top.score);
+    const guide = $<HTMLAnchorElement>('[data-top-guide]');
+    guide.href = allNo ? '/visas/visa-exempt' : `/visas/${top.slug}`;
+    guide.querySelector('.btn__label')!.textContent = allNo ? 'Read the Visa-exempt guide' : `Read the ${topVisa.shortName} guide`;
+    $('[data-empty]').hidden = !allNo;
+
+    $('[data-list]').innerHTML = yes.map((r, i) => card(r, i + 1)).join('');
+    const more = $<HTMLDetailsElement>('[data-more]');
+    more.hidden = no.length === 0;
+    more.open = allNo;
+    $('[data-more-label]').textContent = `Show ${no.length} ${no.length === 1 ? 'visa' : 'visas'} you don't qualify for`;
+    $('[data-list-no]').innerHTML = no.map((r, i) => card(r, yes.length + i + 1)).join('');
+    const slug = allNo ? 'visa-exempt' : top.slug;
+    $<HTMLAnchorElement>('[data-checklist-link]').href = `/tools/checklist?visa=${slug}`;
+    $<HTMLAnchorElement>('[data-expert-link]').href = `/experts?visa=${slug}`;
+
+    show('results');
+    // Short skeleton so the change of view is perceptible (spec: at most 300ms).
+    const sk = $('[data-skeleton]');
+    const body = $('[data-results-body]');
+    sk.hidden = false;
+    body.hidden = true;
+    setTimeout(() => {
+      sk.hidden = true;
+      body.hidden = false;
+      if (focus) $('[data-top-title]').focus();
+    }, 250);
+  }
+
+  function finish() {
+    const a = validAnswers(readForm());
+    if (!a) return goStep(1);
+    save(a);
+    history.pushState(null, '', `${location.pathname}?${toQuery(a)}#results`);
+    renderResults(a, true);
+  }
+
+  // ---------- events ----------
+
+  form.addEventListener('submit', (e) => {
+    e.preventDefault();
+    const bad = validateStep(step);
+    if (bad) return bad.focus();
+    if (step === TOTAL) finish();
+    else goStep(step + 1);
+  });
+  backBtn.addEventListener('click', () => goStep(step - 1));
+
+  same.addEventListener('change', () => {
+    resWrap.hidden = same.checked;
+    if (!same.checked) field('residence').focus();
+  });
+
+  form.querySelectorAll<HTMLButtonElement>('[data-fill]').forEach((b) =>
+    b.addEventListener('click', () => {
+      const input = field(b.dataset.fill!);
+      input.value = b.dataset.value!;
+      input.dispatchEvent(new Event('input', { bubbles: true }));
+      form.querySelectorAll(`[data-fill="${b.dataset.fill}"]`).forEach((x) => x.setAttribute('aria-pressed', String(x === b)));
+    }),
+  );
+  form.querySelectorAll<HTMLInputElement>('input[name=purpose]').forEach((r) =>
+    r.addEventListener('change', () => (document.getElementById('q1-error')!.textContent = '')),
+  );
+
+  const usd = $('[data-usd]');
+  function updateUsd() {
+    const v = Number(field('savings').value);
+    usd.textContent = Number.isFinite(v) && v > 0 ? `≈ USD ${Math.round(v / THB_PER_USD).toLocaleString('en-US')} (at ${THB_PER_USD} THB per USD)` : '';
+  }
+  field('savings').addEventListener('input', updateUsd);
+
+  $('[data-edit]').addEventListener('click', () => goStep(1));
+  $('[data-restart]').addEventListener('click', () => {
+    try {
+      sessionStorage.removeItem(KEY);
+    } catch {}
+    form.reset();
+    resWrap.hidden = true;
+    form.querySelectorAll('[aria-pressed]').forEach((x) => x.removeAttribute('aria-pressed'));
+    history.pushState(null, '', location.pathname);
+    goStep(1, false);
+    history.replaceState(null, '', `${location.pathname}#step-1`);
+  });
+
+  $('[data-share]').addEventListener('click', async () => {
+    const status = $('[data-share-status]');
+    const url = `${location.origin}${location.pathname}${location.search}`;
+    try {
+      await navigator.clipboard.writeText(url);
+      status.textContent = 'Link copied. Anyone with it sees these results.';
+    } catch {
+      status.textContent = url;
+    }
+  });
+
+  const saveBtn = $<HTMLButtonElement>('[data-save]');
+  saveBtn.addEventListener('click', () => {
+    const hint = $('#save-hint');
+    hint.hidden = !hint.hidden;
+    saveBtn.setAttribute('aria-expanded', String(!hint.hidden));
+  });
+
+  // ---------- routing (URL is the source of truth) ----------
+  function route(focus: boolean) {
+    const fromUrl = fromQuery();
+    const m = location.hash.match(/^#step-(\d)$/);
+    if (fromUrl) fillForm(fromUrl);
+    if (m) return goStep(Number(m[1]), false);
+    if (fromUrl) return renderResults(fromUrl, focus);
+    goStep(1, false, focus);
+  }
+
+  const stored = fromStorage();
+  if (stored) fillForm(stored);
+  else updateUsd();
+  route(false);
+  window.addEventListener('popstate', () => route(true));
+</script>
+
+<style>
+  .finder {
+    padding-bottom: var(--space-section);
+  }
+  .f-trust {
+    list-style: none;
+    padding: 0;
+    margin: 0 0 var(--space-6);
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-2) var(--space-5);
+    font-size: var(--text-sm);
+    color: var(--color-ink-2);
+  }
+  .f-trust li {
+    display: flex;
+    gap: var(--space-2);
+    align-items: center;
+  }
+  .f-trust :global(svg) {
+    color: var(--color-brand);
+  }
+
+  /* Wizard */
+  .f-wizard {
+    display: grid;
+    gap: var(--space-6);
+  }
+  .f-progress__label {
+    font-size: var(--text-sm);
+    font-weight: var(--weight-semibold);
+    color: var(--color-brand);
+  }
+  .f-progress__track {
+    margin-top: var(--space-2);
+    height: 6px;
+    border-radius: var(--radius-pill);
+    background: var(--color-surface-3);
+    overflow: hidden;
+  }
+  .f-progress__bar {
+    display: block;
+    height: 100%;
+    background: var(--color-brand);
+    transform-origin: left;
+    transform: scaleX(0.1667);
+    transition: transform var(--duration-slow) var(--ease-out);
+  }
+  .f-step {
+    display: grid;
+    gap: var(--space-3);
+    align-content: start;
+  }
+  .f-q {
+    font-size: var(--text-3xl);
+    line-height: var(--leading-snug);
+    text-wrap: balance;
+    outline: none;
+  }
+  .f-q--sub {
+    font-size: var(--text-xl);
+    margin-top: var(--space-6);
+  }
+  .f-help {
+    color: var(--color-ink-2);
+    font-size: var(--text-sm);
+  }
+  .f-label {
+    margin-top: var(--space-2);
+    font-weight: var(--weight-semibold);
+    font-size: var(--text-sm);
+  }
+  .f-error {
+    color: var(--color-danger);
+    font-size: var(--text-sm);
+    font-weight: var(--weight-medium);
+    min-height: 1.4em;
+  }
+  .f-error:empty {
+    min-height: 0;
+  }
+  .f-cards {
+    border: 0;
+    padding: 0;
+    margin: var(--space-2) 0 0;
+    display: grid;
+    gap: var(--space-3);
+  }
+  @media (min-width: 40rem) {
+    .f-cards {
+      grid-template-columns: 1fr 1fr;
+    }
+  }
+  .f-card {
+    position: relative;
+    display: flex;
+    gap: var(--space-3);
+    align-items: center;
+    min-height: 4.5rem;
+    padding: var(--space-4);
+    background: var(--color-surface);
+    border: 1.5px solid transparent;
+    border-radius: var(--radius-lg);
+    cursor: pointer;
+    transition:
+      background-color var(--duration-base) var(--ease-out),
+      border-color var(--duration-base) var(--ease-out),
+      transform var(--duration-fast) var(--ease-out);
+  }
+  .f-card:hover {
+    background: var(--color-brand-tint);
+  }
+  .f-card:active {
+    transform: scale(0.98);
+  }
+  .f-card input {
+    position: absolute;
+    opacity: 0;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    margin: 0;
+    cursor: pointer;
+  }
+  .f-card:has(input:checked) {
+    background: var(--color-brand-tint);
+    border-color: var(--color-brand);
+  }
+  .f-card:has(input:focus-visible) {
+    outline: 3px solid var(--color-focus);
+    outline-offset: 2px;
+  }
+  .f-card__icon {
+    display: grid;
+    place-items: center;
+    flex-shrink: 0;
+    width: 2.75rem;
+    height: 2.75rem;
+    border-radius: var(--radius-pill);
+    background: var(--color-surface-2);
+    color: var(--color-brand);
+  }
+  .f-card:has(input:checked) .f-card__icon {
+    background: var(--color-brand);
+    color: var(--color-on-brand);
+  }
+  .f-card__text {
+    display: grid;
+  }
+  .f-card__label {
+    font-weight: var(--weight-semibold);
+  }
+  .f-card__hint {
+    font-size: var(--text-sm);
+    color: var(--color-ink-2);
+  }
+  .f-chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-2);
+  }
+  .f-chip {
+    min-height: var(--tap-min);
+    padding: 0 var(--space-4);
+    border-radius: var(--radius-pill);
+    border: 1.5px solid var(--color-border-strong);
+    background: var(--color-surface);
+    color: var(--color-ink);
+    font-size: var(--text-sm);
+    font-weight: var(--weight-medium);
+    cursor: pointer;
+    transition:
+      background-color var(--duration-base) var(--ease-out),
+      transform var(--duration-fast) var(--ease-out);
+  }
+  .f-chip:hover {
+    background: var(--color-surface-2);
+  }
+  .f-chip:active {
+    transform: scale(0.97);
+  }
+  .f-chip[aria-pressed='true'] {
+    background: var(--color-brand);
+    border-color: var(--color-brand);
+    color: var(--color-on-brand);
+  }
+  .f-num {
+    display: flex;
+    align-items: center;
+    gap: var(--space-3);
+    max-width: 22rem;
+  }
+  .f-num__prefix,
+  .f-num__suffix {
+    font-weight: var(--weight-semibold);
+    color: var(--color-ink-2);
+  }
+  .f-nav {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: var(--space-3);
+    padding-top: var(--space-4);
+  }
+  .f-nav :global([data-next]) {
+    margin-left: auto;
+  }
+  .f-back :global(svg) {
+    transform: scaleX(-1);
+  }
+  @media (max-width: 47.99rem) {
+    .f-nav {
+      position: sticky;
+      bottom: 0;
+      z-index: var(--z-raised);
+      margin-inline: calc(var(--gutter) * -1);
+      padding: var(--space-3) var(--gutter) calc(var(--space-3) + env(safe-area-inset-bottom));
+      background: var(--color-bg);
+      box-shadow: var(--shadow-float);
+    }
+  }
+
+  /* Results */
+  .f-skeleton {
+    display: grid;
+    gap: var(--space-4);
+  }
+  .f-skeleton span {
+    height: 7rem;
+    border-radius: var(--radius-lg);
+    background: var(--color-surface-3);
+  }
+  .f-skeleton[hidden] {
+    display: none;
+  }
+  .f-top {
+    display: grid;
+    gap: var(--space-6);
+    padding: var(--space-8);
+    background: var(--color-brand-tint);
+    border-radius: var(--radius-xl);
+  }
+  @media (min-width: 40rem) {
+    .f-top {
+      grid-template-columns: auto 1fr;
+      align-items: start;
+    }
+  }
+  .f-ring {
+    width: 7.5rem;
+    height: 7.5rem;
+  }
+  .f-ring__bg,
+  .f-ring__fg {
+    fill: none;
+    stroke-width: 6;
+  }
+  .f-ring__bg {
+    stroke: var(--color-surface);
+  }
+  .f-ring__fg {
+    stroke: var(--color-brand);
+    stroke-linecap: round;
+    transform: rotate(-90deg);
+    transform-origin: 32px 32px;
+    transition: stroke-dashoffset 900ms var(--ease-out);
+  }
+  .f-ring__num {
+    font-family: var(--font-display);
+    font-weight: var(--weight-bold);
+    font-size: 17px;
+    fill: var(--color-ink);
+  }
+  .f-top__text {
+    display: grid;
+    gap: var(--space-3);
+  }
+  .f-top__title {
+    font-size: var(--text-3xl);
+    line-height: var(--leading-snug);
+    outline: none;
+  }
+  .f-top__title :global(strong) {
+    color: var(--color-brand);
+  }
+  .f-top__actions {
+    margin-top: var(--space-2);
+  }
+  .f-h2 {
+    margin-top: var(--space-12);
+    font-size: var(--text-2xl);
+  }
+  .f-list {
+    list-style: none;
+    padding: 0;
+    margin-top: var(--space-4);
+    display: grid;
+    gap: var(--space-4);
+  }
+  .finder :global(.f-res) {
+    display: grid;
+    gap: var(--space-4);
+    padding: var(--space-6);
+    background: var(--color-surface);
+    border-radius: var(--radius-lg);
+  }
+  .finder :global(.f-res__head) {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--space-3);
+  }
+  .finder :global(.f-res__rank) {
+    display: grid;
+    place-items: center;
+    width: 2rem;
+    height: 2rem;
+    border-radius: var(--radius-pill);
+    background: var(--color-surface-2);
+    font-weight: var(--weight-bold);
+    font-size: var(--text-sm);
+  }
+  .finder :global(.f-res__name) {
+    font-size: var(--text-xl);
+    flex: 1 1 14rem;
+  }
+  .finder :global(.f-verdict) {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.3em;
+    padding: 0.25em 0.7em;
+    border-radius: var(--radius-pill);
+    font-size: var(--text-xs);
+    font-weight: var(--weight-semibold);
+    white-space: nowrap;
+    vertical-align: middle;
+  }
+  .finder :global(.f-verdict--great-fit) {
+    background: var(--color-success-tint);
+    color: var(--color-success);
+  }
+  .finder :global(.f-verdict--possible) {
+    background: var(--color-warning-tint);
+    color: var(--color-warning);
+  }
+  .finder :global(.f-verdict--not-eligible) {
+    background: var(--color-surface-3);
+    color: var(--color-ink-2);
+  }
+  .finder :global(.f-score) {
+    display: grid;
+    gap: var(--space-1);
+  }
+  .finder :global(.f-score__track) {
+    height: 8px;
+    border-radius: var(--radius-pill);
+    background: var(--color-surface-2);
+    overflow: hidden;
+  }
+  .finder :global(.f-score__bar) {
+    display: block;
+    height: 100%;
+    background: var(--color-brand);
+    transform-origin: left;
+  }
+  .finder :global(.f-res--possible .f-score__bar) {
+    background: var(--color-accent);
+  }
+  .finder :global(.f-res--not-eligible .f-score__bar) {
+    background: var(--color-border-strong);
+  }
+  .finder :global(.f-score__num) {
+    font-size: var(--text-sm);
+    color: var(--color-ink-2);
+  }
+  .finder :global(.f-reasons) {
+    list-style: none;
+    padding: 0;
+    display: grid;
+    gap: var(--space-2);
+  }
+  .finder :global(.f-reasons li) {
+    display: flex;
+    gap: var(--space-2);
+    align-items: flex-start;
+  }
+  .finder :global(.f-reasons svg) {
+    flex-shrink: 0;
+    margin-top: 0.3em;
+    color: var(--color-success);
+  }
+  .finder :global(.f-reasons .is-caveat svg) {
+    color: var(--color-warning);
+  }
+  .finder :global(.f-res--not-eligible .f-reasons svg) {
+    color: var(--color-danger);
+  }
+  .finder :global(.f-arrow) {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-2);
+    min-height: var(--tap-min);
+    font-weight: var(--weight-semibold);
+    width: fit-content;
+  }
+  .f-more {
+    margin-top: var(--space-4);
+  }
+  .f-more summary {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-2);
+    min-height: var(--tap-min);
+    font-weight: var(--weight-semibold);
+    color: var(--color-brand);
+    cursor: pointer;
+    list-style: none;
+  }
+  .f-more summary::-webkit-details-marker {
+    display: none;
+  }
+  .f-more[open] summary :global(svg) {
+    transform: rotate(180deg);
+  }
+  .f-boxes {
+    margin-top: var(--space-12);
+    display: grid;
+    gap: var(--space-4);
+  }
+  @media (min-width: 48rem) {
+    .f-boxes {
+      grid-template-columns: 1fr 1fr;
+    }
+    .f-box--next {
+      grid-column: 1 / -1;
+    }
+  }
+  .f-box {
+    display: grid;
+    gap: var(--space-3);
+    align-content: start;
+    padding: var(--space-6);
+    border-radius: var(--radius-lg);
+    background: var(--color-surface-2);
+  }
+  .f-box h3 {
+    font-size: var(--text-xl);
+  }
+  .f-box--pro {
+    background: var(--color-accent-tint);
+  }
+  .f-steps-list {
+    list-style: none;
+    padding: 0;
+    display: grid;
+    gap: var(--space-1);
+  }
+  @media (min-width: 48rem) {
+    .f-steps-list {
+      grid-template-columns: repeat(3, 1fr);
+    }
+  }
+  .f-steps-list a {
+    display: flex;
+    gap: var(--space-2);
+    align-items: center;
+    min-height: var(--tap-min);
+    font-weight: var(--weight-semibold);
+  }
+  .f-save {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-2);
+    min-height: var(--tap-min);
+    width: fit-content;
+    padding: 0 var(--space-5);
+    border-radius: var(--radius-pill);
+    border: 1.5px solid var(--color-accent-text);
+    background: transparent;
+    color: var(--color-accent-text);
+    font-weight: var(--weight-semibold);
+    cursor: pointer;
+  }
+  .f-save-hint {
+    display: grid;
+    gap: var(--space-3);
+    justify-items: start;
+  }
+  .f-end {
+    margin-top: var(--space-10);
+  }
+  .f-gap {
+    margin-top: var(--space-3);
+  }
+  .f-disclaimer {
+    margin-top: var(--space-6);
+  }
+  .f-foot {
+    text-align: center;
+  }
+  @media (max-width: 47.99rem) {
+    .f-foot {
+      display: none;
+    }
+  }
+</style>

@@ -1,0 +1,275 @@
+---
+import Base from '../../layouts/Base.astro';
+import Input from '../../components/ui/Input.astro';
+import Select from '../../components/ui/Select.astro';
+import Field from '../../components/ui/Field.astro';
+import Button from '../../components/ui/Button.astro';
+import Callout from '../../components/ui/Callout.astro';
+import Steps from '../../components/ui/Steps.astro';
+import Icon from '../../components/ui/Icon.astro';
+import '../../components/money/money.css';
+import { CITY_OPTIONS, FEE_PCT, BUDDY_KEEP_PCT, feeFor } from '../../components/money/plans';
+
+const MIN = 25;
+const MAX = 60;
+const LANGS = ['Thai', 'English', 'Chinese', 'Japanese', 'Korean', 'Russian', 'German', 'French'];
+const SERVICES = [
+  'Apartment viewing',
+  'Opening a bank account',
+  'SIM and phone setup',
+  'City orientation',
+  'Hospital or clinic visit',
+  'Translation at appointments',
+  'Coworking tour',
+  'Other',
+];
+---
+
+<Base
+  title="Become a Local Buddy"
+  description={`Earn $${MIN}–${MAX} an hour helping newcomers settle in Thailand. Keep ${BUDDY_KEEP_PCT}% of every session.`}
+>
+  <div class="container m-hero join-hero">
+    <div class="stack" style="--stack-gap: var(--space-4)">
+      <h1 data-intro>Help newcomers, earn ${MIN}–{MAX} an hour</h1>
+      <p class="lead" data-intro>
+        Show someone the right condo, sit with them at the bank, get their SIM working. You set the price and keep
+        {BUDDY_KEEP_PCT}%.
+      </p>
+    </div>
+    <div class="earn" data-intro>
+      <p class="earn__label">A ${MAX} session pays you</p>
+      <p class="earn__num">${MAX - feeFor(MAX)}</p>
+      <p class="small">We keep {FEE_PCT}% (${feeFor(MAX)}) for payments, vetting and support.</p>
+    </div>
+  </div>
+
+  <section class="section how" aria-labelledby="how-title">
+    <div class="container split" style="align-items: start">
+      <div class="stack" style="--stack-gap: var(--space-5)" data-reveal>
+        <h2 id="how-title">How it works</h2>
+        <Steps
+          items={[
+            { title: 'Apply', body: 'Tell us your city, languages and what you can help with. It takes about 3 minutes.' },
+            { title: 'Short video call', body: 'We check your ID and talk through a few real situations.' },
+            { title: 'Go live', body: 'Your profile goes up and bookings arrive by email. Payouts every week.' },
+          ]}
+        />
+        <Callout tone="warning" title="Practical help only">
+          Buddies never file visas, fill in immigration forms or give legal or tax advice. That work needs a licence.
+        </Callout>
+      </div>
+
+      <div class="form-panel" data-reveal="right">
+        <form class="form" data-apply novalidate>
+          <h2 class="form-title">Apply to be a buddy</h2>
+          <div class="hp" aria-hidden="true">
+            <label for="website">Leave this empty</label>
+            <input type="text" id="website" name="website" tabindex="-1" autocomplete="off" />
+          </div>
+          <div class="form-row">
+            <Input name="fullName" id="j-name" label="Full name" autocomplete="name" required />
+            <Input name="email" id="j-email" type="email" label="Email" autocomplete="email" required />
+          </div>
+          <Select name="city" id="j-city" label="City" placeholder="Choose a city" options={[...CITY_OPTIONS]} required />
+          <Field id="j-langs" label="Languages you speak" group required>
+            <div class="chips" data-group="j-langs">
+              {LANGS.map((l) => <label class="chip"><input type="checkbox" name="languages" value={l} /><span>{l}</span></label>)}
+            </div>
+          </Field>
+          <Field id="j-services" label="Services you can offer" group required>
+            <div class="checks" data-group="j-services">
+              {SERVICES.map((s) => <label class="choice"><input type="checkbox" name="services" value={s} /><span>{s}</span></label>)}
+            </div>
+          </Field>
+          <Input
+            name="priceUsd"
+            id="j-price"
+            type="number"
+            label="Your hourly price (USD)"
+            hint={`Between $${MIN} and $${MAX}. You keep ${BUDDY_KEEP_PCT}%.`}
+            min={MIN}
+            max={MAX}
+            step="1"
+            inputmode="numeric"
+            value="35"
+            required
+            data-price
+          />
+          <p class="small muted" aria-live="polite" data-take>You'd receive $28 per session.</p>
+          <Input
+            name="bio"
+            id="j-bio"
+            label="Short bio"
+            hint="50–500 characters. What you know well and how you'd help."
+            multiline
+            rows={4}
+            maxlength="500"
+            required
+            data-bio
+          />
+          <p class="small muted counter" data-bio-count aria-live="off">0 / 500</p>
+          <Field id="j-consent" label="Scope" group hideLabel>
+            <label class="choice" data-group="j-consent">
+              <input type="checkbox" name="consent" value="yes" />
+              <span>I understand buddies give practical help only and never file visas or give legal advice.</span>
+            </label>
+          </Field>
+          <div data-form-error hidden>
+            <Callout tone="danger" live title="Couldn't send your application"><span data-form-error-text></span></Callout>
+          </div>
+          <Button type="submit" size="lg" block>Apply to be a buddy</Button>
+          <p class="form-foot">We review applications within 3 days. Your details are used only to review your application.</p>
+        </form>
+
+        <div class="done" data-done hidden tabindex="-1">
+          <span class="done__mark"><Icon name="check" size={28} strokeWidth={2.25} /></span>
+          <h2 data-done-title>Thanks!</h2>
+          <p>We review applications within 3 days and will email you to set up a short video call.</p>
+          <Button href="/buddies" variant="secondary" iconRight="arrow-right">See how buddies appear</Button>
+        </div>
+      </div>
+    </div>
+  </section>
+</Base>
+
+<style>
+  .join-hero {
+    display: grid;
+    gap: var(--space-8);
+  }
+  @media (min-width: 64rem) {
+    .join-hero {
+      grid-template-columns: 1.4fr 1fr;
+      align-items: end;
+    }
+  }
+  .earn {
+    padding: var(--space-6);
+    border-radius: var(--radius-xl);
+    background: var(--seg-c2c-bg);
+    color: var(--seg-ink);
+  }
+  .earn__label {
+    font-weight: var(--weight-semibold);
+  }
+  .earn__num {
+    font-family: var(--font-display);
+    font-size: var(--text-5xl);
+    font-weight: var(--weight-bold);
+    line-height: 1;
+    letter-spacing: -0.03em;
+    margin-block: var(--space-2);
+    font-variant-numeric: tabular-nums;
+  }
+  .how {
+    padding-top: var(--space-8);
+  }
+  .form-panel {
+    background: var(--color-surface);
+  }
+  .form-title {
+    font-size: var(--text-2xl);
+  }
+  .form fieldset {
+    border: 0;
+    margin: 0;
+    padding: 0;
+  }
+  .checks {
+    display: grid;
+    gap: 0 var(--space-4);
+  }
+  @media (min-width: 40rem) {
+    .checks {
+      grid-template-columns: 1fr 1fr;
+    }
+  }
+  .counter {
+    margin-top: calc(var(--space-4) * -1);
+    text-align: right;
+    font-variant-numeric: tabular-nums;
+  }
+</style>
+
+<script>
+  import { initMotion } from '../../scripts/motion';
+  import {
+    applyValidation,
+    liveValidate,
+    val,
+    checkedValues,
+    EMAIL_RE,
+    setBusy,
+    postJson,
+    formErrorMessage,
+    type Validator,
+  } from '../../components/money/client';
+
+  initMotion();
+  const form = document.querySelector<HTMLFormElement>('[data-apply]')!;
+  const price = form.querySelector<HTMLInputElement>('[data-price]')!;
+  const take = form.querySelector<HTMLElement>('[data-take]')!;
+  const bio = form.querySelector<HTMLTextAreaElement>('[data-bio]')!;
+  const bioCount = form.querySelector<HTMLElement>('[data-bio-count]')!;
+  const errBox = form.querySelector<HTMLElement>('[data-form-error]')!;
+  const errText = form.querySelector<HTMLElement>('[data-form-error-text]')!;
+
+  const updateTake = () => {
+    const p = Number(price.value);
+    take.textContent = Number.isFinite(p) && p > 0 ? `You'd receive $${(Math.round(p * 0.8 * 100) / 100).toString()} per session.` : '';
+  };
+  price.addEventListener('input', updateTake);
+  updateTake();
+  const updateCount = () => (bioCount.textContent = `${bio.value.trim().length} / 500`);
+  bio.addEventListener('input', updateCount);
+
+  const validate: Validator = (f) => {
+    const e: Record<string, string> = {};
+    if (!val(f, 'fullName')) e['j-name'] = 'Enter your full name.';
+    const email = val(f, 'email');
+    if (!email) e['j-email'] = 'Enter an email address.';
+    else if (!EMAIL_RE.test(email)) e['j-email'] = "That doesn't look like an email. Check for typos.";
+    if (!val(f, 'city')) e['j-city'] = 'Choose the city you live in.';
+    if (!checkedValues(f, 'languages').length) e['j-langs'] = 'Pick at least one language.';
+    if (!checkedValues(f, 'services').length) e['j-services'] = 'Pick at least one service.';
+    const p = Number(val(f, 'priceUsd'));
+    if (!val(f, 'priceUsd') || !Number.isFinite(p) || p < 25 || p > 60) e['j-price'] = 'Set a price between $25 and $60.';
+    const b = val(f, 'bio').length;
+    if (b < 50) e['j-bio'] = `Write at least 50 characters (${50 - b} to go).`;
+    else if (b > 500) e['j-bio'] = 'Keep it under 500 characters.';
+    if (!checkedValues(f, 'consent').length) e['j-consent'] = 'Please confirm you understand the scope.';
+    return e;
+  };
+  liveValidate(form, validate);
+
+  form.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    errBox.hidden = true;
+    if (!applyValidation(form, validate)) return;
+    const btn = form.querySelector<HTMLButtonElement>('button[type="submit"]');
+    const restore = setBusy(btn, 'Sending…');
+    const result = await postJson('/api/buddy-apply', {
+      fullName: val(form, 'fullName'),
+      email: val(form, 'email'),
+      city: val(form, 'city'),
+      languages: checkedValues(form, 'languages'),
+      services: checkedValues(form, 'services'),
+      priceUsd: Number(val(form, 'priceUsd')),
+      bio: val(form, 'bio'),
+      website: val(form, 'website'),
+    });
+    restore();
+    if (!result.ok) {
+      errText.textContent = formErrorMessage(result);
+      errBox.hidden = false;
+      return;
+    }
+    const done = document.querySelector<HTMLElement>('[data-done]')!;
+    const first = val(form, 'fullName').split(/\s+/)[0];
+    done.querySelector('[data-done-title]')!.textContent = `Thanks, ${first}!`;
+    form.hidden = true;
+    done.hidden = false;
+    done.focus();
+  });
+</script>

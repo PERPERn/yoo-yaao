@@ -1,0 +1,107 @@
+---
+/**
+ * Frame for every /partner page: noindex Business layout, demo banner, signed-in bar, sub-nav and the
+ * shared loading / error / not-a-partner states. The page's own content goes in the default
+ * slot and stays hidden until portal.ts `boot()` has data (`[data-p-view="ready"]`).
+ */
+import Business from '../../layouts/Business.astro';
+import Button from '../ui/Button.astro';
+import Callout from '../ui/Callout.astro';
+import Icon from '../ui/Icon.astro';
+import ApplySteps from './ApplySteps.astro';
+import { SITE } from '../../config/site';
+import './partner.css';
+import { visas } from '../../data/visas';
+
+interface Props {
+  title: string;
+  heading: string;
+  lede: string;
+  current: 'overview' | 'leads' | 'messages' | 'listing';
+}
+const { title, heading, lede, current } = Astro.props;
+const tabs = [
+  { id: 'overview', href: '/partner', label: 'Overview' },
+  { id: 'leads', href: '/partner/leads', label: 'Leads' },
+  { id: 'messages', href: '/partner/messages', label: 'Messages' },
+  { id: 'listing', href: '/partner/listing', label: 'Listing' },
+] as const;
+const visaNames = JSON.stringify(Object.fromEntries(visas.map((v) => [v.slug, v.shortName])));
+---
+
+<Business title={title} description="Partner portal: your application, listing and leads." noindex>
+  <div class="pp container" data-pp data-visas={visaNames}>
+    <!-- Demo: no session. Shown before anything else so judges can't miss it. -->
+    <div class="pp-demo" data-p-demo role="status" hidden>
+      <span class="pp-demo__tag"><Icon name="info" size={18} /> Demo view — sample data</span>
+      <p class="pp-demo__text">
+        You're not signed in, so this shows a sample agency. Changes stay in this tab and nothing is saved.
+      </p>
+      <Button href="/account?next=/partner" variant="secondary" size="sm" iconRight="arrow-right" class="pp-demo__cta">
+        Sign in as a partner
+      </Button>
+    </div>
+
+    <header class="pp-head">
+      <div class="pp-head__text">
+        <p class="pp-eyebrow">Partner portal<span data-p-who></span></p>
+        <h1 class="pp-title">{heading}</h1>
+        <p class="pp-lede">{lede}</p>
+      </div>
+      <Button variant="ghost" size="sm" data-p-signout data-p-head-signout hidden>Sign out</Button>
+    </header>
+
+    <nav class="pp-tabs" aria-label="Partner portal">
+      {
+        tabs.map((t) => (
+          <a href={t.href} class="pp-tab" aria-current={t.id === current ? 'page' : undefined}>
+            {t.label}
+            {t.id === 'leads' && <span class="pp-tab__count tabular" data-p-newcount hidden />}
+            {t.id === 'messages' && <span class="pp-tab__count tabular" data-unread-badge hidden />}
+          </a>
+        ))
+      }
+    </nav>
+
+    <div data-p-view="loading" class="pp-loading" aria-busy="true" aria-label="Loading your portal">
+      <span class="pp-skel" style="height: 7rem"></span>
+      <span class="pp-skel" style="height: 11rem"></span>
+      <span class="pp-skel" style="height: 5rem; width: 70%"></span>
+    </div>
+
+    <div data-p-view="error" hidden>
+      <Callout tone="danger" title="Couldn't load your portal" live>
+        <span data-p-error-text>Check your connection and try again.</span>
+        <span class="pp-callout-action"><Button variant="secondary" size="sm" data-p-retry>Try again</Button></span>
+      </Callout>
+    </div>
+
+    <div data-p-view="none" hidden class="pp-panel pp-none">
+      <h2 class="pp-h2">No partner account for <span data-p-none-email></span></h2>
+      <p class="pp-muted">
+        We match partners by the email on their application. Apply with this email, or sign in with the one you used.
+      </p>
+      <div class="cluster">
+        <Button href="/business/apply" iconRight="arrow-right">Apply to list your business</Button>
+        <Button variant="ghost" data-p-signout>Use a different email</Button>
+      </div>
+    </div>
+
+    <div data-p-view="review" hidden class="pp-panel pp-none">
+      <h2 class="pp-h2">Your application is under review</h2>
+      <p class="pp-muted">
+        You're signed in as <strong data-p-review-email></strong>. A person on our team is checking your identity and
+        licence. The portal opens as soon as you're approved, usually within 1–2 business days.
+      </p>
+      <ApplySteps current={3} />
+      <p class="pp-small pp-muted">
+        Haven't applied with this email? <a href="/business/apply">Apply now</a>, or
+        <a href={`mailto:${SITE.supportEmail}?subject=${encodeURIComponent("My partner application")}`}>ask us about your application</a>.
+      </p>
+    </div>
+
+    <div data-p-view="ready" hidden>
+      <slot />
+    </div>
+  </div>
+</Business>

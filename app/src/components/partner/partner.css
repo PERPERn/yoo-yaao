@@ -1,0 +1,520 @@
+/* Partner portal. Global (not scoped) because most of the markup is rendered by client scripts.
+   Everything is prefixed .pp-* to stay out of the rest of the site. */
+
+.pp {
+  display: grid;
+  gap: var(--space-6);
+  padding-block: clamp(var(--space-6), 4vw, var(--space-12)) var(--space-section);
+  min-width: 0;
+}
+.pp > * {
+  min-width: 0;
+}
+
+/* ---------- Demo banner: loud on purpose ---------- */
+.pp-demo {
+  display: grid;
+  gap: var(--space-2) var(--space-4);
+  grid-template-columns: 1fr;
+  align-items: center;
+  padding: var(--space-4) var(--space-5);
+  border-radius: var(--radius-lg);
+  background: var(--color-inverse-bg);
+  color: var(--color-inverse-ink);
+  border: 2px dashed var(--color-accent);
+  --color-focus: var(--color-accent);
+}
+.pp-demo__tag {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  font-family: var(--font-display);
+  font-weight: var(--weight-bold);
+  font-size: var(--text-lg);
+  color: var(--color-accent);
+}
+.pp-demo__text {
+  font-size: var(--text-sm);
+  opacity: 0.85;
+}
+@media (min-width: 48rem) {
+  .pp-demo {
+    grid-template-columns: auto 1fr auto;
+  }
+}
+
+/* ---------- Header + tabs ---------- */
+.pp-head {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-4);
+  justify-content: space-between;
+  align-items: flex-start;
+}
+.pp-head__text {
+  display: grid;
+  gap: var(--space-2);
+  min-width: 0;
+}
+.pp-eyebrow {
+  font-size: var(--text-xs);
+  font-weight: var(--weight-semibold);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--color-ink-3);
+  overflow-wrap: anywhere;
+}
+.pp-title {
+  font-size: var(--text-3xl);
+  line-height: var(--leading-tight);
+  letter-spacing: var(--tracking-display);
+  text-wrap: balance;
+}
+.pp-lede {
+  color: var(--color-ink-2);
+  max-width: 40rem;
+  text-wrap: pretty;
+}
+
+.pp-tabs {
+  display: flex;
+  gap: var(--space-1);
+  border-bottom: 1px solid var(--color-border);
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+.pp-tab {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  min-height: 44px;
+  padding: 0 var(--space-4);
+  margin-bottom: -1px;
+  border-bottom: 3px solid transparent;
+  color: var(--color-ink-2);
+  font-weight: var(--weight-semibold);
+  text-decoration: none;
+  white-space: nowrap;
+  transition: color var(--duration-fast) var(--ease-out), border-color var(--duration-fast) var(--ease-out);
+}
+.pp-tab:hover {
+  color: var(--color-ink);
+  border-bottom-color: var(--color-border-strong);
+  text-decoration: none;
+}
+.pp-tab:active {
+  color: var(--color-brand-strong);
+}
+.pp-tab:focus-visible {
+  outline-offset: -3px;
+}
+.pp-tab[aria-current='page'] {
+  color: var(--color-brand);
+  border-bottom-color: var(--color-brand);
+}
+.pp-tab__count {
+  min-width: 1.5rem;
+  padding: 0 0.4rem;
+  border-radius: var(--radius-pill);
+  background: var(--color-accent);
+  color: var(--color-on-accent);
+  font-size: var(--text-xs);
+  line-height: 1.5rem;
+  text-align: center;
+}
+
+/* ---------- States ---------- */
+.pp-loading {
+  display: grid;
+  gap: var(--space-4);
+}
+.pp-skel {
+  display: block;
+  width: 100%;
+  border-radius: var(--radius-lg);
+  background: var(--color-surface-3);
+  animation: pp-pulse 1.4s var(--ease-in-out) infinite alternate;
+}
+@keyframes pp-pulse {
+  to {
+    opacity: 0.55;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .pp-skel {
+    animation: none;
+  }
+}
+.pp-callout-action {
+  display: block;
+  margin-top: var(--space-3);
+}
+.pp-none {
+  max-width: 40rem;
+}
+
+/* ---------- Building blocks ---------- */
+.pp-panel {
+  display: grid;
+  gap: var(--space-4);
+  padding: clamp(var(--space-5), 3vw, var(--space-6));
+  border-radius: var(--radius-lg);
+  background: var(--color-surface);
+  box-shadow: var(--elev-1);
+  min-width: 0;
+}
+.pp-panel__row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-3);
+  justify-content: space-between;
+  align-items: center;
+}
+.pp-h2 {
+  font-size: var(--text-xl);
+  line-height: var(--leading-tight);
+  text-wrap: balance;
+}
+.pp-label {
+  font-size: var(--text-xs);
+  font-weight: var(--weight-semibold);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--color-ink-3);
+}
+.pp-muted {
+  color: var(--color-ink-2);
+  text-wrap: pretty;
+}
+.pp-small {
+  font-size: var(--text-sm);
+}
+.pp-grid {
+  display: grid;
+  gap: var(--space-6);
+}
+@media (min-width: 60rem) {
+  .pp-grid {
+    grid-template-columns: minmax(0, 1fr) 22rem;
+    align-items: start;
+  }
+}
+
+/* Status pill: the one place colour carries meaning (new / sent / won / lost, application states). */
+.pp-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35em;
+  padding: 0.15rem 0.6rem;
+  border-radius: var(--radius-pill);
+  font-size: var(--text-xs);
+  font-weight: var(--weight-semibold);
+  background: var(--color-surface-2);
+  color: var(--color-ink-2);
+  white-space: nowrap;
+}
+.pp-pill::before {
+  content: '';
+  width: 0.5em;
+  height: 0.5em;
+  border-radius: 50%;
+  background: currentColor;
+}
+.pp-pill[data-s='new'] {
+  background: var(--color-accent-tint);
+  color: var(--color-accent-text);
+}
+.pp-pill[data-s='sent'],
+.pp-pill[data-s='review'] {
+  background: var(--color-info-tint);
+  color: var(--color-info);
+}
+.pp-pill[data-s='won'],
+.pp-pill[data-s='approved'],
+.pp-pill[data-s='paid'] {
+  background: var(--color-success-tint);
+  color: var(--color-success);
+}
+.pp-pill[data-s='lost'],
+.pp-pill[data-s='rejected'] {
+  background: var(--color-danger-tint);
+  color: var(--color-danger);
+}
+
+/* ---------- Overview: lead pipeline ---------- */
+.pp-pipe {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  border-radius: var(--radius-md);
+  overflow: hidden;
+  background: var(--color-surface-2);
+  gap: 1px;
+}
+.pp-pipe__cell {
+  display: grid;
+  gap: var(--space-1);
+  padding: var(--space-3);
+  background: var(--color-surface);
+  text-decoration: none;
+  color: inherit;
+  min-width: 0;
+  transition: background-color var(--duration-fast) var(--ease-out);
+}
+a.pp-pipe__cell:hover {
+  background: var(--color-surface-2);
+  text-decoration: none;
+}
+a.pp-pipe__cell:active {
+  background: var(--color-surface-3);
+}
+a.pp-pipe__cell:focus-visible {
+  outline-offset: -3px;
+}
+.pp-pipe__num {
+  font-family: var(--font-display);
+  font-weight: var(--weight-bold);
+  font-size: var(--text-2xl);
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+}
+.pp-pipe__cell[data-s='new'] .pp-pipe__num {
+  color: var(--color-accent-text);
+}
+.pp-hero-num {
+  font-family: var(--font-display);
+  font-weight: var(--weight-bold);
+  font-size: var(--text-4xl);
+  line-height: 1;
+  letter-spacing: -0.03em;
+  font-variant-numeric: tabular-nums;
+}
+
+/* Applications */
+.pp-apps,
+.pp-cards {
+  display: grid;
+  gap: var(--space-3);
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+.pp-app {
+  display: grid;
+  gap: var(--space-1);
+  padding-block: var(--space-3);
+  border-top: 1px solid var(--color-border);
+}
+.pp-app:first-child {
+  border-top: 0;
+  padding-top: 0;
+}
+.pp-app__name {
+  font-weight: var(--weight-semibold);
+  overflow-wrap: anywhere;
+}
+.pp-featured {
+  display: flex;
+  gap: var(--space-2);
+  align-items: center;
+  color: var(--color-success);
+  font-weight: var(--weight-semibold);
+}
+
+/* Listing card (preview of what nomads see) */
+.pp-listing {
+  display: grid;
+  gap: var(--space-2);
+  padding: var(--space-5);
+  border-radius: var(--radius-md);
+  background: var(--color-surface-2);
+  min-width: 0;
+}
+.pp-listing__name {
+  font-family: var(--font-display);
+  font-size: var(--text-lg);
+  font-weight: var(--weight-bold);
+  overflow-wrap: anywhere;
+}
+.pp-listing__meta {
+  font-size: var(--text-sm);
+  color: var(--color-ink-2);
+}
+.pp-listing__desc {
+  font-size: var(--text-sm);
+  text-wrap: pretty;
+  overflow-wrap: anywhere;
+  white-space: pre-line;
+}
+.pp-listing__url {
+  font-size: var(--text-sm);
+  overflow-wrap: anywhere;
+}
+
+/* Featured upsell */
+.pp-upsell {
+  display: grid;
+  gap: var(--space-3);
+  margin-top: var(--space-2);
+  padding: var(--space-4);
+  border-radius: var(--radius-md);
+  background: var(--seg-b2b-bg);
+  color: var(--color-ink);
+}
+.pp-upsell__price {
+  font-family: var(--font-display);
+  font-weight: var(--weight-bold);
+  font-size: var(--text-3xl);
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+}
+.pp-upsell__price small {
+  font-size: var(--text-base);
+  font-weight: var(--weight-semibold);
+  color: var(--color-ink-2);
+}
+.pp-upsell ul {
+  display: grid;
+  gap: var(--space-2);
+  padding: 0;
+  list-style: none;
+  font-size: var(--text-sm);
+}
+.pp-upsell li {
+  display: flex;
+  gap: var(--space-2);
+}
+
+/* ---------- Leads ---------- */
+.pp-filter {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
+.pp-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  min-height: 44px;
+  padding: 0 var(--space-4);
+  border-radius: var(--radius-pill);
+  border: 1px solid var(--color-border);
+  background: var(--color-surface);
+  color: var(--color-ink-2);
+  font: inherit;
+  font-weight: var(--weight-semibold);
+  font-size: var(--text-sm);
+  cursor: pointer;
+  transition: background-color var(--duration-fast) var(--ease-out), border-color var(--duration-fast) var(--ease-out),
+    transform var(--duration-fast) var(--ease-out);
+}
+.pp-chip:hover {
+  border-color: var(--color-border-strong);
+  color: var(--color-ink);
+}
+.pp-chip:active {
+  transform: scale(0.97);
+}
+.pp-chip[aria-pressed='true'] {
+  background: var(--color-ink);
+  border-color: var(--color-ink);
+  color: var(--color-surface);
+}
+.pp-chip__n {
+  font-variant-numeric: tabular-nums;
+  opacity: 0.75;
+}
+
+.pp-leads {
+  display: grid;
+  gap: var(--space-3);
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+.pp-lead {
+  display: grid;
+  gap: var(--space-3);
+  padding: var(--space-5);
+  border-radius: var(--radius-lg);
+  background: var(--color-surface);
+  box-shadow: var(--elev-1);
+  min-width: 0;
+}
+.pp-lead[data-s='new'] {
+  box-shadow: var(--elev-1), inset 4px 0 0 var(--color-accent);
+}
+.pp-lead__top {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2) var(--space-3);
+  justify-content: space-between;
+  align-items: baseline;
+}
+.pp-lead__name {
+  font-family: var(--font-display);
+  font-size: var(--text-lg);
+  font-weight: var(--weight-bold);
+  overflow-wrap: anywhere;
+}
+.pp-lead__facts {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-1) var(--space-4);
+  font-size: var(--text-sm);
+  color: var(--color-ink-2);
+}
+.pp-lead__msg {
+  font-size: var(--text-sm);
+  padding: var(--space-3) var(--space-4);
+  border-radius: var(--radius-md);
+  background: var(--color-surface-2);
+  overflow-wrap: anywhere;
+  white-space: pre-line;
+}
+.pp-lead__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  align-items: center;
+}
+.pp-lead__email {
+  font-size: var(--text-sm);
+  overflow-wrap: anywhere;
+  margin-right: auto;
+}
+.pp-lead__note {
+  font-size: var(--text-sm);
+  color: var(--color-danger);
+}
+
+/* ---------- Listing form ---------- */
+.pp-form {
+  display: grid;
+  gap: var(--space-5);
+}
+.pp-count {
+  font-size: var(--text-xs);
+  color: var(--color-ink-3);
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+}
+.pp-count[data-over] {
+  color: var(--color-danger);
+  font-weight: var(--weight-semibold);
+}
+.pp-locked {
+  display: grid;
+  gap: var(--space-1);
+  font-size: var(--text-sm);
+}
+
+/* Secondary button on the dark demo banner (scoped Button styles assume a light surface). */
+.pp-demo .btn.btn--secondary {
+  --btn-fg: var(--color-inverse-ink);
+  --btn-border: var(--color-accent);
+  --btn-bg-hover: rgb(255 255 255 / 0.1);
+}
+.pp-eyebrow [data-p-who] {
+  text-transform: none;
+  letter-spacing: 0;
+}

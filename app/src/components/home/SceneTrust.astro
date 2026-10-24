@@ -1,0 +1,80 @@
+---
+import Button from '../ui/Button.astro';
+import Stat from '../ui/Stat.astro';
+import Badge from '../ui/Badge.astro';
+import { visas, VERIFIED_ON } from '../../data/visas';
+import { cities } from '../../data/cities';
+
+// Official (primary-tier) source pages behind the visa facts, grouped by publisher.
+const primary = visas.flatMap((v) => v.sources).filter((s) => s.tier === 'primary');
+const urls = new Set(primary.map((s) => s.url));
+const publishers = [...new Set(primary.map((s) => s.label.split(' — ')[0].trim()))];
+const verified = new Date(VERIFIED_ON).toLocaleDateString('en-GB', {
+  day: 'numeric',
+  month: 'short',
+  year: 'numeric',
+  timeZone: 'UTC',
+});
+---
+
+<section class="section section--tint scene scene--trust" data-scene="trust" aria-labelledby="trust-title">
+  <div class="container trust">
+    <div class="trust__head stack" data-reveal>
+      <h2 id="trust-title" class="display-6xl trust__title">Every fact has a source.</h2>
+      <p class="lead">We read the official pages, link them, and show the date we last checked.</p>
+      <div><Button href="/about" variant="secondary" iconRight="arrow-right">How we verify</Button></div>
+    </div>
+
+    <div class="trust__stats" data-reveal-stagger data-stat-count>
+      <Stat value={visas.length} label="visa routes compared" size="lg" />
+      <Stat value={urls.size} label="official source pages" size="lg" />
+      <Stat value={cities.length} label="city guides" size="lg" />
+    </div>
+
+    <ul class="trust__sources" role="list" data-reveal-stagger="0.05">
+      {
+        publishers.map((p) => (
+          <li class="trust__source">
+            <span>{p}</span>
+            <Badge variant="verified">Verified {verified}</Badge>
+          </li>
+        ))
+      }
+    </ul>
+  </div>
+</section>
+
+<style>
+  .trust {
+    display: grid;
+    gap: var(--space-12);
+  }
+  .trust__title {
+    font-size: var(--text-5xl);
+    max-width: 14ch;
+  }
+  .trust__stats {
+    display: grid;
+    gap: var(--space-8);
+    grid-template-columns: repeat(auto-fit, minmax(min(12rem, 100%), 1fr));
+  }
+  .trust__sources {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(min(22rem, 100%), 1fr));
+    gap: var(--space-3);
+  }
+  .trust__source {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: var(--space-3);
+    padding: var(--space-4) var(--space-5);
+    border-radius: var(--radius-md);
+    background: var(--color-surface);
+    font-weight: var(--weight-medium);
+  }
+</style>

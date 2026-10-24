@@ -1,0 +1,92 @@
+---
+import Base from '../layouts/Base.astro';
+import Button from '../components/ui/Button.astro';
+import Icon from '../components/ui/Icon.astro';
+
+const links = [
+  { href: '/finder', label: 'Visa Finder', note: 'Works without a connection' },
+  { href: '/tools/90-day', label: '90-day report calculator', note: 'Dates are worked out on your phone' },
+  { href: '/visas', label: 'Visa guides', note: 'Any guide you opened before is saved' },
+];
+---
+
+<Base title="You're offline" description="You're offline. Cached guides and tools still work." noindex>
+  <div class="container-narrow off">
+    <span class="off__icon"><Icon name="wifi" size={32} /></span>
+    <h1>You're offline</h1>
+    <p class="lead">Cached guides and tools still work. Payments, booking and your account need a connection.</p>
+    <ul class="off__list">
+      {
+        links.map((l) => (
+          <li>
+            <a href={l.href}>
+              <strong>{l.label}</strong>
+              <span>{l.note}</span>
+              <Icon name="arrow-right" size={18} />
+            </a>
+          </li>
+        ))
+      }
+    </ul>
+    <Button variant="secondary" icon="clock" data-retry>Try again</Button>
+  </div>
+</Base>
+
+<style>
+  .off {
+    display: grid;
+    gap: var(--space-6);
+    justify-items: start;
+    padding-block: var(--space-section);
+  }
+  .off__icon {
+    display: grid;
+    place-items: center;
+    width: 4rem;
+    height: 4rem;
+    border-radius: 50%;
+    background: var(--color-warning-tint);
+    color: var(--color-warning);
+  }
+  .off h1 {
+    font-size: var(--text-4xl);
+    letter-spacing: var(--tracking-display);
+  }
+  .off__list {
+    display: grid;
+    gap: var(--space-3);
+    width: 100%;
+    padding: 0;
+    list-style: none;
+  }
+  .off__list a {
+    display: grid;
+    grid-template-columns: 1fr auto;
+    gap: 0 var(--space-4);
+    align-items: center;
+    padding: var(--space-4) var(--space-5);
+    border-radius: var(--radius-lg);
+    background: var(--color-surface);
+    color: var(--color-ink);
+    text-decoration: none;
+  }
+  .off__list a:hover {
+    background: var(--color-surface-2);
+    color: var(--color-ink);
+    text-decoration: none;
+  }
+  .off__list span {
+    grid-column: 1;
+    font-size: var(--text-sm);
+    color: var(--color-ink-2);
+  }
+  .off__list :global(svg) {
+    grid-row: 1 / span 2;
+    grid-column: 2;
+    color: var(--color-brand);
+  }
+</style>
+
+<script>
+  document.querySelector('[data-retry]')?.addEventListener('click', () => location.reload());
+</script>

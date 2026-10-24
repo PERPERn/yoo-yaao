@@ -1,0 +1,62 @@
+---
+import Button from '../ui/Button.astro';
+import ShaderBg from '../core/ShaderBg.astro';
+import { SITE } from '../../config/site';
+---
+
+<section class="scene scene--finale overflow-clip" data-scene="finale" aria-labelledby="finale-title">
+  <ShaderBg />
+  <svg class="finale__mark" viewBox="0 0 1000 220" aria-hidden="true" focusable="false">
+    <text x="500" y="178" text-anchor="middle" textLength="960" lengthAdjust="spacingAndGlyphs" data-finale-word>
+      {SITE.name}
+    </text>
+  </svg>
+  <div class="container finale__copy stack">
+    <h2 id="finale-title" class="finale__title">Your long stay starts here.</h2>
+    <p class="lead">Six questions, one clear answer, every source linked.</p>
+    <div><Button href="/finder" size="lg" iconRight="arrow-right">Find my visa</Button></div>
+  </div>
+</section>
+
+<style>
+  .scene--finale {
+    position: relative;
+    isolation: isolate; /* keeps ShaderBg (z -1) inside the scene */
+    min-height: 100svh;
+    display: grid;
+    align-content: center;
+    gap: var(--space-10);
+    padding-block: var(--space-section);
+  }
+  /* Story mode: a clear band above the wordmark holds the 3D object (POSES.finale). */
+  :global(html.home-story) .scene--finale {
+    gap: var(--space-8);
+    padding-block: calc(var(--header-h) + 22svh) var(--space-10);
+  }
+  :global(html.home-story) .finale__mark {
+    max-height: 30svh;
+  }
+  .finale__mark {
+    width: 100%;
+    height: auto;
+    display: block;
+    padding-inline: var(--gutter);
+    overflow: visible;
+  }
+  .finale__mark text {
+    font-family: var(--font-display);
+    font-weight: var(--weight-bold);
+    font-size: 200px;
+    letter-spacing: var(--tracking-giant);
+    fill: none;
+    stroke: var(--color-brand);
+    stroke-width: 2;
+  }
+  .finale__copy {
+    align-items: center;
+    text-align: center;
+  }
+  .finale__title {
+    font-size: var(--text-4xl);
+  }
+</style>

@@ -1,0 +1,555 @@
+---
+import type { GetStaticPaths } from 'astro';
+import type { Visa, VisaSlug } from '../../types/contracts';
+import Base from '../../layouts/Base.astro';
+import Section from '../../components/ui/Section.astro';
+import Badge from '../../components/ui/Badge.astro';
+import Button from '../../components/ui/Button.astro';
+import Stat from '../../components/ui/Stat.astro';
+import Steps from '../../components/ui/Steps.astro';
+import Callout from '../../components/ui/Callout.astro';
+import SourceTag from '../../components/ui/SourceTag.astro';
+import Accordion from '../../components/ui/Accordion.astro';
+import Card from '../../components/ui/Card.astro';
+import Icon from '../../components/ui/Icon.astro';
+import PageHeader from '../../components/core/PageHeader.astro';
+import DocChecklist from '../../components/core/DocChecklist.astro';
+import LegalNote from '../../components/core/LegalNote.astro';
+import Motion from '../../components/core/Motion.astro';
+import { visas, visaBySlug } from '../../data/visas';
+import { faq } from '../../data/faq';
+import { listings } from '../../data/listings';
+import { SITE } from '../../config/site';
+import { costParts, fmtDateISO, fmtStay, isStale, n, approxUsd } from '../../components/core/format';
+
+export const getStaticPaths = (() => visas.map((v) => ({ params: { slug: v.slug }, props: { visa: v } }))) satisfies GetStaticPaths;
+
+interface Props {
+  visa: Visa;
+}
+const { visa } = Astro.props;
+const slug = visa.slug;
+
+const FAQ_MATCH: Record<VisaSlug, RegExp> = {
+  dtv: /\bDTV\b/,
+  ltr: /\bLTR\b|How much money/,
+  privilege: /Privilege/,
+  'visa-exempt': /visa-free|exemption|60 days/i,
+  retirement: /retirement/i,
+};
+const RELATED: Record<VisaSlug, VisaSlug[]> = {
+  dtv: ['visa-exempt', 'ltr'],
+  ltr: ['dtv', 'privilege'],
+  privilege: ['retirement', 'ltr'],
+  'visa-exempt': ['dtv', 'privilege'],
+  retirement: ['ltr', 'privilege'],
+};
+const related = RELATED[slug].map(visaBySlug);
+const faqs = faq.filter((f) => FAQ_MATCH[slug].test(f.q) || FAQ_MATCH[slug].test(f.a)).slice(0, 4);
+if (slug !== 'visa-exempt') {
+  const report = faq.find((f) => /90-day report/.test(f.q));
+  if (report && !faqs.includes(report)) faqs.push(report);
+}
+const insurance = ['dtv', 'ltr', 'retirement'].includes(slug) ? listings.filter((l) => l.kind === 'insurance') : [];
+const cost = costParts(visa);
+const [stayValue, ...stayUnit] = fmtStay(visa.stay.perEntryDays).split(' ');
+const validity = visa.stay.validityYears
+  ? { value: String(visa.stay.validityYears), unit: visa.stay.validityYears === 1 ? 'year' : 'years' }
+  : { value: 'Per entry', unit: '' };
+const stale = isStale(visa.verifiedAt);
+const e = visa.eligibility;
+const thresholds = [
+  e.minAge !== undefined && { label: 'Minimum age', value: `${e.minAge}+` },
+  e.minIncomeUsdYear !== undefined && { label: 'Minimum income', value: `USD ${n(e.minIncomeUsdYear)} a year` },
+  e.minSavingsThb !== undefined && { label: 'Savings to show', value: `${n(e.minSavingsThb)} THB (${approxUsd(e.minSavingsThb)})` },
+  { label: 'Remote work for foreign clients', value: e.remoteWorkAllowed ? 'Allowed' : 'Not allowed' },
+].filter(Boolean) as { label: string; value: string }[];
+
+const jsonLd = JSON.stringify({
+  '@context': 'https://schema.org',
+  '@type': 'Article',
+  headline: `${visa.name}: requirements, documents and steps`,
+  description: visa.summary,
+  dateModified: visa.verifiedAt,
+  inLanguage: 'en',
+  mainEntityOfPage: new URL(`/visas/${slug}`, Astro.site ?? SITE.url).href,
+  publisher: { '@type': 'Organization', name: SITE.name, url: SITE.url },
+  citation: visa.sources.map((s) => s.url),
+});
+const nextPath = `/visas/${slug}`;
+---
+
+<Base
+  title={`${visa.shortName} visa guide`}
+  description={`${visa.name}: who it's for, cost, documents and how to apply. ${visa.summary}`.slice(0, 158)}
+  type="article"
+>
+  <script slot="head" type="application/ld+json" set:html={jsonLd} />
+
+  <PageHeader
+    title={visa.name}
+    lead={visa.summary}
+    crumbs={[{ label: 'Visas', href: '/visas' }, { label: visa.shortName }]}
+  >
+    <ul class="bestfor" aria-label="Best for">
+      {visa.bestFor.map((b) => <li><Badge variant="brand">{b}</Badge></li>)}
+    </ul>
+  </PageHeader>
+
+  <nav class="chipnav" aria-label="On this page">
+    <div class="container chipnav__row">
+      <a href="#facts">Facts</a>
+      <a href="#eligibility">Eligibility</a>
+      <a href="#documents">Documents</a>
+      <a href="#steps">Steps</a>
+      <a href="#sources">Sources</a>
+    </div>
+  </nav>
+
+  <!-- Key facts -->
+  <section id="facts" class="facts section--tint" aria-labelledby="facts-title">
+    <div class="container">
+      <h2 id="facts-title" class="sr-only">Key facts</h2>
+      <div class="facts__grid" data-reveal-stagger>
+        <Stat size="lg" value={stayValue} unit={stayUnit.join(' ')} label="Stay per entry" />
+        <Stat size="lg" value={validity.value} unit={validity.unit} label="Visa validity" />
+        <Stat size="lg" value={cost.value} unit={cost.unit} label="Government fee" note={cost.note} />
+        <div class="facts__extend">
+          <p class="facts__extend-label">Extending</p>
+          <p class="facts__extend-text">{visa.stay.extendable}</p>
+        </div>
+      </div>
+      {visa.cost.note && <p class="facts__note small muted">{visa.cost.note}</p>}
+    </div>
+  </section>
+
+  <!-- Eligibility -->
+  <Section id="eligibility" title="Am I eligible?" lead="The rules that decide whether you can apply. Read each one against your own situation.">
+    <div class="elig">
+      <div class="elig__main" data-reveal>
+        <dl class="elig__thresholds">
+          {
+            thresholds.map((t) => (
+              <div>
+                <dt>{t.label}</dt>
+                <dd>{t.value}</dd>
+              </div>
+            ))
+          }
+        </dl>
+        <ul class="ticklist">
+          {e.other.map((o) => <li><Icon name="check" size={18} />{o}</li>)}
+        </ul>
+      </div>
+      <aside class="elig__cta" data-reveal>
+        <Icon name="passport" size={28} />
+        <h3>Not sure you qualify?</h3>
+        <p>Answer 6 questions and see how {visa.shortName} ranks against the other four visas for your profile.</p>
+        <Button href="/finder" variant="secondary" iconRight="arrow-right">Check with the Visa Finder</Button>
+      </aside>
+    </div>
+  </Section>
+
+  <!-- Documents -->
+  <Section
+    id="documents"
+    tone="tint"
+    title="Documents checklist"
+    lead="Tick each document as you get it. Your ticks stay in this browser and show up in the checklist tool too."
+  >
+    <div class="docs">
+      <DocChecklist slug={slug} documents={visa.documents} doneHref="#steps" data-reveal />
+      <div class="docs__side">
+        <Button href={`/tools/checklist?visa=${slug}`} variant="secondary" icon="check">Track this checklist</Button>
+        <p class="small muted">Add notes per document, and sync across devices with Pro.</p>
+      </div>
+    </div>
+  </Section>
+
+  <!-- Steps -->
+  <Section id="steps" title="How to apply" width="narrow">
+    <Steps items={visa.steps} data-reveal />
+  </Section>
+
+  <!-- Gotchas -->
+  <Section spacing="tight" width="narrow" aria-label="Common mistakes">
+    <Callout tone="warning" title="Common mistakes and recent changes" data-reveal>
+      <ul class="gotchas">
+        {visa.gotchas.map((g) => <li>{g}</li>)}
+      </ul>
+    </Callout>
+  </Section>
+
+  <!-- Sources -->
+  <Section id="sources" title="Sources" width="narrow">
+    <p class="verified">
+      <Badge variant="verified">Verified {fmtDateISO(visa.verifiedAt)}</Badge>
+      {stale && <Badge variant="warning" icon="alert">May be out of date</Badge>}
+    </p>
+    <ul class="sources">
+      {visa.sources.map((s) => <li><SourceTag source={s} verifiedAt={visa.verifiedAt} /></li>)}
+    </ul>
+    <p class="small muted">
+      Primary sources are Thai government, embassy or official operator pages. <a href="/about#verify">How we check facts</a>.
+    </p>
+  </Section>
+
+  {
+    faqs.length > 0 && (
+      <Section id="faq" tone="tint" title={`${visa.shortName} questions people ask`} width="narrow">
+        <Accordion items={faqs.map((f) => ({ question: f.q, answer: f.a }))} schema />
+      </Section>
+    )
+  }
+
+  <!-- Get help -->
+  <Section id="help" title="Get help">
+    <div class="help" data-reveal-stagger>
+      <Card href={`/experts?visa=${slug}`} title="Talk to a licensed agent" tone="brand" padding="lg">
+        <p>For complex cases: previous overstays, mixed income, family applications. Free to ask, no obligation.</p>
+        <p class="help__go" aria-hidden="true">Get expert help <Icon name="arrow-right" size={18} /></p>
+      </Card>
+      <Card href="/buddies" title="Book a Local Buddy" padding="lg" tone="tint">
+        <p>Practical help on the ground: apartment viewings, a bank visit, getting a SIM. Buddies don't file visas.</p>
+        <p class="help__go" aria-hidden="true">Meet a buddy <Icon name="arrow-right" size={18} /></p>
+      </Card>
+    </div>
+  </Section>
+
+  {
+    insurance.length > 0 && (
+      <Section id="insurance" spacing="tight" title="Insurance you may need" width="narrow">
+        <p class="muted">{visa.shortName} applications often ask for health insurance. These providers sell long-stay cover:</p>
+        <ul class="ins">
+          {insurance.map((l) => (
+            <li>
+              <a href={l.url} target="_blank" rel={l.affiliate ? 'sponsored noopener' : 'noopener noreferrer'}>
+                {l.name}<span class="sr-only"> (opens in a new tab)</span>
+              </a>
+              {l.affiliate && <a href="/legal#affiliate" class="ins__paid"><Badge variant="paid" /></a>}
+            </li>
+          ))}
+        </ul>
+      </Section>
+    )
+  }
+
+  <!-- Related -->
+  <Section id="related" title="Compare with">
+    <ul class="related" data-reveal-stagger>
+      {
+        related.map((r) => (
+          <Card as="li" href={`/visas/${r.slug}`} title={r.name} padding="lg">
+            <p class="muted">{r.summary}</p>
+            <p class="related__meta tabular">
+              {fmtStay(r.stay.perEntryDays)} per entry · {costParts(r).value} {costParts(r).unit}
+            </p>
+          </Card>
+        ))
+      }
+    </ul>
+    <LegalNote class="legal" />
+  </Section>
+
+  <div class="stickycta" data-save-visa>
+    <div class="container stickycta__row">
+      <p class="stickycta__text">{visa.shortName}: never miss a deadline</p>
+      <Button
+        href={`/account?next=${encodeURIComponent(nextPath)}&intent=pro`}
+        variant="accent"
+        data-save-visa-link
+      >Save this visa &amp; get reminders</Button>
+    </div>
+  </div>
+</Base>
+
+<Motion />
+
+<script>
+  import { bindChecklist } from '../../components/core/checklist-client';
+  import { getProState } from '../../components/core/pro';
+
+  document.querySelectorAll<HTMLElement>('[data-checklist]').forEach((el) => bindChecklist(el, el.dataset.checklist!));
+
+  const link = document.querySelector<HTMLAnchorElement>('[data-save-visa-link]');
+  getProState().then((s) => {
+    if (!link) return;
+    if (s.isPro) {
+      link.href = '/account#stays';
+      link.textContent = 'Add this visa to my stays';
+    } else if (s.loggedIn) {
+      link.href = '/pricing';
+    }
+  });
+</script>
+
+<style>
+  .bestfor {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-2);
+    list-style: none;
+    padding: 0;
+    margin: 0;
+  }
+
+  .chipnav {
+    position: sticky;
+    top: var(--header-h);
+    z-index: var(--z-raised);
+    background: var(--color-bg);
+  }
+  .chipnav__row {
+    display: flex;
+    gap: var(--space-2);
+    overflow-x: auto;
+    padding-block: var(--space-2);
+    scrollbar-width: none;
+  }
+  .chipnav a {
+    flex-shrink: 0;
+    display: inline-flex;
+    align-items: center;
+    min-height: var(--tap-min);
+    padding: 0 var(--space-4);
+    border-radius: var(--radius-pill);
+    background: var(--color-surface-2);
+    color: var(--color-ink);
+    font-size: var(--text-sm);
+    font-weight: var(--weight-medium);
+    text-decoration: none;
+    transition: background-color var(--duration-base) var(--ease-out);
+  }
+  .chipnav a:hover {
+    background: var(--color-surface-3);
+  }
+  section[id],
+  :global(section[id]) {
+    scroll-margin-top: calc(var(--header-h) + 4rem);
+  }
+
+  .facts {
+    padding-block: var(--space-12);
+  }
+  .facts__grid {
+    display: grid;
+    gap: var(--space-8) var(--space-6);
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  @media (min-width: 60rem) {
+    .facts__grid {
+      grid-template-columns: repeat(3, auto) minmax(0, 1.6fr);
+    }
+  }
+  .facts__extend {
+    grid-column: 1 / -1;
+  }
+  @media (min-width: 60rem) {
+    .facts__extend {
+      grid-column: auto;
+    }
+  }
+  .facts__extend-label {
+    font-size: var(--text-sm);
+    font-weight: var(--weight-semibold);
+  }
+  .facts__extend-text {
+    margin-top: var(--space-2);
+    color: var(--color-ink);
+    text-wrap: pretty;
+  }
+  .facts__note {
+    margin-top: var(--space-8);
+    max-width: 75ch;
+  }
+
+  .elig {
+    display: grid;
+    gap: var(--space-10);
+  }
+  @media (min-width: 60rem) {
+    .elig {
+      grid-template-columns: minmax(0, 1.7fr) minmax(0, 1fr);
+      align-items: start;
+    }
+  }
+  .elig__thresholds {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(12rem, 1fr));
+    gap: var(--space-3);
+    margin: 0 0 var(--space-8);
+  }
+  .elig__thresholds div {
+    padding: var(--space-4) var(--space-5);
+    border-radius: var(--radius-md);
+    background: var(--color-surface-2);
+  }
+  .elig__thresholds dt {
+    font-size: var(--text-sm);
+    color: var(--color-ink-2);
+  }
+  .elig__thresholds dd {
+    margin: var(--space-1) 0 0;
+    font-family: var(--font-display);
+    font-weight: var(--weight-semibold);
+    font-size: var(--text-lg);
+    font-variant-numeric: tabular-nums;
+  }
+  .ticklist {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    display: grid;
+    gap: var(--space-4);
+  }
+  .ticklist li {
+    display: flex;
+    gap: var(--space-3);
+    max-width: 68ch;
+    text-wrap: pretty;
+  }
+  .ticklist :global(svg) {
+    flex-shrink: 0;
+    margin-top: 0.25em;
+    color: var(--color-brand);
+  }
+  .elig__cta {
+    display: grid;
+    gap: var(--space-3);
+    justify-items: start;
+    padding: var(--space-8);
+    border-radius: var(--radius-xl);
+    background: var(--color-brand-tint);
+    position: sticky;
+    top: calc(var(--header-h) + 5rem);
+  }
+  .elig__cta :global(svg) {
+    color: var(--color-brand);
+  }
+  .elig__cta h3 {
+    font-size: var(--text-xl);
+  }
+
+  .docs {
+    display: grid;
+    gap: var(--space-8);
+  }
+  @media (min-width: 60rem) {
+    .docs {
+      grid-template-columns: minmax(0, 2fr) minmax(0, 1fr);
+      align-items: start;
+    }
+  }
+  .docs__side {
+    display: grid;
+    gap: var(--space-3);
+    justify-items: start;
+  }
+
+  .gotchas {
+    margin: var(--space-2) 0 0;
+    padding-left: 1.2em;
+    display: grid;
+    gap: var(--space-3);
+  }
+
+  .verified {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-2);
+    margin-bottom: var(--space-6);
+  }
+  .sources {
+    list-style: none;
+    padding: 0;
+    margin: 0 0 var(--space-6);
+    display: grid;
+    gap: var(--space-4);
+  }
+
+  .help {
+    display: grid;
+    gap: var(--space-5);
+  }
+  @media (min-width: 48rem) {
+    .help {
+      grid-template-columns: 1fr 1fr;
+    }
+  }
+  .help__go {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-2);
+    margin-top: var(--space-2);
+    font-weight: var(--weight-semibold);
+    color: var(--color-brand);
+  }
+
+  .ins {
+    list-style: none;
+    padding: 0;
+    margin: var(--space-4) 0 0;
+    display: grid;
+    gap: var(--space-2);
+  }
+  .ins li {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--space-3);
+    min-height: var(--tap-min);
+  }
+  .ins__paid {
+    text-decoration: none;
+  }
+
+  .related {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    display: grid;
+    gap: var(--space-5);
+  }
+  @media (min-width: 48rem) {
+    .related {
+      grid-template-columns: 1fr 1fr;
+    }
+  }
+  .related__meta {
+    font-size: var(--text-sm);
+    font-weight: var(--weight-semibold);
+  }
+  .legal {
+    margin-top: var(--space-12);
+  }
+
+  .stickycta {
+    position: sticky;
+    bottom: 0;
+    z-index: var(--z-raised);
+    background: var(--color-surface);
+    box-shadow: var(--shadow-float);
+    padding-block: var(--space-3) calc(var(--space-3) + env(safe-area-inset-bottom));
+  }
+  .stickycta__row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-4);
+  }
+  .stickycta__text {
+    font-weight: var(--weight-semibold);
+    display: none;
+  }
+  .stickycta__row :global(.btn) {
+    flex: 1;
+  }
+  @media (min-width: 48rem) {
+    .stickycta__text {
+      display: block;
+    }
+    .stickycta__row :global(.btn) {
+      flex: 0 0 auto;
+    }
+  }
+</style>

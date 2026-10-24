@@ -1,0 +1,398 @@
+---
+import Base from '../../layouts/Base.astro';
+import Section from '../../components/ui/Section.astro';
+import Button from '../../components/ui/Button.astro';
+import Field from '../../components/ui/Field.astro';
+import Icon from '../../components/ui/Icon.astro';
+import Accordion from '../../components/ui/Accordion.astro';
+import SourceTag from '../../components/ui/SourceTag.astro';
+import PageHeader from '../../components/core/PageHeader.astro';
+import ProBand from '../../components/core/ProBand.astro';
+import ProHint from '../../components/core/ProHint.astro';
+import LegalNote from '../../components/core/LegalNote.astro';
+import Motion from '../../components/core/Motion.astro';
+import { faq } from '../../data/faq';
+import { VERIFIED_ON } from '../../data/visas';
+
+const reportFaq = faq.find((f) => /90-day report/.test(f.q));
+const tm30Faq = faq.find((f) => /TM30/.test(f.q));
+const howTo = [
+  {
+    question: 'How to file: online, by post, or in person',
+    answer: `<p>${reportFaq?.a ?? ''}</p><ul><li><strong>Online:</strong> through the Immigration Bureau's online 90-day report service, from 15 days before the due date. Keep the receipt it emails you.</li><li><strong>By post:</strong> send form TM47 with passport copies to your local immigration office by registered mail, at least 15 days before the due date.</li><li><strong>In person:</strong> take your passport, form TM47 and your last receipt to your local immigration office within the filing window.</li></ul>`,
+  },
+  {
+    question: 'TM30: your landlord must file it within 24 hours',
+    answer: `<p>${tm30Faq?.a ?? ''}</p>`,
+  },
+  {
+    question: 'How this calculator counts',
+    answer:
+      '<p>Your next report is due 90 days after the date you enter. If you report on time, the one after is due 90 days after that, and so on. Leaving Thailand resets the count: your next report is then due 90 days after you come back.</p>',
+  },
+];
+---
+
+<Base
+  title="90-day report calculator"
+  description="Enter your arrival or last report date to see your next Thai 90-day report deadline, the filing window and the next three dates. Add them to your calendar."
+>
+  <PageHeader
+    title="90-day report calculator"
+    lead="Stay in Thailand 90 days in a row on a long-stay visa and you must tell immigration where you live. Find your next date in 5 seconds."
+    crumbs={[{ label: 'Stay Tools', href: '/tools' }, { label: '90-day report' }]}
+  />
+
+  <Section spacing="none" aria-label="Calculator">
+    <div class="calc">
+      <form class="calc__form" data-form novalidate>
+        <Field id="basis" label="Count from" group>
+          <label class="choice">
+            <input type="radio" name="basis" value="entry" checked />
+            <span>The date I entered Thailand</span>
+          </label>
+          <label class="choice">
+            <input type="radio" name="basis" value="report" />
+            <span>The date of my last 90-day report</span>
+          </label>
+        </Field>
+        <Field id="date" label="Date" hint="Use the stamp in your passport, or the date on your last receipt." required>
+          <input
+            type="date"
+            id="date"
+            name="date"
+            class="control"
+            required
+            aria-describedby="date-hint date-error"
+            data-date
+          />
+        </Field>
+        <p class="calc__privacy small muted">
+          <Icon name="lock" size={16} /> Worked out in your browser. Nothing is sent anywhere.
+        </p>
+      </form>
+
+      <div class="calc__result" aria-live="polite" data-result-wrap>
+        <div class="empty" data-empty>
+          <Icon name="calendar" size={28} />
+          <p>Pick a date to see your deadlines.</p>
+        </div>
+
+        <div class="result" data-result hidden>
+          <p class="result__label">Next report due</p>
+          <p class="result__date tabular" data-due></p>
+          <p class="result__count" data-countdown></p>
+
+          <div class="alert alert--danger" data-overdue hidden role="alert">
+            <Icon name="alert" size={20} />
+            <p>
+              This report may be overdue. Fines start at 2,000 THB. File as soon as possible.
+              <a href="#sources">See the sources</a>
+            </p>
+          </div>
+          <div class="alert alert--warning" data-duenow hidden>
+            <Icon name="clock" size={20} />
+            <p data-duenow-text></p>
+          </div>
+
+          <p class="result__window" data-window></p>
+
+          <div class="result__next">
+            <p class="result__sub">The next three reports, if you file on time</p>
+            <ol class="result__list tabular" data-next></ol>
+          </div>
+
+          <div class="result__actions">
+            <Button icon="calendar" data-ics>Add to calendar (.ics)</Button>
+            <Button variant="secondary" icon="plus" data-save>Save this stay</Button>
+          </div>
+          <ProHint />
+        </div>
+      </div>
+    </div>
+  </Section>
+
+  <Section title="Filing your report" width="narrow">
+    <Accordion items={howTo} />
+    <div id="sources" class="sources">
+      <SourceTag
+        label="Thai Immigration Bureau — notification of staying longer than 90 days (TM47)"
+        url="https://www.immigration.go.th/"
+        tier="primary"
+        verifiedAt={VERIFIED_ON}
+      />
+      <LegalNote />
+    </div>
+  </Section>
+
+  <Section spacing="tight">
+    <ProBand
+      title="Get an email 15 days and 1 day before each report."
+      body="Pro keeps your dates in your account and reminds you before every 90-day report, visa expiry and TM30 after travel. The calendar file stays free."
+      data-reveal
+    />
+  </Section>
+</Base>
+
+<Motion />
+
+<script>
+  import { addDays, buildIcs, diffDays, downloadFile, fmtDate, fmtDateLong, parseISODate, plural, toISODate, today } from '../../components/core/dates';
+  import { readJSON, writeJSON } from '../../components/core/storage';
+  import { handleSaveStay } from '../../components/core/save-stay';
+
+  const KEY = 'ls-90day';
+  const $ = <T extends HTMLElement>(sel: string) => document.querySelector<T>(sel)!;
+  const form = $<HTMLFormElement>('[data-form]');
+  const input = $<HTMLInputElement>('[data-date]');
+  const err = $<HTMLElement>('#date-error');
+  const empty = $('[data-empty]');
+  const result = $('[data-result]');
+  const hint = $('[data-pro-hint]');
+  const now = today();
+  input.max = toISODate(now);
+
+  let dues: Date[] = [];
+  let base: Date | null = null;
+  let basis: 'entry' | 'report' = 'entry';
+
+  function basisValue(): 'entry' | 'report' {
+    return (form.querySelector<HTMLInputElement>('input[name=basis]:checked')?.value as 'entry' | 'report') ?? 'entry';
+  }
+
+  function showError(msg: string) {
+    err.textContent = msg;
+    input.setAttribute('aria-invalid', msg ? 'true' : 'false');
+  }
+
+  function render(scroll = false) {
+    basis = basisValue();
+    base = parseISODate(input.value);
+    hint.hidden = true;
+    if (!input.value || !base) {
+      showError(input.value ? 'Enter a full date, for example 14 Jan 2027.' : '');
+      empty.hidden = false;
+      result.hidden = true;
+      return;
+    }
+    if (diffDays(base, now) > 0) {
+      showError(basis === 'entry' ? "Entry date can't be in the future." : "Report date can't be in the future.");
+      empty.hidden = false;
+      result.hidden = true;
+      return;
+    }
+    showError('');
+    writeJSON(KEY, { basis, date: input.value });
+    const params = new URLSearchParams({ from: basis, date: input.value });
+    history.replaceState(null, '', `${location.pathname}?${params}`);
+
+    const due = addDays(base, 90);
+    dues = [due, addDays(due, 90), addDays(due, 180), addDays(due, 270)];
+    const open = addDays(due, -15);
+    const close = addDays(due, 7);
+    const toDue = diffDays(due, now);
+
+    $('[data-due]').textContent = fmtDateLong(due);
+    $('[data-countdown]').textContent =
+      toDue > 0 ? `in ${plural(toDue, 'day')}` : toDue === 0 ? 'today' : `${plural(-toDue, 'day')} ago`;
+    $('[data-window]').innerHTML = `You can report from <strong>${fmtDate(open)}</strong> to <strong>${fmtDate(close)}</strong>.` +
+      (diffDays(open, now) > 0 ? ` The window opens in ${plural(diffDays(open, now), 'day')}.` : '');
+
+    const overdue = diffDays(now, close) > 0;
+    $('[data-overdue]').hidden = !overdue;
+    const dueNow = !overdue && diffDays(now, open) >= 0;
+    $('[data-duenow]').hidden = !dueNow;
+    if (dueNow) $('[data-duenow-text]').textContent = `Your filing window is open now. File by ${fmtDate(close)}.`;
+
+    $('[data-next]').innerHTML = dues
+      .slice(1)
+      .map((d) => `<li><time datetime="${toISODate(d)}">${fmtDate(d)}</time><span>window ${fmtDate(addDays(d, -15))} – ${fmtDate(addDays(d, 7))}</span></li>`)
+      .join('');
+
+    empty.hidden = true;
+    result.hidden = false;
+    if (scroll && matchMedia('(max-width: 60rem)').matches) {
+      result.scrollIntoView({ behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth', block: 'start' });
+    }
+  }
+
+  // Restore: URL first (shareable), then this device.
+  const q = new URLSearchParams(location.search);
+  const saved = readJSON<{ basis?: string; date?: string }>(KEY, {});
+  const startBasis = q.get('from') ?? saved.basis;
+  const startDate = q.get('date') ?? saved.date;
+  if (startBasis === 'report') form.querySelector<HTMLInputElement>('input[value=report]')!.checked = true;
+  // No saved date: prefill an example entry 30 days ago so the timeline shows straight away.
+  input.value = startDate || toISODate(addDays(now, -30));
+  render();
+
+  input.addEventListener('change', () => render(true));
+  input.addEventListener('blur', () => render());
+  form.addEventListener('change', (e) => {
+    if ((e.target as HTMLInputElement).name === 'basis') render();
+  });
+  form.addEventListener('submit', (e) => {
+    e.preventDefault();
+    render(true);
+    if (input.getAttribute('aria-invalid') === 'true' || !input.value) input.focus();
+  });
+
+  $('[data-ics]').addEventListener('click', () => {
+    if (!dues.length) return;
+    const ics = buildIcs(
+      dues.map((d, i) => ({
+        date: d,
+        title: `Thai 90-day report due${i ? ` (${i + 1})` : ''}`,
+        description: `File your TM47 90-day report. Window: ${fmtDate(addDays(d, -15))} to ${fmtDate(addDays(d, 7))}. Late fines start at 2,000 THB. ${location.origin}/tools/90-day`,
+        alarmsDaysBefore: [15, 1],
+      })),
+      '90-day reports',
+    );
+    downloadFile(`90-day-reports-${toISODate(dues[0])}.ics`, ics);
+  });
+
+  $('[data-save]').addEventListener('click', () => {
+    if (!base) return;
+    handleSaveStay(
+      hint,
+      {
+        visaType: 'unknown',
+        entryDate: toISODate(base),
+        lastReportDate: basis === 'report' ? toISODate(base) : null,
+      },
+      `/tools/90-day${location.search}`,
+    );
+  });
+</script>
+
+<style>
+  .calc {
+    display: grid;
+    gap: var(--space-8);
+    padding-bottom: var(--space-section);
+  }
+  @media (min-width: 60rem) {
+    .calc {
+      grid-template-columns: minmax(0, 1fr) minmax(0, 1.2fr);
+      gap: var(--space-12);
+      align-items: start;
+    }
+  }
+  .calc__form {
+    display: grid;
+    gap: var(--space-6);
+    padding: var(--space-6);
+    border-radius: var(--radius-lg);
+    background: var(--color-surface);
+  }
+  .calc__privacy {
+    display: flex;
+    gap: var(--space-2);
+    align-items: center;
+  }
+  .calc__result {
+    scroll-margin-top: calc(var(--header-h) + var(--space-4));
+  }
+  .empty {
+    display: grid;
+    justify-items: start;
+    gap: var(--space-3);
+    padding: var(--space-10) var(--space-8);
+    border-radius: var(--radius-xl);
+    background: var(--color-surface-2);
+    color: var(--color-ink-2);
+    font-size: var(--text-lg);
+  }
+  .result {
+    display: grid;
+    gap: var(--space-5);
+    padding: clamp(var(--space-6), 4vw, var(--space-10));
+    border-radius: var(--radius-xl);
+    background: var(--color-brand-tint);
+    scroll-margin-top: calc(var(--header-h) + var(--space-4));
+  }
+  .result__label {
+    font-weight: var(--weight-semibold);
+    color: var(--color-ink);
+  }
+  .result__date {
+    font-family: var(--font-display);
+    font-size: var(--text-4xl);
+    font-weight: var(--weight-bold);
+    line-height: var(--leading-tight);
+    letter-spacing: var(--tracking-display);
+    margin-top: calc(var(--space-3) * -1);
+  }
+  .result__count {
+    font-size: var(--text-xl);
+    font-weight: var(--weight-semibold);
+    color: var(--color-brand);
+    margin-top: calc(var(--space-4) * -1);
+  }
+  .result__window {
+    max-width: 48ch;
+  }
+  .result__sub {
+    font-size: var(--text-sm);
+    font-weight: var(--weight-semibold);
+    margin-bottom: var(--space-2);
+  }
+  .result__list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    display: grid;
+    gap: var(--space-1);
+  }
+  .result__list :global(li) {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    gap: var(--space-1) var(--space-4);
+    padding: var(--space-3) var(--space-4);
+    border-radius: var(--radius-md);
+    background: var(--color-surface);
+  }
+  .result__list :global(time) {
+    font-weight: var(--weight-semibold);
+  }
+  .result__list :global(span) {
+    font-size: var(--text-sm);
+    color: var(--color-ink-2);
+  }
+  .result__actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-3);
+  }
+  .alert {
+    display: flex;
+    gap: var(--space-3);
+    align-items: flex-start;
+    padding: var(--space-4) var(--space-5);
+    border-radius: var(--radius-md);
+  }
+  .alert :global(svg) {
+    flex-shrink: 0;
+    margin-top: 0.15em;
+  }
+  .alert--danger {
+    background: var(--color-danger-tint);
+    color: var(--color-ink);
+  }
+  .alert--danger :global(svg) {
+    color: var(--color-danger);
+  }
+  .alert--warning {
+    background: var(--color-warning-tint);
+  }
+  .alert--warning :global(svg) {
+    color: var(--color-warning);
+  }
+  .sources {
+    display: grid;
+    gap: var(--space-4);
+    margin-top: var(--space-8);
+    scroll-margin-top: calc(var(--header-h) + var(--space-4));
+  }
+</style>

@@ -1,0 +1,79 @@
+---
+/**
+ * Breadcrumb trail plus BreadcrumbList JSON-LD (ux-flow §0.2). The last item is the current page.
+ *   <Breadcrumbs items={[{ label: 'Visas', href: '/visas' }, { label: 'DTV' }]} />
+ * "Home" is prepended automatically.
+ */
+import { SITE } from '../../config/site';
+
+interface Crumb { label: string; href?: string }
+interface Props { items: Crumb[]; class?: string; [key: string]: unknown }
+const { items, class: className, ...rest } = Astro.props;
+const trail: Crumb[] = [{ label: 'Home', href: '/' }, ...items];
+const base = Astro.site ?? new URL(SITE.url);
+const jsonLd = JSON.stringify({
+  '@context': 'https://schema.org',
+  '@type': 'BreadcrumbList',
+  itemListElement: trail.map((c, i) => ({
+    '@type': 'ListItem',
+    position: i + 1,
+    name: c.label,
+    item: new URL(c.href ?? Astro.url.pathname, base).href,
+  })),
+});
+---
+
+<nav aria-label="Breadcrumb" class:list={['crumbs', className]} {...rest}>
+  <ol>
+    {
+      trail.map((c, i) =>
+        i === trail.length - 1 ? (
+          <li><span aria-current="page">{c.label}</span></li>
+        ) : (
+          <li>
+            <a href={c.href}>{c.label}</a>
+            <span class="crumbs__sep" aria-hidden="true">/</span>
+          </li>
+        ),
+      )
+    }
+  </ol>
+</nav>
+<script type="application/ld+json" set:html={jsonLd} />
+
+<style>
+  .crumbs ol {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--space-1) var(--space-2);
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    font-size: var(--text-sm);
+    color: var(--color-ink-2);
+  }
+  .crumbs li {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-2);
+  }
+  .crumbs a {
+    color: var(--color-ink-2);
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+    min-height: var(--tap-min);
+  }
+  .crumbs a:hover {
+    color: var(--color-brand);
+    text-decoration: underline;
+  }
+  .crumbs [aria-current='page'] {
+    color: var(--color-ink);
+    font-weight: var(--weight-medium);
+  }
+  .crumbs__sep {
+    color: var(--color-border-strong);
+  }
+</style>

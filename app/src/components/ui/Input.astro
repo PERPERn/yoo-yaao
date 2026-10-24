@@ -1,0 +1,68 @@
+---
+import Field from './Field.astro';
+
+/**
+ * Text input (or textarea with `multiline`). Pass `label` to get the full Field
+ * (label, hint, error, aria wiring). Without a label you must provide aria-label.
+ * Extra attributes (min, max, step, pattern, autocomplete, inputmode, data-*) pass through.
+ */
+interface Props {
+  name: string;
+  id?: string;
+  label?: string;
+  hint?: string;
+  error?: string;
+  type?: 'text' | 'email' | 'number' | 'date' | 'tel' | 'url' | 'search' | 'password';
+  value?: string | number;
+  placeholder?: string;
+  required?: boolean;
+  optional?: boolean;
+  multiline?: boolean;
+  rows?: number;
+  hideLabel?: boolean;
+  class?: string;
+  [key: string]: unknown;
+}
+
+const {
+  name,
+  id = name,
+  label,
+  hint,
+  error,
+  type = 'text',
+  value,
+  placeholder,
+  required = false,
+  optional = false,
+  multiline = false,
+  rows = 4,
+  hideLabel = false,
+  class: className,
+  ...rest
+} = Astro.props;
+
+const describedBy = label ? [hint && `${id}-hint`, `${id}-error`].filter(Boolean).join(' ') : undefined;
+const common = {
+  id,
+  name,
+  placeholder,
+  required,
+  'aria-invalid': error ? ('true' as const) : undefined,
+  'aria-describedby': describedBy,
+  class: ['control', className].filter(Boolean).join(' '),
+  ...rest,
+};
+---
+
+{
+  label ? (
+    <Field id={id} label={label} hint={hint} error={error} required={required} optional={optional} hideLabel={hideLabel}>
+      {multiline ? <textarea rows={rows} {...common}>{value}</textarea> : <input type={type} value={value} {...common} />}
+    </Field>
+  ) : multiline ? (
+    <textarea rows={rows} {...common}>{value}</textarea>
+  ) : (
+    <input type={type} value={value} {...common} />
+  )
+}

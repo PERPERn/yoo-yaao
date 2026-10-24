@@ -1,0 +1,222 @@
+---
+import Business from '../../layouts/Business.astro';
+import Section from '../../components/ui/Section.astro';
+import PriceCard from '../../components/ui/PriceCard.astro';
+import Button from '../../components/ui/Button.astro';
+import Icon from '../../components/ui/Icon.astro';
+import Accordion from '../../components/ui/Accordion.astro';
+import '../../components/money/money.css';
+import { SITE } from '../../config/site';
+import { LISTING, VERIFIED_AGENT } from '../../components/money/plans';
+
+const audiences = [
+  {
+    icon: 'briefcase' as const,
+    title: 'Coworking spaces',
+    body: 'Remote workers compare day passes and fibre speeds before they pick a neighbourhood. Be the first space they see on the city page.',
+  },
+  {
+    icon: 'users' as const,
+    title: 'Coliving and condos',
+    body: 'People on a DTV or LTR look for 3–12 month stays. Your listing sits next to the cost-of-living numbers they are reading.',
+  },
+  {
+    icon: 'shield' as const,
+    title: 'Licensed visa agencies',
+    body: 'We never file visas. When someone needs help, we send their case to a verified agency, with the visa and timeline already filled in.',
+  },
+];
+
+const faq = [
+  { question: 'Can I cancel?', answer: 'Yes, any time, from the link in your invoice email. Your listing stays featured until the end of the month you paid for.' },
+  {
+    question: 'Why do you verify every partner?',
+    answer:
+      'Travellers trust us with visa decisions. Fake agencies and visa-run touts are common, so nobody goes live until a person on our team has checked who you are and, for agencies, your licence. <a href="/business/verify">How we verify</a>.',
+  },
+  {
+    question: 'How are expert-help leads qualified?',
+    answer:
+      'Every request includes the visa the person is considering, their passport country, their timeline and a description of their case of at least 20 characters. We send each request to no more than 2 agencies.',
+  },
+  {
+    question: 'When do I pay?',
+    answer: `Only after you're approved. You upgrade to a featured listing from your partner portal, and if it doesn't go live within 1 business day we refund the month in full.`,
+  },
+  {
+    question: 'Is the founding-partner price really locked?',
+    answer: `Yes. The first 20 partners keep $${LISTING.priceUsd}/mo for as long as they stay subscribed.`,
+  },
+];
+---
+
+<Business
+  title="List your business"
+  description={`Get your coworking, coliving or visa agency in front of people planning a long stay in Thailand. Verified partners only. Featured listings from $${LISTING.priceUsd}/mo.`}
+>
+  <div class="container m-hero b-hero">
+    <div class="stack" style="--stack-gap: var(--space-5)">
+      <p class="b-eyebrow"><Icon name="shield" size={16} /> Verified partners only</p>
+      <h1 data-intro>Reach long-stay nomads before they land</h1>
+      <p class="lead" data-intro>
+        {SITE.name} helps people pick a visa, a city and a place to work. Verified partners appear right where those
+        decisions are made.
+      </p>
+      <div class="cluster" data-intro>
+        <Button href="/business/apply" size="lg" iconRight="arrow-right">Apply to list your business</Button>
+        <Button href="#plans" variant="secondary" size="lg">Compare plans</Button>
+      </div>
+      <p class="small muted" data-intro>
+        Already a partner? <a href="/partner">Sign in to your portal</a>
+      </p>
+    </div>
+  </div>
+
+  <Section id="why" tone="tint" title="Who it's for">
+    <ul class="who" data-reveal-stagger>
+      {
+        audiences.map((a) => (
+          <li>
+            <span class="who__icon"><Icon name={a.icon} size={22} /></span>
+            <div>
+              <h3>{a.title}</h3>
+              <p class="muted">{a.body}</p>
+            </div>
+          </li>
+        ))
+      }
+    </ul>
+  </Section>
+
+  <Section id="plans" title="Plans" lead="Monthly, no contract. Prices in US dollars. You pay only after we approve you.">
+    <div class="plans" data-reveal-stagger>
+      <PriceCard
+        featured
+        ribbon="Founding-partner price"
+        name={LISTING.name}
+        segment="Coworking, coliving and condos"
+        price={LISTING.priceUsd}
+        period="/mo"
+        features={LISTING.features}
+        ctaLabel="Apply for a featured listing"
+        ctaHref="/business/apply?plan=featured"
+        ctaVariant="accent"
+      />
+      <PriceCard
+        id="agents"
+        name={VERIFIED_AGENT.name}
+        segment="Licensed visa agencies"
+        price={VERIFIED_AGENT.priceUsd}
+        period="/mo"
+        note={`or $${VERIFIED_AGENT.perLeadUsd} per lead`}
+        features={[...VERIFIED_AGENT.features]}
+        ctaLabel="Apply as an agency"
+        ctaHref="/business/apply?plan=agent"
+        ctaVariant="secondary"
+      />
+      <PriceCard
+        name="Team / API"
+        segment="Relocation firms and HR teams"
+        price="Soon"
+        features={['Visa data and deadlines in your own tools', 'Seats for your whole team', 'Invoice billing']}
+        ctaLabel="Join the waitlist"
+        ctaHref={`mailto:${SITE.supportEmail}?subject=${encodeURIComponent(`${SITE.name} Team / API waitlist`)}`}
+        ctaVariant="secondary"
+      />
+    </div>
+  </Section>
+
+  <Section tone="tint" spacing="tight">
+    <div class="trust" data-reveal>
+      <span class="who__icon"><Icon name="shield" size={22} /></span>
+      <div class="stack" style="--stack-gap: var(--space-2)">
+        <h2 class="trust__title">Every partner is checked by a person</h2>
+        <p class="muted">Identity for everyone, plus a TAT licence or business registration for agencies. 1–2 business days.</p>
+      </div>
+      <Button href="/business/verify" variant="secondary" iconRight="arrow-right">How we verify</Button>
+    </div>
+  </Section>
+
+  <Section width="narrow" title="Partner questions">
+    <Accordion items={faq} />
+  </Section>
+
+  <div class="sticky-cta">
+    <p class="sticky-cta__meta"><strong>${LISTING.priceUsd}/mo</strong>Featured listing</p>
+    <Button href="/business/apply?plan=featured">Apply</Button>
+  </div>
+</Business>
+
+<style>
+  .b-hero {
+    display: grid;
+    gap: var(--space-8);
+  }
+  .b-hero h1 {
+    max-width: 20ch;
+  }
+  .b-eyebrow {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-2);
+    font-size: var(--text-sm);
+    font-weight: var(--weight-semibold);
+    color: var(--seg-b2b-strong);
+  }
+  .who {
+    display: grid;
+    gap: var(--space-8);
+    padding: 0;
+    list-style: none;
+  }
+  @media (min-width: 60rem) {
+    .who {
+      grid-template-columns: repeat(3, 1fr);
+    }
+  }
+  .who li {
+    display: flex;
+    gap: var(--space-4);
+  }
+  .who h3 {
+    font-size: var(--text-xl);
+    margin-bottom: var(--space-2);
+  }
+  .who__icon {
+    display: grid;
+    place-items: center;
+    flex-shrink: 0;
+    width: 2.75rem;
+    height: 2.75rem;
+    border-radius: 50%;
+    background: var(--seg-b2b-bg);
+    color: var(--seg-b2b-strong);
+  }
+  .plans {
+    display: grid;
+    gap: var(--space-5);
+  }
+  @media (min-width: 60rem) {
+    .plans {
+      grid-template-columns: 1.15fr 1fr 1fr;
+    }
+  }
+  .trust {
+    display: grid;
+    gap: var(--space-4);
+    align-items: center;
+  }
+  @media (min-width: 48rem) {
+    .trust {
+      grid-template-columns: auto 1fr auto;
+    }
+  }
+  .trust__title {
+    font-size: var(--text-xl);
+  }
+</style>
+
+<script>
+  import { initMotion } from '../../scripts/motion';
+  initMotion();
+</script>

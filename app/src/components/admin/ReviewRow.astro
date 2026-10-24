@@ -1,0 +1,173 @@
+---
+/**
+ * Review drawer row for an application (cloned per row by the applications page script).
+ * Ids/for/aria-describedby are filled in per row by the script, since the markup is a template.
+ */
+import Button from '../ui/Button.astro';
+
+interface Props {
+  colspan: number;
+}
+const { colspan } = Astro.props;
+---
+
+<tr class="rv-row" data-drawer hidden>
+  <td colspan={colspan}>
+    <div class="rv">
+      <div class="rv__info">
+        <p class="rv__msg" data-f="message"></p>
+        <dl class="rv__facts">
+          <div><dt>Email</dt><dd data-f="email"></dd></div>
+          <div data-site-wrap><dt>Website</dt><dd><a data-f="site" target="_blank" rel="noopener noreferrer nofollow"></a></dd></div>
+          <div data-lic-no-wrap><dt>Licence no.</dt><dd data-f="license_no"></dd></div>
+          <div><dt>Last reviewed</dt><dd data-f="reviewed"></dd></div>
+        </dl>
+      </div>
+
+      <fieldset class="rv__checks">
+        <legend>Verification</legend>
+        <label class="adm-switch">
+          <input type="checkbox" data-chk="identity" />
+          <span>Identity checked</span>
+        </label>
+        <p class="rv__hint">Name and photo ID match the applicant (passport, Thai ID, or company director).</p>
+        <div data-lic-wrap>
+          <label class="adm-switch">
+            <input type="checkbox" data-chk="license" />
+            <span>Licence checked</span>
+          </label>
+          <p class="rv__hint" data-lic-hint></p>
+        </div>
+      </fieldset>
+
+      <div class="rv__note">
+        <label class="rv__label" data-note-label>Review note</label>
+        <textarea class="control" rows="3" maxlength="2000" data-note></textarea>
+        <p class="rv__hint" data-note-hint>The applicant can read this note. Required to reject.</p>
+        <p class="rv__error" data-note-err hidden>Add a note that tells the applicant why.</p>
+      </div>
+
+      <div class="rv__actions">
+        <p class="rv__why" data-why></p>
+        <div class="rv__btns">
+          <Button size="sm" variant="ghost" data-save>Save review</Button>
+          <Button size="sm" variant="secondary" icon="x" data-reject>Reject</Button>
+          <Button size="sm" icon="check" data-approve>Approve</Button>
+        </div>
+      </div>
+    </div>
+  </td>
+</tr>
+
+<style>
+  .rv-row > td {
+    padding: 0 !important;
+    background: var(--color-bg);
+  }
+  .rv {
+    display: grid;
+    gap: var(--space-5);
+    padding: var(--space-5);
+    /* On narrow screens the table scrolls; keep the drawer pinned to the visible width */
+    position: sticky;
+    left: 0;
+    max-width: calc(100vw - 2 * var(--space-4) - 2px);
+  }
+  @media (min-width: 56rem) {
+    .rv {
+      grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr);
+    }
+    .rv__actions {
+      grid-column: 1 / -1;
+    }
+  }
+  .rv__msg {
+    margin: 0 0 var(--space-3);
+    max-width: 60ch;
+    white-space: pre-line;
+  }
+  .rv__facts {
+    margin: 0;
+    display: grid;
+    gap: var(--space-1);
+    font-size: var(--text-sm);
+  }
+  .rv__facts div {
+    display: flex;
+    gap: var(--space-2);
+  }
+  .rv__facts dt {
+    min-width: 7rem;
+    color: var(--color-ink-2);
+  }
+  .rv__facts dd {
+    margin: 0;
+    overflow-wrap: anywhere;
+  }
+  .rv__facts a {
+    color: var(--color-brand);
+  }
+  .rv__checks {
+    margin: 0;
+    padding: 0;
+    border: 0;
+    display: grid;
+    gap: 0;
+    align-content: start;
+  }
+  .rv__checks legend,
+  .rv__label {
+    margin-bottom: var(--space-1);
+    padding: 0;
+    color: var(--color-ink-2);
+    font-size: var(--text-xs);
+    font-weight: var(--weight-semibold);
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+  }
+  .rv__checks .adm-switch span {
+    font-weight: var(--weight-semibold);
+  }
+  .rv__hint {
+    margin: 0 0 var(--space-2) calc(1.25rem + var(--space-2));
+    color: var(--color-ink-3);
+    font-size: var(--text-xs);
+  }
+  .rv__note {
+    display: grid;
+    gap: var(--space-1);
+  }
+  .rv__note .rv__hint {
+    margin-left: 0;
+  }
+  .rv__note textarea {
+    min-height: 5rem;
+    font-size: var(--text-sm);
+  }
+  .rv__error {
+    margin: 0;
+    color: var(--color-danger);
+    font-size: var(--text-sm);
+    font-weight: var(--weight-medium);
+  }
+  .rv__actions {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-3);
+    padding-top: var(--space-4);
+    border-top: 1px solid var(--color-border);
+  }
+  .rv__why {
+    margin: 0;
+    color: var(--color-ink-2);
+    font-size: var(--text-sm);
+  }
+  .rv__btns {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-2);
+    margin-left: auto;
+  }
+</style>

@@ -1,0 +1,76 @@
+---
+/**
+ * Top of every Frontend-A page: optional breadcrumbs, the page's single <h1>, a lead line,
+ * and an optional `aside` slot that sits to the right on wide screens (a key figure, a picker…).
+ * Default slot renders under the lead (chips, actions).
+ */
+import Breadcrumbs from './Breadcrumbs.astro';
+
+interface Crumb { label: string; href?: string }
+interface Props {
+  title: string;
+  lead?: string;
+  crumbs?: Crumb[];
+  tone?: 'default' | 'tint';
+  class?: string;
+}
+const { title, lead, crumbs, tone = 'default', class: className } = Astro.props;
+const hasAside = Astro.slots.has('aside');
+---
+
+<header class:list={['phead', tone === 'tint' && 'section--tint', className]}>
+  <div class="container">
+    {crumbs && <Breadcrumbs items={crumbs} class="phead__crumbs" />}
+    <div class:list={['phead__grid', hasAside && 'phead__grid--aside']}>
+      <div class="phead__text">
+        <h1 class="phead__title" data-intro>{title}</h1>
+        {lead && <p class="phead__lead" data-intro>{lead}</p>}
+        <div class="phead__extra" data-intro><slot /></div>
+      </div>
+      {hasAside && <div class="phead__aside" data-intro><slot name="aside" /></div>}
+    </div>
+  </div>
+</header>
+
+<style>
+  .phead {
+    padding-block: var(--space-8) var(--space-12);
+  }
+  .phead__crumbs {
+    margin-bottom: var(--space-6);
+  }
+  .phead__grid {
+    display: grid;
+    gap: var(--space-8);
+    align-items: end;
+  }
+  @media (min-width: 60rem) {
+    .phead {
+      padding-block: var(--space-10) var(--space-16);
+    }
+    .phead__grid--aside {
+      grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr);
+      gap: var(--space-16);
+    }
+  }
+  .phead__title {
+    font-size: var(--text-4xl);
+    line-height: var(--leading-tight);
+    letter-spacing: var(--tracking-display);
+    text-wrap: balance;
+    max-width: 18ch;
+  }
+  .phead__lead {
+    margin-top: var(--space-5);
+    font-size: var(--text-lg);
+    color: var(--color-ink-2);
+    max-width: 58ch;
+    text-wrap: pretty;
+  }
+  .phead__extra:empty {
+    display: none;
+  }
+  .phead__extra {
+    margin-top: var(--space-6);
+  }
+</style>

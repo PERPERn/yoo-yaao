@@ -1,0 +1,31 @@
+node_modules/
+.DS_Store
+app/.env
+app/dist/
+app/.astro/
+app/.vercel/
+/tools/
+MiroFish/
+*.blend1
+
+# Secrets: never commit any env file except the example
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+
+# Local AI tooling and personal notes, not part of the product
+.claude/
+.agents/
+skills-lock.json
+CHEATSHEET.md
+REPOKUB-STACK.md
+
+# Loose files at the repo root (screenshots, reference PDFs, scratch npm)
+/*.jpg
+/*.jpeg
+/*.png
+/*.pdf
+/package.json
+/package-lock.json

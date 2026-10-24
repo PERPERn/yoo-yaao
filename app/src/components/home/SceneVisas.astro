@@ -1,0 +1,150 @@
+---
+import Button from '../ui/Button.astro';
+import SourceTag from '../ui/SourceTag.astro';
+import { visas, VERIFIED_ON } from '../../data/visas';
+
+const order = ['dtv', 'ltr', 'privilege', 'visa-exempt', 'retirement'];
+const list = order.map((s) => visas.find((v) => v.slug === s)).filter((v): v is (typeof visas)[number] => Boolean(v));
+
+function stayLabel(days: number) {
+  if (days >= 365) {
+    const y = Math.round(days / 365);
+    return { value: String(y), unit: y === 1 ? 'year' : 'years' };
+  }
+  return { value: String(days), unit: 'days' };
+}
+---
+
+<section class="scene scene--visas" data-scene="visas" aria-labelledby="visas-title">
+  <div class="container visas">
+    <div class="visas__head stack" data-reveal>
+      <h2 id="visas-title" class="display-6xl visas__title">Find your visa in 60 seconds.</h2>
+      <p class="lead">Answer six questions. We match you against five official visa routes.</p>
+      <div><Button href="/finder" iconRight="arrow-right">Start the finder</Button></div>
+    </div>
+
+    <ul class="vcards" role="list" data-visa-fan>
+      {
+        list.map((v) => {
+          const s = stayLabel(v.stay.perEntryDays);
+          return (
+            <li class="vcard">
+              <a class="vcard__link" href={`/visas/${v.slug}`}>
+                <span class="vcard__name">{v.shortName}</span>
+                <span class="vcard__stay tabular">
+                  {s.value} <small>{s.unit}</small>
+                </span>
+                <span class="vcard__meta">per entry{v.stay.validityYears ? ` · ${v.stay.validityYears}-year visa` : ''}</span>
+                <span class="vcard__for">{v.bestFor[0]}</span>
+              </a>
+            </li>
+          );
+        })
+      }
+    </ul>
+    <SourceTag label="Official embassy, MFA, BOI and TAT pages" verifiedAt={VERIFIED_ON} compact class="visas__src" />
+  </div>
+</section>
+
+<style>
+  .scene--visas {
+    padding-block: var(--space-section);
+  }
+  .visas {
+    display: grid;
+    gap: var(--space-10);
+  }
+  .visas__head {
+    text-align: center;
+    align-items: center;
+    max-width: 46rem;
+    margin-inline: auto;
+  }
+  .visas__title {
+    font-size: var(--text-5xl);
+  }
+  .vcards {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: grid;
+    gap: var(--space-4);
+    grid-template-columns: repeat(auto-fit, minmax(min(12rem, 100%), 1fr));
+  }
+  .vcard__link {
+    display: grid;
+    gap: var(--space-1);
+    height: 100%;
+    padding: var(--space-6);
+    border-radius: var(--radius-lg);
+    background: var(--color-surface);
+    color: var(--color-ink);
+    text-decoration: none;
+    transition:
+      transform var(--duration-base) var(--ease-out),
+      box-shadow var(--duration-base) var(--ease-out);
+  }
+  .vcard__link:hover {
+    box-shadow: var(--shadow-raise);
+  }
+  .vcard:first-child .vcard__link {
+    background: var(--color-brand-tint);
+  }
+  .vcard__name {
+    font-family: var(--font-display);
+    font-weight: var(--weight-bold);
+    font-size: var(--text-xl);
+    color: var(--color-brand);
+  }
+  .vcard__stay {
+    font-family: var(--font-display);
+    font-weight: var(--weight-bold);
+    font-size: var(--text-4xl);
+    line-height: 1;
+    white-space: nowrap; /* number and unit stay on one line */
+  }
+  .vcard__stay small {
+    font-size: var(--text-lg);
+  }
+  .vcard__meta,
+  .vcard__for {
+    font-size: var(--text-sm);
+    color: var(--color-ink-2);
+  }
+  .vcard__for {
+    margin-top: var(--space-3);
+  }
+  :global(.visas__src) {
+    justify-self: center;
+  }
+  /* Story mode: the cards stack under the passport, then fan out (home-scroll.ts). */
+  @media (min-width: 40rem) {
+    :global(html.home-story) .scene--visas {
+      min-height: 100svh;
+      display: grid;
+      align-content: space-between;
+      padding-block: calc(var(--header-h) + var(--space-6)) var(--space-10);
+    }
+    :global(html.home-story) .visas__title {
+      font-size: var(--text-4xl);
+    }
+    :global(html.home-story) .vcard__stay {
+      font-size: var(--text-3xl); /* fanned cards are ~13rem wide */
+    }
+    :global(html.home-story) .vcards {
+      position: relative;
+      display: block;
+      height: 15rem;
+    }
+    :global(html.home-story) .vcard {
+      position: absolute;
+      left: 50%;
+      bottom: 0;
+      width: min(13rem, 17vw);
+      margin-left: calc(min(13rem, 17vw) / -2);
+      box-shadow: var(--shadow-card-stack);
+      border-radius: var(--radius-lg);
+      will-change: transform;
+    }
+  }
+</style>

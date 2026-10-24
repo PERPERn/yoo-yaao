@@ -1,0 +1,151 @@
+---
+import Base from '../layouts/Base.astro';
+import Section from '../components/ui/Section.astro';
+import Button from '../components/ui/Button.astro';
+import Steps from '../components/ui/Steps.astro';
+import SourceTag from '../components/ui/SourceTag.astro';
+import Badge from '../components/ui/Badge.astro';
+import PageHeader from '../components/core/PageHeader.astro';
+import LegalNote from '../components/core/LegalNote.astro';
+import Motion from '../components/core/Motion.astro';
+import { SITE } from '../config/site';
+import { visas, VERIFIED_ON } from '../data/visas';
+import { cities } from '../data/cities';
+import type { Source } from '../types/contracts';
+import { fmtDateISO } from '../components/core/format';
+
+const seen = new Set<string>();
+const all: Source[] = [];
+for (const s of [...visas.flatMap((v) => v.sources), ...cities.flatMap((c) => c.sources)]) {
+  if (seen.has(s.url)) continue;
+  seen.add(s.url);
+  all.push(s);
+}
+const primary = all.filter((s) => s.tier === 'primary');
+const secondary = all.filter((s) => s.tier === 'secondary');
+---
+
+<Base
+  title="Method & sources"
+  description={`How ${SITE.name} checks Thai visa facts: primary sources first, a verified date on every fact, and conflicts shown instead of hidden.`}
+>
+  <PageHeader
+    title="How we check every fact"
+    lead={`${SITE.name} exists so people can stay in Thailand longer without breaking a rule they didn't know about. Longer, legal stays mean more money spent in Thai neighbourhoods, not just in airports and beach resorts.`}
+    crumbs={[{ label: 'Method & sources' }]}
+  >
+    <Badge variant="verified">Last full check {fmtDateISO(VERIFIED_ON)}</Badge>
+  </PageHeader>
+
+  <Section id="verify" tone="tint" title="How we verify">
+    <div class="verify">
+      <Steps
+        items={[
+          { title: 'Primary sources first', body: 'Every visa guide carries at least one official source: a Thai embassy, the Ministry of Foreign Affairs, the Board of Investment, the Tourism Authority of Thailand, or the official operator.' },
+          { title: 'A date on every fact', body: 'Each fact block shows when we last checked it. Anything older than 90 days is flagged "May be out of date".' },
+          { title: 'Conflicts shown, not hidden', body: 'When two embassies or guides disagree, we say so in "Common mistakes" and tell you whose word to follow, instead of quietly picking one.' },
+          { title: 'Re-checked every month', body: 'Thai visa rules changed at least four times between 2024 and 2026. We re-read every source before each release.' },
+        ]}
+        data-reveal
+      />
+      <aside class="verify__side" data-reveal="right">
+        <h3>What we don't do</h3>
+        <ul>
+          <li>We don't file visas or fill in immigration forms.</li>
+          <li>We don't give legal or tax advice.</li>
+          <li>We never invent figures. Sample buddies and listings are marked "Demo".</li>
+        </ul>
+        <p>For a complex case, we connect you with a <a href="/experts">licensed agent</a>.</p>
+      </aside>
+    </div>
+  </Section>
+
+  <Section id="sources" title="Our sources" lead={`${primary.length} official sources and ${secondary.length} secondary ones, used only where no official page states the fact.`} width="narrow">
+    <h3 class="srch">Official (primary)</h3>
+    <ul class="srcs">
+      {primary.map((s) => <li><SourceTag source={s} compact /></li>)}
+    </ul>
+    <h3 class="srch">Secondary</h3>
+    <ul class="srcs">
+      {secondary.map((s) => <li><SourceTag source={s} compact /></li>)}
+    </ul>
+  </Section>
+
+  <Section id="team" tone="tint" title="Who we are" width="narrow">
+    <div class="prose">
+      <p>
+        {SITE.name} is built by a small independent team for people planning a long stay in Thailand: remote workers, retirees, students of Muay Thai and Thai cooking, and anyone in between.
+      </p>
+      <p>
+        Found a mistake, or a rule that changed? Tell us at <a href={`mailto:${SITE.supportEmail}`}>{SITE.supportEmail}</a> and we'll fix it and update the verified date.
+      </p>
+    </div>
+    <LegalNote class="legal" />
+  </Section>
+
+  <Section spacing="tight">
+    <div class="cta" data-reveal>
+      <h2 class="cta__title">See which visa fits you</h2>
+      <Button href="/finder" size="lg" iconRight="arrow-right">Try the Visa Finder</Button>
+    </div>
+  </Section>
+</Base>
+
+<Motion />
+
+<style>
+  .verify {
+    display: grid;
+    gap: var(--space-10);
+  }
+  @media (min-width: 60rem) {
+    .verify {
+      grid-template-columns: minmax(0, 1.6fr) minmax(0, 1fr);
+      align-items: start;
+    }
+  }
+  .verify__side {
+    display: grid;
+    gap: var(--space-3);
+    padding: var(--space-8);
+    border-radius: var(--radius-xl);
+    background: var(--color-surface);
+  }
+  .verify__side h3 {
+    font-size: var(--text-xl);
+  }
+  .verify__side ul {
+    margin: 0;
+    padding-left: 1.2em;
+    display: grid;
+    gap: var(--space-2);
+  }
+  .srch {
+    font-size: var(--text-lg);
+    margin: var(--space-8) 0 var(--space-4);
+  }
+  .srch:first-of-type {
+    margin-top: 0;
+  }
+  .srcs {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    display: grid;
+    gap: var(--space-3);
+  }
+  .legal {
+    margin-top: var(--space-8);
+  }
+  .cta {
+    display: grid;
+    gap: var(--space-6);
+    justify-items: start;
+    padding: clamp(var(--space-6), 5vw, var(--space-12));
+    border-radius: var(--radius-xl);
+    background: var(--color-brand-tint);
+  }
+  .cta__title {
+    font-size: var(--text-3xl);
+  }
+</style>

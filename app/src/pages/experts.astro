@@ -1,0 +1,221 @@
+---
+import Base from '../layouts/Base.astro';
+import Section from '../components/ui/Section.astro';
+import Input from '../components/ui/Input.astro';
+import Select from '../components/ui/Select.astro';
+import Field from '../components/ui/Field.astro';
+import Button from '../components/ui/Button.astro';
+import Callout from '../components/ui/Callout.astro';
+import Steps from '../components/ui/Steps.astro';
+import Icon from '../components/ui/Icon.astro';
+import Accordion from '../components/ui/Accordion.astro';
+import '../components/money/money.css';
+import { SITE } from '../config/site';
+import { visas } from '../data/visas';
+import { COUNTRIES } from '../data/finder';
+
+const visaOptions = [...visas.map((v) => ({ value: v.slug, label: v.name })), { value: 'not-sure', label: 'Not sure yet' }];
+const countryOptions = [...COUNTRIES].sort((a, b) => a.name.localeCompare(b.name)).map((c) => ({ value: c.code, label: c.name }));
+
+const faq = [
+  {
+    question: 'What does it cost?',
+    answer:
+      'Asking is free and you are under no obligation. If you hire the agency, they quote their own fee before any work starts. We may receive a referral fee from partner agents; it never changes what you pay.',
+  },
+  {
+    question: 'Who are the agents?',
+    answer:
+      'Thai visa agencies and law firms that hold a valid licence or registration, which we check before they can receive requests.',
+  },
+  {
+    question: 'What happens to my details?',
+    answer: `We share your request with at most 2 partner agencies and nobody else. Ask us to delete it at any time: <a href="mailto:${SITE.supportEmail}">${SITE.supportEmail}</a>. See our <a href="/legal#privacy">privacy notice</a>.`,
+  },
+];
+---
+
+<Base
+  title="Get expert help"
+  description="Complex visa case? Tell us about it and a licensed Thai visa agency replies within 1 business day. Free to ask."
+>
+  <div class="container m-hero">
+    <h1 data-intro>Get help from a licensed visa expert</h1>
+    <p class="lead" data-intro>
+      Free to ask. We only refer you to licensed agencies, and we never file visas ourselves.
+    </p>
+  </div>
+
+  <section class="section ex" aria-labelledby="form-title">
+    <div class="container split" style="align-items: start">
+      <div class="stack" style="--stack-gap: var(--space-6)" data-reveal>
+        <h2 id="steps-title">How it works</h2>
+        <Steps
+          items={[
+            { title: 'Tell us your case', body: 'Your visa, passport and timeline, in a few sentences.' },
+            { title: 'A matched agent replies within 1 business day', body: 'By email, with what they need from you and their fee.' },
+            { title: 'You decide', body: 'Hire them or not. There is no obligation.' },
+          ]}
+        />
+        <Callout tone="info" title="When an expert is worth it">
+          A previous overstay or refusal, income that is hard to document, a family or business visa, or a deadline
+          that is days away.
+        </Callout>
+        <p class="small muted disclosure">
+          <Icon name="wallet" size={18} /> We may receive a referral fee from partner agents. It never changes what you pay.
+        </p>
+      </div>
+
+      <div class="form-panel" data-reveal="right">
+        <form class="form" data-lead novalidate>
+          <h2 id="form-title" class="form-title">Tell us about your case</h2>
+          <div class="hp" aria-hidden="true">
+            <label for="website">Leave this empty</label>
+            <input type="text" id="website" name="website" tabindex="-1" autocomplete="off" />
+          </div>
+          <div class="form-row">
+            <Input name="name" id="e-name" label="Your name" autocomplete="name" required />
+            <Input name="email" id="e-email" type="email" label="Email" autocomplete="email" required />
+          </div>
+          <Select name="visa" id="e-visa" label="Which visa are you considering?" placeholder="Choose a visa" options={visaOptions} required />
+          <Select name="nationality" id="e-nat" label="Passport country" placeholder="Choose a country" options={countryOptions} required />
+          <Field id="e-time" label="When do you want to apply?" group required>
+            <div class="chips" data-group="e-time">
+              {['Within 1 month', '1–3 months', 'Just researching'].map((t) => (
+                <label class="chip"><input type="radio" name="timeline" value={t} /><span>{t}</span></label>
+              ))}
+            </div>
+          </Field>
+          <Input
+            name="message"
+            id="e-msg"
+            label="Tell us about your case"
+            hint="e.g. freelancer with clients in the EU, want DTV, previous overstay of 3 days"
+            multiline
+            rows={5}
+            maxlength="1000"
+            required
+          />
+          <Field id="e-consent" label="Consent" group hideLabel>
+            <label class="choice" data-group="e-consent">
+              <input type="checkbox" name="consent" value="yes" />
+              <span>I agree that {SITE.name} shares my request with up to 2 licensed partner agents.</span>
+            </label>
+          </Field>
+          <div data-form-error hidden>
+            <Callout tone="danger" live title="Couldn't send your request"><span data-form-error-text></span></Callout>
+          </div>
+          <Button type="submit" size="lg" block>Get matched with an expert</Button>
+          <p class="form-foot">Free to ask. No obligation.</p>
+        </form>
+
+        <div class="done" data-done hidden tabindex="-1">
+          <span class="done__mark"><Icon name="check" size={28} strokeWidth={2.25} /></span>
+          <h2>Request sent</h2>
+          <p>A licensed agent will email you within 1 business day. Reference <strong data-ref class="tabular"></strong>.</p>
+          <p class="small muted">You can also chat with your agency once they're assigned. Sign in with the same email to open Messages.</p>
+          <div class="cluster">
+            <Button href="/messages" iconRight="arrow-right">Message this agency</Button>
+            <Button href="/visas" variant="secondary">Read the visa guides</Button>
+            <Button href="/tools" variant="ghost">Open Stay Tools</Button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <Section tone="tint" width="narrow" title="Questions about expert help">
+    <Accordion items={faq} />
+  </Section>
+</Base>
+
+<style>
+  .ex {
+    padding-top: var(--space-6);
+  }
+  .form-title {
+    font-size: var(--text-2xl);
+  }
+  .form fieldset {
+    border: 0;
+    margin: 0;
+    padding: 0;
+  }
+  .disclosure {
+    display: flex;
+    gap: var(--space-2);
+    align-items: center;
+  }
+</style>
+
+<script>
+  import { initMotion } from '../scripts/motion';
+  import {
+    applyValidation,
+    liveValidate,
+    val,
+    checkedValues,
+    EMAIL_RE,
+    setBusy,
+    postJson,
+    formErrorMessage,
+    shortRef,
+    type Validator,
+  } from '../components/money/client';
+
+  initMotion();
+  const form = document.querySelector<HTMLFormElement>('[data-lead]')!;
+  const errBox = form.querySelector<HTMLElement>('[data-form-error]')!;
+  const errText = form.querySelector<HTMLElement>('[data-form-error-text]')!;
+
+  // Prefill the visa from ?visa=dtv (finder results and visa guides link here).
+  const visa = new URLSearchParams(location.search).get('visa');
+  const visaSelect = form.querySelector<HTMLSelectElement>('#e-visa');
+  if (visa && visaSelect && Array.from(visaSelect.options).some((o) => o.value === visa)) visaSelect.value = visa;
+
+  const validate: Validator = (f) => {
+    const e: Record<string, string> = {};
+    if (!val(f, 'name')) e['e-name'] = 'Enter your name.';
+    const email = val(f, 'email');
+    if (!email) e['e-email'] = 'Enter an email address.';
+    else if (!EMAIL_RE.test(email)) e['e-email'] = "That doesn't look like an email. Check for typos.";
+    if (!val(f, 'visa')) e['e-visa'] = 'Choose a visa, or "Not sure yet".';
+    if (!val(f, 'nationality')) e['e-nat'] = 'Choose your passport country.';
+    if (!val(f, 'timeline')) e['e-time'] = 'Choose when you want to apply.';
+    const m = val(f, 'message').length;
+    if (m < 20) e['e-msg'] = `Add a little more detail (${20 - m} more characters).`;
+    else if (m > 1000) e['e-msg'] = 'Keep it under 1000 characters.';
+    if (!checkedValues(f, 'consent').length) e['e-consent'] = 'We need your OK to share your request with an agent.';
+    return e;
+  };
+  liveValidate(form, validate);
+
+  form.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    errBox.hidden = true;
+    if (!applyValidation(form, validate)) return;
+    const btn = form.querySelector<HTMLButtonElement>('button[type="submit"]');
+    const restore = setBusy(btn, 'Sending…');
+    const ref = shortRef();
+    const r = await postJson('/api/lead', {
+      name: val(form, 'name'),
+      email: val(form, 'email'),
+      nationality: val(form, 'nationality'),
+      visaSlug: val(form, 'visa'),
+      message: `[${ref}] Timeline: ${val(form, 'timeline')}\n\n${val(form, 'message')}`,
+      source: 'experts',
+      website: val(form, 'website'),
+    });
+    restore();
+    if (!r.ok) {
+      errText.textContent = formErrorMessage(r);
+      errBox.hidden = false;
+      return;
+    }
+    const done = document.querySelector<HTMLElement>('[data-done]')!;
+    done.querySelector('[data-ref]')!.textContent = `#${ref}`;
+    form.hidden = true;
+    done.hidden = false;
+    done.focus();
+  });
+</script>

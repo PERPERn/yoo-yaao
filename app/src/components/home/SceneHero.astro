@@ -1,0 +1,94 @@
+---
+import Button from '../ui/Button.astro';
+import HeroStage from '../ui/HeroStage.astro';
+import Icon from '../ui/Icon.astro';
+import ShaderBg from '../core/ShaderBg.astro';
+---
+
+<section class="scene scene--hero" data-scene="hero" aria-labelledby="hero-title">
+  <ShaderBg />
+  <div class="container hero">
+    <div class="hero__copy stack">
+      <h1 id="hero-title" class="display-6xl hero__title" data-intro>Stay longer in Thailand.</h1>
+      <p class="lead" data-intro>For remote workers and long-stayers: the right visa for your passport, the exact embassy checklist, and no missed 90‑day reports.</p>
+      <div class="cluster hero__ctas" data-intro>
+        <Button href="/finder" size="lg" iconRight="arrow-right">Find my visa</Button>
+        <Button href="/visas" size="lg" variant="ghost">Compare visas</Button>
+      </div>
+    </div>
+    <div class="hero__visual">
+      <HeroStage
+        ratio="4 / 3"
+        data-hero-story
+        label="An open passport with a gold visa stamp, and a small floating Thai island rising from its pages"
+      />
+    </div>
+  </div>
+  <a class="hero__hint" href="#not-just-a-visa">
+    <span>Scroll the story</span>
+    <Icon name="chevron-down" size={18} />
+  </a>
+</section>
+
+<style>
+  .scene--hero {
+    position: relative;
+    isolation: isolate; /* keeps ShaderBg (z -1) inside the scene */
+    min-height: calc(100svh - var(--header-h));
+    display: grid;
+    align-items: center;
+    padding-block: var(--space-10) var(--space-20);
+  }
+  /* The fixed story stage lives in this stacking context: lift it over later pinned/isolated scenes
+     (blueprint, finale), or they paint over the 3D object. */
+  :global(html.home-story) .scene--hero {
+    z-index: 1;
+  }
+  .hero {
+    display: grid;
+    gap: var(--space-10);
+    align-items: center;
+  }
+  @media (min-width: 60rem) {
+    .hero {
+      grid-template-columns: 1.05fr 1fr;
+    }
+  }
+  .hero__title {
+    max-width: 9ch;
+  }
+  @media (max-width: 39.99rem) {
+    /* Phones: both actions stack full width, so the ghost button's label lines up with the primary. */
+    .hero__ctas > :global(*) {
+      flex: 1 1 100%;
+    }
+    /* Phones: the object sits top-centre, above the headline. */
+    .hero__visual {
+      order: -1;
+      width: min(100%, 26rem);
+      justify-self: center;
+    }
+  }
+  .hero__visual {
+    /* Keeps the stage's space when the stage turns into the fixed story canvas (no layout shift). */
+    aspect-ratio: 4 / 3;
+    width: 100%;
+  }
+  .hero__hint {
+    position: absolute;
+    left: 50%;
+    bottom: var(--space-6);
+    translate: -50% 0;
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-2);
+    min-height: var(--tap-min);
+    padding-inline: var(--space-4);
+    color: var(--color-ink-2);
+    font-size: var(--text-sm);
+    text-decoration: none;
+  }
+  .hero__hint:hover {
+    color: var(--color-ink);
+  }
+</style>
