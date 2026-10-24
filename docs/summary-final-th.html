@@ -1,0 +1,127 @@
+<!doctype html>
+<html lang="th">
+<head>
+<meta charset="utf-8">
+<title>สรุปผลงาน Yoo Yaao</title>
+<style>
+@font-face{font-family:Anuphan;src:url(../app/node_modules/@fontsource-variable/anuphan/files/anuphan-thai-wght-normal.woff2) format('woff2');}
+@font-face{font-family:Anuphan;src:url(../app/node_modules/@fontsource-variable/anuphan/files/anuphan-latin-wght-normal.woff2) format('woff2');unicode-range:U+0000-00FF,U+2013-2014,U+2018-201D,U+2026,U+2192;}
+@page{size:A4;margin:16mm 15mm}
+*{box-sizing:border-box}
+body{font-family:Anuphan,sans-serif;color:#10302c;font-size:12.5px;line-height:1.6;margin:0}
+h1{font-size:30px;margin:0 0 4px;color:#0d6461}
+h2{font-size:18px;margin:22px 0 8px;color:#0d6461;border-bottom:2px solid #e3a33a;padding-bottom:4px;break-after:avoid}
+h3{font-size:14px;margin:12px 0 4px}
+.sub{color:#4a5852;margin:0 0 14px}
+.links{background:#f6f3ec;border-radius:10px;padding:10px 14px;margin:10px 0}
+.links div{margin:2px 0}
+table{width:100%;border-collapse:collapse;margin:6px 0 10px;break-inside:avoid}
+th,td{text-align:left;padding:6px 8px;border-bottom:1px solid #d9e6e2;vertical-align:top}
+th{background:#e7f1ee;font-weight:600}
+ul{margin:4px 0 8px;padding-left:20px}
+li{margin:2px 0}
+.ok{color:#1a703e;font-weight:600}
+.todo{color:#a24b1d;font-weight:600}
+.grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px}
+.card{border:1px solid #d9e6e2;border-radius:10px;padding:10px 12px;break-inside:avoid}
+.card h3{margin-top:0;color:#0d6461}
+.pb{break-before:page}
+</style>
+</head>
+<body>
+<h1>สรุปผลงาน: Yoo Yaao</h1>
+<p class="sub">แพลตฟอร์มช่วยชาวต่างชาติอยู่ไทยได้นานขึ้นอย่างถูกกฎหมาย · การแข่งขัน All for One University · อัปเดต 24 ต.ค. 2026 23:10</p>
+
+<div class="links">
+  <div><b>เว็บจริง:</b> https://yoo-yaao.vercel.app</div>
+  <div><b>โค้ด (public):</b> https://github.com/PERPERn/yoo-yaao</div>
+  <div><b>Miro (wireframe, mind map):</b> https://miro.com/app/board/uXjVEWEwo1M=/</div>
+  <div><b>คลิปเดโม 2 นาที:</b> docs/pitch/yoo-yaao-demo-2min.mp4 · <b>Business Model Canvas:</b> docs/pitch/business-model-canvas-th.pdf</div>
+</div>
+
+<h2>1. ไอเดียในหนึ่งหน้า</h2>
+<table>
+<tr><th style="width:22%">กลุ่มเป้าหมาย</th><td>Digital nomad, remote worker และผู้เกษียณชาวต่างชาติที่อยากอยู่ไทยหลายเดือน รวมทั้งผู้ถือหรือผู้สนใจวีซ่า DTV, LTR และ Retirement</td></tr>
+<tr><th>ปัญหา</th><td>ไม่รู้ว่าวีซ่าไหนเหมาะกับตัวเอง (กฎเปลี่ยนบ่อย บล็อกให้ข้อมูลขัดกันเอง) · พลาดรายงานตัว 90 วันแล้วโดนปรับ · ไม่รู้ว่าเอเจนต์คนไหนไว้ใจได้และราคาไม่โปร่งใส</td></tr>
+<tr><th>ทางแก้</th><td>Visa Finder บอกวีซ่าที่เหมาะภายใน 60 วินาที โดยอ้างแหล่งทางการทุกข้อ · Stay Tools (ปฏิทินรายงานตัว 90 วัน, ตัวนับวันพำนัก, checklist) · Local Buddy คนท้องถิ่นช่วยพาไปทำธุระ · เอเจนซี่ที่ผ่านการตรวจใบอนุญาตแล้ว พร้อมแชท ส่งงาน และรีวิว</td></tr>
+<tr><th>จุดต่าง</th><td>ข้อมูลทุกข้อมีแหล่งอ้างอิงและวันที่ตรวจล่าสุด · ไม่ขายวีซ่าเอง แต่จับคู่กับเอเจนซี่ที่ตรวจตัวตนและใบอนุญาต TAT แล้ว (ระบบฐานข้อมูลบังคับให้ตรวจก่อนอนุมัติ) · ใช้ฟรีเป็นหลัก</td></tr>
+<tr><th>ผลที่คาดหวัง</th><td>ช่วยให้ชาวต่างชาติพำนักนานขึ้นและใช้จ่ายในไทยมากขึ้น ซึ่งส่งเสริมการท่องเที่ยวระยะยาว · สร้างรายได้เสริมให้คนไทย (Buddy) และธุรกิจท้องถิ่น (coworking, เอเจนซี่)</td></tr>
+</table>
+
+<h2>2. โมเดลธุรกิจ: รายได้ 3 ทาง</h2>
+<div class="grid">
+  <div class="card"><h3>B2C: Pro</h3>$8/เดือน หรือ $59/ปี สำหรับระบบเตือนและซิงก์ข้อมูล บวกค่า affiliate ประกันและ eSIM</div>
+  <div class="card"><h3>B2B: ธุรกิจ</h3>Featured listing $49/เดือน บวกค่า lead และแพ็กเกจ Verified Agent สำหรับเอเจนซี่</div>
+  <div class="card"><h3>C2C: Local Buddy</h3>คิด commission 20% ต่อการจองบัดดี้แต่ละครั้ง</div>
+</div>
+
+<h2>3. สิ่งที่สร้างเสร็จแล้ว (ใช้งานได้บนเว็บจริง)</h2>
+<h3>ฝั่งผู้ใช้ (นักท่องเที่ยว / nomad)</h3>
+<ul>
+<li><b>หน้าแรกแบบ scroll story:</b> แต่ละฉากค้างไว้จนอนิเมชันเล่นจบ, มีโมเดล 3D จาก Blender (ในฉาก 90 วันแสดงเป็นเส้น), พื้นหลัง shader และคลิปเดโม</li>
+<li><b>วีซ่าและเครื่องมือ:</b> Visa Finder, หน้าวีซ่า 5 ประเภท, เครื่องคิดรายงานตัว 90 วัน (ส่งออกไฟล์ปฏิทิน .ics ได้), ตัวนับวันพำนัก, checklist เอกสาร</li>
+<li><b>เมืองและบัดดี้:</b> หน้าเมือง (กรุงเทพ เชียงใหม่ ภูเก็ต), Local Buddies, หน้าราคา และหน้าสถานะการจ่ายเงินพร้อมอนิเมชันเมื่อจ่ายสำเร็จ</li>
+<li><b>บัญชีผู้ใช้:</b> login ด้วยลิงก์ทางอีเมล, เมนูโปรไฟล์ที่ header (รูป ชื่อ ข้อความ ปุ่ม Log out), ตั้งค่าโปรไฟล์ครั้งแรก (ชื่อ รูป สัญชาติ วีซ่า วันเข้า เมือง)</li>
+<li><b>แชทกับเอเจนซี่:</b> กด "Message" ที่เอเจนซี่ได้ทันที · รับไฟล์งานที่เอเจนซี่ส่ง → กดยืนยันว่าได้รับ → ให้ดาวและเขียนรีวิว</li>
+<li><b>ช่องวันที่:</b> คลิกแล้วเปิดปฏิทินให้เลือกได้ทุกช่อง</li>
+</ul>
+<h3>ฝั่งธุรกิจ (แยกออกมาที่ /business)</h3>
+<ul>
+<li><b>สมัครเป็นพาร์ทเนอร์:</b> ต้องกรอกเลขใบอนุญาต TAT หรือเลขทะเบียนบริษัท และมีหน้าอธิบายขั้นตอนการตรวจสอบ</li>
+<li><b>พอร์ทัลพาร์ทเนอร์:</b> ดู lead และอัปเดตสถานะ, แก้ไข listing, แชทกับลูกค้า, ส่งงานพร้อมแนบไฟล์</li>
+</ul>
+<h3>ฝั่งผู้ดูแล (/admin)</h3>
+<ul>
+<li><b>Dashboard:</b> KPI, กราฟรายได้แยก B2C/B2B/C2C, traffic, สถานะระบบ, sales funnel</li>
+<li><b>อนุมัติใบสมัคร:</b> ต้องติ๊ก checklist ตรวจตัวตนและใบอนุญาตให้ครบก่อน แล้วเลือกเองว่าจะผูกกับ listing ไหน</li>
+<li><b>จัดการอื่นๆ:</b> จ่าย lead ให้เอเจนซี่, เปิด/ปิด listing, เปลี่ยน role ผู้ใช้</li>
+</ul>
+
+<h2 class="pb">4. ความปลอดภัย</h2>
+<ul>
+<li><b>ควบคุมสิทธิ์ที่ฐานข้อมูล:</b> มี role 3 แบบคือ user, partner และ admin โดยใช้ Row Level Security · ผู้ใช้เปลี่ยน role ของตัวเองไม่ได้ · แต่ละคนเห็นเฉพาะข้อมูลของตัวเอง</li>
+<li><b>การอนุมัติพาร์ทเนอร์:</b> ฐานข้อมูลปฏิเสธการอนุมัติหรือการตั้งสถานะ "จ่ายแล้ว" ถ้ายังไม่ได้ตรวจตัวตนและใบอนุญาต แม้แต่ admin ก็ทำไม่ได้</li>
+<li><b>แชท ไฟล์งาน และรีวิว:</b> เข้าถึงได้เฉพาะลูกค้าของงานนั้น เอเจนซี่ที่ได้รับมอบหมาย และ admin · ระบบตั้งชื่อผู้ส่งเองจึงปลอมตัวไม่ได้ · ข้อความแสดงเป็นข้อความธรรมดาจึงฝังโค้ดไม่ได้ · รีวิวได้เฉพาะลูกค้าที่งานเสร็จแล้ว และได้ครั้งเดียว</li>
+<li><b>ไฟล์รูปและงาน:</b> จำกัดขนาดและชนิดไฟล์ · แต่ละคนอัปโหลดได้เฉพาะในโฟลเดอร์ของตัวเอง</li>
+<li><b>อื่นๆ:</b> ใส่ security headers (CSP, HSTS) · ป้องกันการพาไปเว็บอื่นหลัง login (open redirect) · คีย์ลับไม่เคยถูกส่งไปที่เบราว์เซอร์ · ก่อนเปิดเป็น public ได้สแกน repo แล้วไม่พบคีย์หลุด</li>
+<li><b>การทดสอบ:</b> ทุก migration ทดสอบด้วยผู้ใช้ปลอมแล้ว rollback (ชุดส่งงานและรีวิวทดสอบผ่าน 33/33)</li>
+</ul>
+
+<h2>5. คุณภาพและการทดสอบ</h2>
+<ul>
+<li><b>Type check และ build:</b> astro check ไม่มี error และ build ผ่าน</li>
+<li><b>ทดสอบหน้าเว็บ:</b> ไล่ทดสอบจริงทุกหน้า 42 หน้า ไม่มี console error และไม่มีการเลื่อนแนวนอนที่ความกว้าง 375px</li>
+<li><b>Accessibility:</b> axe ผ่านเรื่อง contrast, ลำดับหัวข้อ, landmark และการกดด้วยคีย์บอร์ด · ขนาดเป้ากดอย่างน้อย 24px</li>
+<li><b>มือถือ:</b> ไม่โหลดโมเดล 3D และ shader บนจอเล็ก หน้าจึงเปิดเร็วขึ้น · ตัววิดีโอโหลดเมื่อกดเล่นเท่านั้น</li>
+<li><b>ฟอนต์และดีไซน์:</b> Bricolage Grotesque, Public Sans และ Anuphan (ภาษาไทย) · โทนสี Jade & Marigold · ใช้ธีมสว่างโดยตั้งใจ</li>
+</ul>
+
+<h2>6. งานที่ส่งในการแข่งขัน</h2>
+<table>
+<tr><th>งาน</th><th>ไฟล์</th></tr>
+<tr><td>ไอเดีย 1 หน้า + 3 ข้อจำกัด, pitch topics, daily plan</td><td>docs/pitch/submission-th.md</td></tr>
+<tr><td>Mind map / ตารางคู่แข่ง 2 ราย / Storyboard 3 ช่อง</td><td>docs/pitch/mindmap-th.html, competitors-th.html, storyboard-th.html</td></tr>
+<tr><td>Wireframe</td><td>Miro frame 3 (ฝั่งผู้ใช้) และ frame 5 (ฝั่งธุรกิจ, admin, แชท)</td></tr>
+<tr><td>Business Model Canvas</td><td>docs/pitch/business-model-canvas-th.pdf / .png</td></tr>
+<tr><td>Prototype + คลิป 2 นาที</td><td>เว็บจริง + docs/pitch/yoo-yaao-demo-2min.mp4 (1:49, พากย์เสียงไทย สร้างด้วย Remotion)</td></tr>
+<tr><td>โครงสไลด์นำเสนอ + คำถามกรรมการ 10 ข้อ</td><td>docs/pitch/deck-outline-th.md</td></tr>
+<tr><td>แผนที่ความรู้ของโปรเจกต์</td><td>graphify-out/graph.html (1,373 nodes, 56 กลุ่ม)</td></tr>
+</table>
+
+<h2>7. สิ่งที่ต้องตั้งค่าเอง <span class="todo">(ยังรอดำเนินการ)</span></h2>
+<ol>
+<li><b>Supabase → Authentication → URL Configuration:</b> Site URL = https://yoo-yaao.vercel.app · Redirect URLs = https://yoo-yaao.vercel.app/** และ http://localhost:4321/** <br>ถ้ายังไม่ตั้ง ลิงก์ login จะพาไปที่ localhost:3000</li>
+<li><b>ตั้งบัญชีตัวเองเป็น admin:</b> login 1 ครั้ง แล้วรันใน SQL Editor: <code>update public.profiles set role='admin' where lower(email)='อีเมลคุณ';</code></li>
+<li><b>Supabase:</b> เปิด Leaked password protection และตรวจว่า Confirm email ยังเปิดอยู่</li>
+<li><b>ไม่บังคับ:</b> ใส่คีย์ Stripe test และ service-role key ใน Vercel เพื่อให้จ่ายเงินจริง (ตอนนี้เป็นโหมดเดโมที่ไม่ตัดเงิน) · ต้องการ login ด้วย Google ให้เปิด Google provider แล้วตั้ง PUBLIC_AUTH_GOOGLE=1</li>
+</ol>
+
+<h2>8. ข้อจำกัดที่ควรรู้ และสิ่งที่ต่อยอดได้</h2>
+<ul>
+<li><b>ข้อมูลตัวอย่าง:</b> ตอนนี้ยังไม่มีเอเจนซี่จริงในระบบ หน้า experts และ admin จึงใช้ข้อมูลตัวอย่างที่ติดป้ายบอกไว้ · traffic และรายได้ใน dashboard ก็เป็นข้อมูลตัวอย่าง จนกว่าจะเชื่อม Vercel Analytics และ Stripe</li>
+<li><b>ยังไม่ได้ทดสอบด้วยบัญชีจริง:</b> แชทแบบ realtime ระหว่าง 2 บัญชี และการส่งงานแบบเต็มลูป ต้องรอตั้งค่าข้อ 7 ก่อน</li>
+<li><b>ยังไม่มีอีเมลแจ้งเตือน:</b> ระบบเตือนของ Pro และการแจ้งตอนเอเจนซี่ส่งงาน ยังไม่ส่งอีเมลจริง (ต้องใช้บริการส่งเมล เช่น Resend)</li>
+<li><b>ต่อยอดได้ (ไว้เล่าตอน pitch):</b> เครื่องคิดค่าปรับ overstay, checklist 7 วันแรกในไทย, แชร์ผล Finder, web push, ชวนเพื่อน, ทริปเมืองรองระหว่างพำนัก, แจ้งเตือนผ่าน LINE, ขยายไปประเทศอื่นใน SEA</li>
+</ul>
+</body>
+</html>
