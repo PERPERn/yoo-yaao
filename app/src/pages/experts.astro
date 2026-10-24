@@ -173,6 +173,24 @@ const faq = [
   const visaSelect = form.querySelector<HTMLSelectElement>('#e-visa');
   if (visa && visaSelect && Array.from(visaSelect.options).some((o) => o.value === visa)) visaSelect.value = visa;
 
+  // Signed in? Fill in who they are so the request (and the chat that follows) uses the same email.
+  void (async () => {
+    try {
+      if (!Object.keys(localStorage).some((k) => /^sb-.+-auth-token$/.test(k))) return;
+      const { getSession, getProfile } = await import('../lib/supabase');
+      const session = await getSession();
+      if (!session) return;
+      const me = await getProfile().catch(() => null);
+      const fill = (id: string, v: string | null | undefined) => {
+        const el = form.querySelector<HTMLInputElement | HTMLSelectElement>(id);
+        if (el && v && !el.value) el.value = v;
+      };
+      fill('#e-name', me?.displayName);
+      fill('#e-email', session.user.email);
+      fill('#e-nat', me?.nationality);
+    } catch {}
+  })();
+
   const validate: Validator = (f) => {
     const e: Record<string, string> = {};
     if (!val(f, 'name')) e['e-name'] = 'Enter your name.';
