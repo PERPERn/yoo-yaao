@@ -154,7 +154,11 @@ table,
 }
 
 /* Running text keeps a readable measure; cards and columns are narrower anyway. */
-:where(main) :where(p, li, dd, blockquote) {
+:where(main) :where(p, dd, blockquote) {
+  max-inline-size: var(--measure);
+}
+/* List items are layout cells (cards, grids) as often as prose, so only prose lists get the cap. */
+:where(main) :where(ul, ol):not([class]) > li {
   max-inline-size: var(--measure);
 }
 :where(.text-center) :where(p) {

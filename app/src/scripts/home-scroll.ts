@@ -16,18 +16,19 @@ type Pose = Partial<HeroPose>;
 
 /**
  * Where the 3D object is while each scene is on screen. A pair = [scene enters, scene leaves].
- * It shows only in hero and finale; elsewhere it is hidden (opacity 0) and parked one
+ * It shows in hero, blueprint (wireframe, above the timeline) and finale; elsewhere it is hidden (opacity 0) and parked one
  * screen above or below its next visible spot, so it scrolls in and out with the content as it fades.
  */
 const HERO: Pose = { x: 0.26, y: -0.02, scale: 0.85 }; // right half: the headline owns the left
 const FINALE: Pose = { x: 0, y: 0.3, scale: 0.34, spin: 0.35 }; // the band above the wordmark
+const BLUEPRINT: Pose = { x: 0.24, y: 0.17, scale: 0.5, lift: 1, glow: 0.6, wire: 1, spin: 0.2 }; // right half, above the timeline
 const away = (p: Pose, dy: number): Pose => ({ ...p, y: (p.y ?? 0) + dy, opacity: 0 });
 const POSES: Record<string, Pose | [Pose, Pose]> = {
   hero: HERO,
   sweep: away(HERO, 1),
   problem: away(FINALE, -1),
   visas: away(FINALE, -1),
-  blueprint: away(FINALE, -1),
+  blueprint: BLUEPRINT,
   cities: away(FINALE, -1),
   buddies: away(FINALE, -1),
   demo: away(FINALE, -1),
