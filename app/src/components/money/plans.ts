@@ -34,7 +34,7 @@ export const VERIFIED_AGENT = {
   perLeadUsd: '40–110',
   features: [
     'Qualified leads from the "Get expert help" form',
-    'Licence checked before you go live',
+    'Business registration checked before you go live',
     '"Verified agent" badge on visa guides',
     'Or pay per lead instead of monthly',
   ],
@@ -48,10 +48,10 @@ export const CITY_OPTIONS = [
 
 export const cityLabel = (slug: string) => CITY_OPTIONS.find((c) => c.value === slug)?.label ?? slug;
 
-/** Pro-only features for the Free vs Pro comparison. */
+/** Free features for the Free vs Pro comparison (Pro-only ones live in data/products.ts). */
 export const FREE_FEATURES = [
   'Visa Finder and every visa guide',
-  '90-day, stay and tax counters (on this device)',
-  'Document checklists (on this device)',
-  'Add deadlines to your calendar (.ics)',
+  'You count it yourself: 90-day, stay and 180-day tax counters, on this device',
+  'Document checklists, on this device',
+  'Add deadlines to your own calendar (.ics)',
 ];

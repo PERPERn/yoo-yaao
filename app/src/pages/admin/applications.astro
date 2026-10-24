@@ -154,15 +154,15 @@ import Button from '../../components/ui/Button.astro';
     q('[data-lic-no-wrap]').hidden = !a.license_no && !licence;
     q('[data-lic-wrap]').hidden = !licence;
     q('[data-lic-hint]').textContent = a.license_no
-      ? `Look up ${a.license_no} with the Department of Tourism or DBD and confirm it belongs to ${name}.`
-      : 'No licence number given. Ask the applicant for it before ticking this.';
+      ? `Look up ${a.license_no} with DBD (or the Lawyers Council for a law firm) and confirm it belongs to ${name}.`
+      : 'No registration number given. Ask the applicant for it before ticking this.';
 
     id.checked = a.verified_identity;
     lic.checked = a.verified_license;
     note.value = a.review_note ?? '';
 
     /** Approve reads the boxes as ticked now; the chip shows what is saved. */
-    const missing = () => [!id.checked && 'Identity checked', licence && !lic.checked && 'Licence checked'].filter(Boolean) as string[];
+    const missing = () => [!id.checked && 'Identity checked', licence && !lic.checked && 'Registration checked'].filter(Boolean) as string[];
     function sync() {
       stamp(tr, 'status', ...STATUS[a.status]);
       stamp(tr, 'verif', ...verification(type, a));

@@ -148,7 +148,7 @@ const Intro: React.FC<{ l: Line }> = ({ l }) => {
 const PROBLEM = [
   ['Visa-free stay', '60 → 30 days'],
   ['Official DTV fee vs agent', '฿10,000 vs ฿50,000+'],
-  ['Late 90-day report', '฿1,600–10,000 fine'],
+  ['Late 90-day report', '฿2,000 fine'],
 ];
 const Problem: React.FC<{ l: Line }> = ({ l }) => {
   const f = useCurrentFrame();

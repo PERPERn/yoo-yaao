@@ -99,7 +99,7 @@ const faq = [
           <Field id="e-consent" label="Consent" group hideLabel>
             <label class="choice" data-group="e-consent">
               <input type="checkbox" name="consent" value="yes" />
-              <span>I agree that {SITE.name} shares my request with up to 2 licensed partner agents.</span>
+              <span>I agree that {SITE.name} shares my form details (name, email, nationality, visa and message) with up to 2 verified agencies. Required.</span>
             </label>
           </Field>
           <div data-form-error hidden>
@@ -113,6 +113,7 @@ const faq = [
           <span class="done__mark"><Icon name="check" size={28} strokeWidth={2.25} /></span>
           <h2>Request sent</h2>
           <p>A licensed agent will email you within 1 business day. Reference <strong data-ref class="tabular"></strong>.</p>
+          <p class="small muted">As you agreed, we share your form details with up to 2 verified agencies and no one else.</p>
           <p class="small muted">You can also chat with your agency once they're assigned. Sign in with the same email to open Messages.</p>
           <div class="cluster">
             <Button href="/messages" iconRight="arrow-right" data-chat-link>Message this agency</Button>
@@ -402,6 +403,7 @@ const faq = [
       visaSlug: val(form, 'visa'),
       message: `[${ref}] Timeline: ${val(form, 'timeline')}\n\n${val(form, 'message')}`,
       source: 'experts',
+      consent: checkedValues(form, 'consent').length > 0,
       website: val(form, 'website'),
     });
     restore();

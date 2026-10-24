@@ -11,10 +11,8 @@ export const products: Product[] = [
     priceUsd: 8,
     interval: 'month',
     features: [
-      'Save your stays and visa dates',
-      'Email reminders: 90-day report, visa expiry, TM30',
-      'Document checklist tracker synced across devices',
-      '180-day tax-residency counter',
+      'We email you before your 90-day report, visa expiry and TM30',
+      'Your stays, dates and checklists sync across your devices',
       'Alerts when Thai visa rules change',
     ],
   },

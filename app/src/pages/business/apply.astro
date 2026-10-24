@@ -53,8 +53,8 @@ import { LISTING, VERIFIED_AGENT, CITY_OPTIONS } from '../../components/money/pl
           <Input
             name="licenseNo"
             id="p-licence"
-            label="Licence number"
-            hint="TAT licence or business registration number"
+            label="Registration or licence number"
+            hint="Business registration (DBD) number or, for law firms, Lawyers Council licence number"
             maxlength="80"
             required
           />
@@ -67,7 +67,7 @@ import { LISTING, VERIFIED_AGENT, CITY_OPTIONS } from '../../components/money/pl
         <Field id="p-consent" label="Verification consent" group hideLabel>
           <label class="choice" data-group="p-consent">
             <input type="checkbox" name="consent" value="yes" />
-            <span>We verify your identity and licence before your listing goes live</span>
+            <span>We verify your identity and registration before your listing goes live</span>
           </label>
         </Field>
         <div data-form-error hidden>
@@ -149,7 +149,7 @@ import { LISTING, VERIFIED_AGENT, CITY_OPTIONS } from '../../components/money/pl
     if (!val(f, 'businessName')) e['p-name'] = 'Enter your business name.';
     if (!val(f, 'kind')) e['p-kind'] = 'Choose what kind of business you run.';
     if (!val(f, 'city')) e['p-city'] = 'Choose a city.';
-    if (val(f, 'kind') === 'agency' && !val(f, 'licenseNo')) e['p-licence'] = 'Agencies need a TAT licence or business registration number.';
+    if (val(f, 'kind') === 'agency' && !val(f, 'licenseNo')) e['p-licence'] = 'Agencies need a business registration (DBD) number or, for law firms, a Lawyers Council licence number.';
     const url = val(f, 'url');
     if (url && !/^https?:\/\/[^\s.]+\.[^\s]+$/i.test(url)) e['p-url'] = 'Enter the full address, starting with https://';
     const email = val(f, 'email');

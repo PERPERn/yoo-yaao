@@ -39,7 +39,7 @@ export const POST: APIRoute = async ({ request }) => {
   if (!row.email) details.email = 'A valid email is required';
   if (row.message === undefined) details.message = 'Max 2000 characters';
   if (row.license_no === undefined) details.licenseNo = 'Max 80 characters';
-  if (row.kind === 'agency' && !row.license_no) details.licenseNo = 'Agencies need a licence or registration number';
+  if (row.kind === 'agency' && !row.license_no) details.licenseNo = 'Agencies need a DBD registration or Lawyers Council licence number';
   if (Object.keys(details).length) return errorJson('validation_failed', 422, details);
 
   const sb = getAnonServerClient();

@@ -201,6 +201,19 @@ const d = FINDER_DEFAULTS;
           </Callout>
         </div>
 
+        <div data-study hidden>
+          <Callout tone="info" title="The ED visa isn't covered yet">
+            <p>Full-time study in Thailand needs a Non-Immigrant ED (education) visa. Yoo Yaao doesn't cover it yet, so none of the 5 visas below fit. Read the official requirements first.</p>
+            <div class="cluster f-gap">
+              <Button
+                href="https://image.mfa.go.th/mfa/0/n3gTFT2TOE/NON-IMMIGRANT_VISA_%28ED%29_FOR_EDUCATION_-_To_study_or_take_academic_course_in_Thailand-newL.pdf"
+                variant="secondary"
+                external>Ministry of Foreign Affairs: ED visa (PDF)</Button
+              >
+            </div>
+          </Callout>
+        </div>
+
         <h2 class="f-h2">All 5 visas, ranked for you</h2>
         <ol class="f-list" data-list></ol>
         <details class="f-more" data-more hidden>
@@ -333,8 +346,12 @@ const d = FINDER_DEFAULTS;
     return ok ? out : null;
   }
 
+  // Answers live in the hash (#results?purpose=…) so they never reach the server or its logs.
+  // Old shared links put them in ?query; those still open.
+  const RESULTS_HASH = '#results?';
   function fromQuery(): FinderInput | null {
-    const q = new URLSearchParams(location.search);
+    const h = location.hash.startsWith(RESULTS_HASH) ? location.hash.slice(RESULTS_HASH.length) : '';
+    const q = new URLSearchParams(h || location.search);
     if (!q.has('purpose')) return null;
     return validAnswers({
       purpose: q.get('purpose'),
@@ -463,7 +480,8 @@ const d = FINDER_DEFAULTS;
     const guide = $<HTMLAnchorElement>('[data-top-guide]');
     guide.href = allNo ? '/visas/visa-exempt' : `/visas/${top.slug}`;
     guide.querySelector('.btn__label')!.textContent = allNo ? 'Read the Visa-exempt guide' : `Read the ${topVisa.shortName} guide`;
-    $('[data-empty]').hidden = !allNo;
+    $('[data-empty]').hidden = !allNo || a.purpose === 'study';
+    $('[data-study]').hidden = a.purpose !== 'study';
 
     $('[data-list]').innerHTML = yes.map((r, i) => card(r, i + 1)).join('');
     const more = $<HTMLDetailsElement>('[data-more]');
@@ -492,7 +510,7 @@ const d = FINDER_DEFAULTS;
     const a = validAnswers(readForm());
     if (!a) return goStep(1);
     save(a);
-    history.pushState(null, '', `${location.pathname}?${toQuery(a)}#results`);
+    history.pushState(null, '', `${location.pathname}${RESULTS_HASH}${toQuery(a)}`);
     renderResults(a, true);
   }
 
@@ -546,8 +564,8 @@ const d = FINDER_DEFAULTS;
 
   $('[data-share]').addEventListener('click', async () => {
     const status = $('[data-share-status]');
-    // The query holds only the six answers (no name or email), so the link is safe to share.
-    const url = `${location.origin}${location.pathname}${location.search}`;
+    // The hash holds only the six answers (no name or email) and is never sent to the server.
+    const url = `${location.origin}${location.pathname}${location.hash}`;
     if (navigator.share) {
       try {
         await navigator.share({ title: 'My Thai visa match — Yoo Yaao', url });
@@ -582,6 +600,9 @@ const d = FINDER_DEFAULTS;
     goStep(1, false, focus);
   }
 
+  // Legacy ?query link: move the answers into the hash so they don't stay in the address bar.
+  if (new URLSearchParams(location.search).has('purpose') && !location.hash.startsWith(RESULTS_HASH))
+    history.replaceState(null, '', `${location.pathname}${RESULTS_HASH}${location.search.slice(1)}`);
   const stored = fromStorage();
   if (stored) fillForm(stored);
   else updateUsd();

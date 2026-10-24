@@ -81,7 +81,7 @@ export type BuddyApplication = {
 
 /** Verification fields on both application tables. license_no comes from the public form; the rest are admin-only. */
 export type ApplicationReview = {
-  license_no: string | null; // agencies: TAT licence or business registration no.
+  license_no: string | null; // agencies: DBD business registration no. or, for law firms, Lawyers Council licence no.
   verified_identity: boolean;
   verified_license: boolean;
   review_note: string | null;

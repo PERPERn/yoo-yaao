@@ -219,7 +219,15 @@ const nextPath = `/visas/${slug}`;
   {
     insurance.length > 0 && (
       <Section id="insurance" spacing="tight" title="Insurance you may need" width="narrow">
-        <p class="muted">{visa.shortName} applications often ask for health insurance. These providers sell long-stay cover:</p>
+        {slug === 'dtv' ? (
+          <p class="muted">
+            Some embassies may ask DTV applicants for health insurance. We found no official DTV checklist that requires it, so check your embassy's page first.{' '}
+            {visa.sources[0] && <SourceTag source={visa.sources.find((s) => s.tier === 'primary') ?? visa.sources[0]} verifiedAt={visa.verifiedAt} compact />}
+          </p>
+        ) : (
+          <p class="muted">{visa.shortName} applications ask for health insurance (see the requirements above).</p>
+        )}
+        <p class="muted">These providers sell long-stay cover. A "Paid link" badge marks any link that earns us a commission.</p>
         <ul class="ins">
           {insurance.map((l) => (
             <li>

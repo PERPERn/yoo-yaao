@@ -33,6 +33,8 @@ export const POST: APIRoute = async ({ request }) => {
   if (row.message === undefined) details.message = 'Max 2000 characters';
   if (row.source === undefined) details.source = 'Max 120 characters';
   if (row.agent_id === undefined) details.agentId = 'Must be an agency id';
+  // PDPA: the /experts form shares details with up to 2 agencies, so explicit consent is required.
+  if (row.source === 'experts' && body.consent !== true) details.consent = 'Consent is required to share your request';
   if (Object.keys(details).length) return errorJson('validation_failed', 422, details);
 
   const sb = getAnonServerClient();

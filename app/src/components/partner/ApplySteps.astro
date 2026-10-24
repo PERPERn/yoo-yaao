@@ -14,7 +14,7 @@ const { current = 0, class: className, ...rest } = Astro.props;
 const APPLY_STEPS = [
   { title: 'Apply', body: 'Two minutes: your business, city and contact email.' },
   { title: 'Confirm email', body: 'Click the link we send, so we know the address is yours.' },
-  { title: 'We verify identity & licence', body: 'A person on our team checks your documents. 1–2 business days.' },
+  { title: 'We verify identity & registration', body: 'A person on our team checks your documents. 1–2 business days.' },
   { title: 'Approved: portal access', body: 'Your listing goes live and you can manage leads in the partner portal.' },
 ];
 const state = (i: number) => (i + 1 < current ? 'done' : i + 1 === current ? 'current' : 'todo');
