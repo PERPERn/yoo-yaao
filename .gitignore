@@ -27,6 +27,8 @@ REPOKUB-STACK.md
 /*.jpeg
 /*.png
 /*.pdf
+/*.mp4
+/*.MP4
 /package.json
 /package-lock.json
 
