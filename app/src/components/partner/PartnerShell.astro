@@ -31,6 +31,15 @@ const visaNames = JSON.stringify(Object.fromEntries(visas.map((v) => [v.slug, v.
 
 <Business title={title} description="Partner portal: your application, listing and leads." noindex>
   <div class="pp container" data-pp data-visas={visaNames}>
+    <header class="pp-head band theme-night">
+      <div class="pp-head__text">
+        <p class="pp-eyebrow">Partner portal<span data-p-who></span></p>
+        <h1 class="pp-title">{heading}</h1>
+        <p class="pp-lede">{lede}</p>
+      </div>
+      <Button variant="ghost" size="sm" data-p-signout data-p-head-signout hidden>Sign out</Button>
+    </header>
+
     <!-- Demo: no session. Shown before anything else so judges can't miss it. -->
     <div class="pp-demo" data-p-demo role="status" hidden>
       <span class="pp-demo__tag"><Icon name="info" size={18} /> Demo view — sample data</span>
@@ -41,15 +50,6 @@ const visaNames = JSON.stringify(Object.fromEntries(visas.map((v) => [v.slug, v.
         Sign in as a partner
       </Button>
     </div>
-
-    <header class="pp-head">
-      <div class="pp-head__text">
-        <p class="pp-eyebrow">Partner portal<span data-p-who></span></p>
-        <h1 class="pp-title">{heading}</h1>
-        <p class="pp-lede">{lede}</p>
-      </div>
-      <Button variant="ghost" size="sm" data-p-signout data-p-head-signout hidden>Sign out</Button>
-    </header>
 
     <nav class="pp-tabs" aria-label="Partner portal">
       {

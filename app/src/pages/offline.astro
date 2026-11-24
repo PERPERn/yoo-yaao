@@ -11,7 +11,7 @@ const links = [
 ---
 
 <Base title="You're offline" description="You're offline. Cached guides and tools still work." noindex>
-  <div class="container-narrow off">
+  <div class="container-narrow off band theme-night">
     <span class="off__icon"><Icon name="wifi" size={32} /></span>
     <h1>You're offline</h1>
     <p class="lead">Cached guides and tools still work. Payments, booking and your account need a connection.</p>
@@ -37,7 +37,7 @@ const links = [
     display: grid;
     gap: var(--space-6);
     justify-items: start;
-    padding-block: var(--space-section);
+    padding-block: var(--space-section) !important;
   }
   .off__icon {
     display: grid;

@@ -77,7 +77,7 @@ const year = new Date().getFullYear();
     <!-- PWA -->
     <link rel="manifest" href="/manifest.webmanifest" />
     <!-- Light only, on purpose (docs/design.md § Dark mode) -->
-    <meta name="theme-color" content="#eef4f0" />
+    <meta name="theme-color" content="#17463f" />
     <meta name="color-scheme" content="light" />
     <link rel="preload" href={bodyFont} as="font" type="font/woff2" crossorigin />
     <link rel="preload" href={displayFont} as="font" type="font/woff2" crossorigin />
@@ -91,7 +91,7 @@ const year = new Date().getFullYear();
   <body>
     <a class="skip-link" href="#main">Skip to content</a>
 
-    <header class="site-header" data-site-header data-over={over || undefined}>
+    <header class="site-header theme-night" data-site-header data-over={over || undefined}>
       <div class="container site-header__bar">
         <Logo />
 
@@ -154,6 +154,7 @@ const year = new Date().getFullYear();
     </main>
 
     <footer class="site-footer">
+      <div class="arcade" aria-hidden="true"></div>
       <div class="container site-footer__inner">
         <div class="site-footer__top">
           <div class="site-footer__brand">
@@ -274,41 +275,6 @@ const year = new Date().getFullYear();
 <style>
   /* ---------- Header ---------- */
   .site-header {
-    position: sticky;
-    top: 0;
-    z-index: var(--z-header);
-    background: var(--color-bg);
-    padding-top: env(safe-area-inset-top);
-    transition: box-shadow var(--duration-base) var(--ease-out);
-  }
-  /* Glass lives on a pseudo-element: backdrop-filter on the header itself would become the
-     containing block of the fixed .mobile-nav and clip it to the bar. Static blur, never animated. */
-  @supports (backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px)) {
-    .site-header {
-      background: transparent;
-    }
-    .site-header::before {
-      content: '';
-      position: absolute;
-      inset: 0;
-      z-index: -1;
-      background: var(--header-glass);
-      -webkit-backdrop-filter: blur(16px) saturate(1.4);
-      backdrop-filter: blur(16px) saturate(1.4);
-    }
-    :global(html.nav-open) .site-header::before {
-      background: var(--color-bg);
-    }
-  }
-  .site-header[data-scrolled] {
-    box-shadow:
-      inset 0 -1px 0 var(--highlight),
-      0 1px 0 var(--color-border),
-      0 10px 28px -18px rgb(var(--shadow-rgb) / calc(0.3 * var(--shadow-k)));
-  }
-  /* Over a stage: no glass, night colours, so the render runs to the top edge. */
-  .site-header[data-over]:not([data-scrolled]) {
-    --color-ink: var(--night-ink);
     --color-ink-2: #d4e2dd;
     --color-brand: var(--night-ink);
     --color-brand-strong: #fff;
@@ -316,25 +282,39 @@ const year = new Date().getFullYear();
     --color-on-brand: var(--night-bg);
     --color-surface-2: rgb(255 255 255 / 0.12);
     --color-focus: var(--night-accent);
-    color: var(--night-ink);
+    position: sticky;
+    top: 0;
+    z-index: var(--z-header);
+    background: none;
+    padding-top: env(safe-area-inset-top);
+    transition: box-shadow var(--duration-base) var(--ease-out);
   }
+  /* The fill lives on a pseudo-element: a filter on the header itself would become the containing
+     block of the fixed .mobile-nav and clip it to the bar. */
+  .site-header::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    z-index: -1;
+    background: var(--wall-bg);
+  }
+  :global(html.nav-open) .site-header::before {
+    background: var(--night-bg) !important;
+  }
+  .site-header[data-scrolled] {
+    box-shadow:
+      inset 0 -1px 0 var(--highlight),
+      0 1px 0 var(--color-border),
+      0 10px 28px -18px rgb(var(--shadow-rgb) / calc(0.3 * var(--shadow-k)));
+  }
+  /* Over a stage: no fill, so the render runs to the top edge. */
   .site-header[data-over]:not([data-scrolled])::before {
     background: linear-gradient(180deg, rgb(5 28 30 / 0.72), transparent);
     -webkit-backdrop-filter: none;
     backdrop-filter: none;
   }
-  :global(html.nav-open) .site-header[data-over] {
-    --color-ink: #10292b;
-    --color-ink-2: #4b5b5a;
-    --color-brand: #0d6461;
-    --color-brand-strong: #0a4f4d;
-    --color-brand-tint: #d6ebe7;
-    --color-on-brand: #fff;
-    --color-surface-2: #e2ece6;
-    color: var(--color-ink);
-  }
-  :global(html.nav-open) .site-header[data-over]::before {
-    background: var(--color-bg) !important;
+  .site-header[data-over]:not([data-scrolled]) {
+    box-shadow: none;
   }
   .site-nav__link:active,
   .site-header__login:active,
@@ -516,9 +496,11 @@ const year = new Date().getFullYear();
 
   /* ---------- Footer ---------- */
   .site-footer {
-    background: var(--color-inverse-bg);
+    --color-brand: var(--night-ink); /* logo tile */
+    --color-on-brand: var(--night-bg);
+    background: var(--wall-bg);
+    border-top: 3px solid var(--night-accent);
     color: var(--color-inverse-ink);
-    padding-top: clamp(var(--space-12), 7vw, var(--space-24));
     padding-bottom: calc(var(--space-8) + env(safe-area-inset-bottom));
   }
   .site-footer a {
@@ -530,6 +512,7 @@ const year = new Date().getFullYear();
     text-decoration: underline;
   }
   .site-footer__inner {
+    padding-top: clamp(var(--space-12), 6vw, var(--space-20));
     display: flex;
     flex-direction: column;
     gap: clamp(var(--space-10), 6vw, var(--space-16));
@@ -554,7 +537,7 @@ const year = new Date().getFullYear();
   }
   .site-footer__tagline {
     font-size: var(--text-lg);
-    color: var(--color-inverse-ink-2);
+    color: #c6d8d3;
     max-width: 32ch;
   }
   .site-footer__nav {
@@ -566,7 +549,7 @@ const year = new Date().getFullYear();
     margin-bottom: var(--space-3);
     font-size: var(--text-sm);
     font-weight: var(--weight-semibold);
-    color: var(--color-inverse-ink-2);
+    color: #c6d8d3;
   }
   .site-footer__nav ul {
     list-style: none;
@@ -587,7 +570,7 @@ const year = new Date().getFullYear();
     padding-top: var(--space-6);
     box-shadow: 0 -1px 0 rgb(255 255 255 / 0.12);
     font-size: var(--text-sm);
-    color: var(--color-inverse-ink-2);
+    color: #c6d8d3;
   }
   @media (min-width: 60rem) {
     .site-footer__legal {

@@ -6,8 +6,8 @@ import { visas } from '../data/visas';
 ---
 
 <Base title="Page not found" description="This page took a wrong turn." noindex>
-  <section class="nf">
-    <div class="container nf__grid">
+  <section class="nf theme-night">
+    <div class="container nf__grid band theme-night">
       <div>
         <p class="nf__code" aria-hidden="true">404</p>
         <h1 class="nf__title">This page took a wrong turn.</h1>
@@ -18,7 +18,7 @@ import { visas } from '../data/visas';
           <Button href="/" variant="ghost">Home</Button>
         </div>
       </div>
-      <nav class="nf__visas" aria-labelledby="nf-visas">
+      <nav class="nf__visas theme-light" aria-labelledby="nf-visas">
         <h2 id="nf-visas">Looking for a visa guide?</h2>
         <ul>
           {
@@ -39,7 +39,7 @@ import { visas } from '../data/visas';
 
 <style>
   .nf {
-    padding-block: var(--space-16) var(--space-section);
+    background: none;
   }
   .nf__grid {
     display: grid;
@@ -57,7 +57,7 @@ import { visas } from '../data/visas';
     font-weight: var(--weight-bold);
     line-height: 0.9;
     letter-spacing: var(--tracking-giant);
-    color: var(--color-brand-tint);
+    color: var(--night-accent);
   }
   .nf__title {
     margin-top: var(--space-4);

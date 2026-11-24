@@ -105,7 +105,7 @@ const googleOn = import.meta.env.PUBLIC_AUTH_GOOGLE === '1';
     </div>
 
     <!-- Logged out -->
-    <div data-view="login" hidden class="login">
+    <div data-view="login" hidden class="login band band--art theme-night" style="--band-art: url(/media/stage/visa-exempt.webp)">
       <div class="login__intro stack" style="--stack-gap: var(--space-4)">
         <h2 class="acc-title" data-view-title>Log in or sign up</h2>
         <p class="lead">No password needed. We'll email you a secure link.</p>
@@ -116,7 +116,7 @@ const googleOn = import.meta.env.PUBLIC_AUTH_GOOGLE === '1';
         </ol>
         <p class="muted" data-intent-note hidden></p>
       </div>
-      <div class="form-panel">
+      <div class="form-panel theme-light">
         <div data-login-expired hidden>
           <Callout tone="warning" title="That link has expired or was already used">
             Each link works once, and sending a new one cancels the old ones. Enter your email for a fresh link.
@@ -172,12 +172,12 @@ const googleOn = import.meta.env.PUBLIC_AUTH_GOOGLE === '1';
     </div>
 
     <!-- First-run setup / edit profile -->
-    <div data-view="setup" hidden class="login">
+    <div data-view="setup" hidden class="login band band--art theme-night" style="--band-art: url(/media/stage/dtv.webp)">
       <div class="login__intro stack" style="--stack-gap: var(--space-4)">
         <h2 class="acc-title" data-view-title data-setup-title>Set up your profile</h2>
         <p class="lead" data-setup-lead>About a minute. We use your visa and entry date to pre-fill your stay, and you can change anything later.</p>
       </div>
-      <form class="form-panel form" data-profile-form novalidate>
+      <form class="form-panel form theme-light" data-profile-form novalidate>
         <div class="ph">
           <span class="ph__preview" data-ph-preview aria-hidden="true"></span>
           <div class="stack" style="--stack-gap: var(--space-1)">
@@ -206,7 +206,7 @@ const googleOn = import.meta.env.PUBLIC_AUTH_GOOGLE === '1';
 
     <!-- Logged in -->
     <div data-view="app" hidden class="app">
-      <header class="app__head">
+      <header class="app__head band theme-night">
         <div class="app__who">
           <span class="ph__preview app__avatar" data-me-avatar aria-hidden="true"></span>
           <div class="stack" style="--stack-gap: var(--space-2)">
@@ -360,7 +360,7 @@ const googleOn = import.meta.env.PUBLIC_AUTH_GOOGLE === '1';
 
 <style>
   .acct {
-    padding-block: clamp(var(--space-8), 5vw, var(--space-16)) var(--space-section);
+    padding-block: 0 var(--space-section);
     display: grid;
     gap: var(--space-8);
   }
@@ -412,14 +412,10 @@ const googleOn = import.meta.env.PUBLIC_AUTH_GOOGLE === '1';
   }
   .login {
     display: grid;
-    gap: var(--space-8);
-    max-width: 64rem;
+    gap: var(--space-6);
   }
-  @media (min-width: 56rem) {
-    .login {
-      grid-template-columns: 1fr 1fr;
-      align-items: start;
-    }
+  .acct > :is(.loading, .narrow, .ret) {
+    margin-top: var(--space-10);
   }
   /* View titles swap between h1 (visible view) and h2 (hidden views); same look either way. */
   .acc-title {

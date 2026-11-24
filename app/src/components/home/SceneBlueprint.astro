@@ -14,7 +14,7 @@ const checks = ['TM30 address notice filed', 'Reminder 15 days before each repor
 const x = (d: number) => 50 + (d / 360) * 540;
 ---
 
-<section class="scene scene--blueprint section--night blueprint-grid" data-scene="blueprint" aria-labelledby="bp-title">
+<section class="scene scene--blueprint section--night" data-scene="blueprint" aria-labelledby="bp-title">
   <div class="container blueprint">
     <div class="bp__copy stack" data-reveal>
       <h2 id="bp-title" class="display-6xl bp__title">Never miss a 90-day report.</h2>
@@ -61,6 +61,9 @@ const x = (d: number) => 50 + (d / 360) * 540;
 
 <style>
   .scene--blueprint {
+    --color-ink-2: #c6d8d3;
+    background: var(--wall-bg);
+    border-block: 3px solid var(--night-accent);
     padding-block: var(--space-section);
   }
   .blueprint {
@@ -119,12 +122,12 @@ const x = (d: number) => 50 + (d / 360) * 540;
   }
   .bp__line {
     fill: none;
-    stroke: var(--night-line-strong);
+    stroke: var(--night-accent);
     stroke-width: 3;
   }
   .bp__mark circle {
-    fill: var(--night-bg);
-    stroke: var(--night-line-strong);
+    fill: var(--lacquer);
+    stroke: var(--night-accent);
     stroke-width: 3;
   }
   .bp__day {
@@ -139,21 +142,14 @@ const x = (d: number) => 50 + (d / 360) * 540;
     color: var(--color-ink-2);
     margin-top: var(--space-2);
   }
-  /* Solid night panels: the measuring grid frames the copy and timeline but never runs through text. */
   .bp__copy,
   .bp__figure {
-    background: var(--night-bg);
-    border-radius: var(--radius-2xl);
-    padding: var(--space-4);
+    padding: var(--space-4) 0;
   }
   @media (min-width: 60rem) {
     .blueprint {
       grid-template-columns: 1fr 1fr;
       align-items: center;
-    }
-    .bp__copy,
-    .bp__figure {
-      padding: var(--space-8);
     }
     .bp__svg {
       min-width: 0;

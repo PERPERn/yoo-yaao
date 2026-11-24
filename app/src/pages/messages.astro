@@ -7,16 +7,16 @@ import Chat from '../components/chat/Chat.astro';
 
 <Base title="Messages" description="Your conversations with licensed visa agencies on Yoo Yaao." noindex>
   <div class="container msgs">
+    <header class="msgs-head band theme-night">
+      <h1 class="msgs-title">Messages</h1>
+      <p class="msgs-lede">Talk to the licensed agency matched to your visa request. Sign in with the email you used on the request.</p>
+    </header>
+
     <div class="msgs-demo" data-msgs-demo role="status" hidden>
       <span class="msgs-demo__tag"><Icon name="info" size={18} /> Demo view — sample data</span>
       <p class="msgs-demo__text">You're not signed in, so this shows sample chats. Try sending a message; nothing is saved.</p>
       <Button href="/account?next=/messages" variant="secondary" size="sm" iconRight="arrow-right">Sign in to see yours</Button>
     </div>
-
-    <header class="msgs-head">
-      <h1 class="msgs-title">Messages</h1>
-      <p class="msgs-lede">Talk to the licensed agency matched to your visa request. Sign in with the email you used on the request.</p>
-    </header>
 
     <Chat
       side="customer"
@@ -31,7 +31,11 @@ import Chat from '../components/chat/Chat.astro';
   .msgs {
     display: grid;
     gap: var(--space-6);
-    padding-block: clamp(var(--space-6), 4vw, var(--space-12)) var(--space-section);
+    padding-block: 0 var(--space-section);
+  }
+  .msgs-head {
+    display: grid;
+    gap: var(--space-2);
   }
   .msgs-title {
     font-size: var(--text-3xl);

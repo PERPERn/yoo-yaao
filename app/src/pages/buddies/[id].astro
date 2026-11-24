@@ -37,7 +37,7 @@ const TIMES = [
   title={`${name}, Local Buddy in ${city}`}
   description={`Book a 60-minute session with ${name} in ${city}: ${buddy.services.join(', ').toLowerCase()}. ${money(buddy.priceUsd)} per session.`}
 >
-  <div class="container">
+  <div class="container band theme-night">
     <nav aria-label="Breadcrumb" class="crumbs">
       <ol>
         <li><a href="/">Home</a></li>
@@ -46,10 +46,6 @@ const TIMES = [
         <li aria-current="page">{name}</li>
       </ol>
     </nav>
-  </div>
-
-  <div class="container profile">
-    <div class="profile__main stack" style="--stack-gap: var(--space-10)">
       <header class="head" data-intro>
         <Avatar name={name} src={buddy.avatarUrl ?? `/images/buddies/${buddy.id}.svg`} size="xl" />
         <div class="stack" style="--stack-gap: var(--space-2)">
@@ -61,7 +57,10 @@ const TIMES = [
           <Rating value={buddy.rating} count={buddy.sessions} />
         </div>
       </header>
+  </div>
 
+  <div class="container profile">
+    <div class="profile__main stack" style="--stack-gap: var(--space-10)">
       <Callout tone="warning" title="Fictional profile">{DEMO_NOTICE}</Callout>
 
       <section aria-labelledby="about-title" class="stack" style="--stack-gap: var(--space-3)" data-reveal>

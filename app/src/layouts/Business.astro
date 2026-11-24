@@ -51,7 +51,7 @@ const year = new Date().getFullYear();
     <meta property="og:url" content={canonicalUrl} />
     <meta property="og:image" content={imageUrl} />
     <meta name="twitter:card" content="summary_large_image" />
-    <meta name="theme-color" content="#0b1f21" />
+    <meta name="theme-color" content="#17463f" />
     <link rel="manifest" href="/manifest.webmanifest" />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <link rel="apple-touch-icon" href="/icons/icon-192.png" />
@@ -94,6 +94,7 @@ const year = new Date().getFullYear();
     </main>
 
     <footer class="biz-foot">
+      <div class="arcade" aria-hidden="true"></div>
       <div class="container biz-foot__inner">
         <p class="biz-foot__brand"><Logo href={null} size="sm" /> <span>for Business</span></p>
         <ul class="biz-foot__links">
@@ -121,10 +122,11 @@ const year = new Date().getFullYear();
   }
   /* Deep-ink strip: the visual cue that this is the business side. */
   .biz-head {
+    --color-brand: var(--night-ink); /* logo tile */
+    --color-on-brand: var(--night-bg);
     --color-focus: var(--color-accent);
-    background: var(--color-inverse-bg);
+    background: var(--wall-bg);
     color: var(--color-inverse-ink);
-    border-bottom: 3px solid var(--color-accent);
   }
   .biz-head__bar {
     display: flex;
@@ -165,7 +167,7 @@ const year = new Date().getFullYear();
     align-items: center;
     gap: var(--space-1);
     min-height: var(--tap-min);
-    color: var(--color-inverse-ink-2);
+    color: #c6d8d3;
     font-size: var(--text-sm);
     text-decoration: none;
   }
@@ -212,14 +214,18 @@ const year = new Date().getFullYear();
   }
 
   .biz-foot {
+    --color-brand: var(--night-ink); /* logo tile */
+    --color-on-brand: var(--night-bg);
     margin-top: var(--space-section);
-    background: var(--color-inverse-bg);
-    color: var(--color-inverse-ink-2);
-    padding-block: var(--space-10) calc(var(--space-8) + env(safe-area-inset-bottom));
+    background: var(--wall-bg);
+    border-top: 3px solid var(--night-accent);
+    color: #c6d8d3;
+    padding-block: 0 calc(var(--space-8) + env(safe-area-inset-bottom));
     font-size: var(--text-sm);
     --color-focus: var(--color-accent);
   }
   .biz-foot__inner {
+    padding-top: var(--space-10);
     display: grid;
     gap: var(--space-5);
   }

@@ -4,7 +4,7 @@ import ShaderBg from '../core/ShaderBg.astro';
 import { SITE } from '../../config/site';
 ---
 
-<section class="scene scene--finale overflow-clip" data-scene="finale" aria-labelledby="finale-title">
+<section class="scene scene--finale overflow-clip theme-night" data-scene="finale" aria-labelledby="finale-title">
   <ShaderBg />
   <svg class="finale__mark" viewBox="0 0 1000 220" aria-hidden="true" focusable="false">
     <text x="500" y="178" text-anchor="middle" textLength="960" lengthAdjust="spacingAndGlyphs" data-finale-word>
@@ -20,6 +20,11 @@ import { SITE } from '../../config/site';
 
 <style>
   .scene--finale {
+    --color-ink-2: #c6d8d3;
+    --color-bg: #17463f; /* the shader mixes these: lacquer, teal, gold */
+    --color-brand-tint: #1f5f58;
+    --color-accent-tint: #5a4a1e;
+    background: var(--wall-bg);
     position: relative;
     isolation: isolate; /* keeps ShaderBg (z -1) inside the scene */
     min-height: 100svh;
@@ -49,7 +54,7 @@ import { SITE } from '../../config/site';
     font-size: 200px;
     letter-spacing: var(--tracking-giant);
     fill: none;
-    stroke: var(--color-brand);
+    stroke: var(--night-accent);
     stroke-width: 2;
   }
   .finale__copy {

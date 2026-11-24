@@ -53,6 +53,10 @@ const support = `mailto:${SITE.supportEmail}`;
     data-demo-interval={demoProduct?.interval ?? ''}
     data-products={JSON.stringify(productNames)}
   >
+    <div class="band theme-night">
+      <h1 class="co__title">{isDemo ? 'Demo payment' : 'Payment status'}</h1>
+    </div>
+
     {
       isDemo && (
         <Callout tone="warning" title="Demo mode: this is not a real payment" class="co__demo">
@@ -61,8 +65,6 @@ const support = `mailto:${SITE.supportEmail}`;
         </Callout>
       )
     }
-
-    <h1 class="co__title">{isDemo ? 'Demo payment' : 'Payment status'}</h1>
 
     <Steps
       layout="horizontal"
@@ -181,7 +183,7 @@ const support = `mailto:${SITE.supportEmail}`;
 
 <style>
   .co {
-    padding-block: var(--space-10) var(--space-16);
+    padding-block: 0 var(--space-16);
     display: flex;
     flex-direction: column;
     gap: var(--space-6);

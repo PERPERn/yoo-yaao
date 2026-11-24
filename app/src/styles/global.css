@@ -473,8 +473,8 @@ input[type='radio'] {
 .theme-night {
   --color-bg: var(--night-bg);
   --color-surface: var(--night-surface);
-  --color-surface-2: #0f2a2b;
-  --color-surface-3: #1a3a39;
+  --color-surface-2: #0e3435;
+  --color-surface-3: #1b4746;
   --color-ink: var(--night-ink);
   --color-ink-2: var(--night-ink-2);
   --color-ink-3: #86a09c;
@@ -503,6 +503,78 @@ input[type='radio'] {
   color: var(--color-ink);
   color-scheme: dark;
 }
+/* A light island (form, card) on the wall */
+.theme-light {
+  color: var(--color-ink);
+  color-scheme: light;
+}
+/* The main action is gold on every dark surface, teal on every light one */
+:is(.theme-night, .section--night) .btn.btn--primary {
+  --btn-bg: var(--night-accent);
+  --btn-bg-hover: #f7c876;
+  --btn-fg: #10292b;
+}
+.theme-light .btn.btn--primary {
+  --btn-bg: var(--color-brand);
+  --btn-bg-hover: var(--color-brand-strong);
+  --btn-fg: var(--color-on-brand);
+}
+
+/* ---------- The wall ----------
+   Full-bleed lacquer behind a .container that opens a page. Pair with .theme-night. */
+.band.theme-night {
+  --color-ink-2: #c6d8d3;
+  --color-focus: var(--night-accent);
+  position: relative;
+  isolation: isolate;
+  background: none;
+  padding-block: var(--space-10) var(--space-12);
+}
+.band.theme-night::before {
+  content: '';
+  position: absolute;
+  inset: 0 calc(50% - 50vw);
+  z-index: -1;
+  background: var(--wall-bg);
+  border-bottom: 3px solid var(--night-accent);
+}
+.band h1,
+.band h2 {
+  color: var(--night-ink);
+}
+.band .theme-light :is(h1, h2, h3) {
+  color: var(--color-ink);
+}
+/* The footer draws its own gold edge right below */
+main:has(> :is(.nf, .off):last-child) .band::before {
+  border-bottom: 0;
+}
+/* A lit niche on the right of a tall band (login, 404) */
+@media (min-width: 64rem) {
+  .band--art.theme-night {
+    min-height: min(46rem, calc(100svh - var(--header-h)));
+    align-content: center;
+  }
+  .band--art.theme-night::after {
+    content: '';
+    position: absolute;
+    inset: 0 calc(50% - 50vw) 3px auto;
+    width: 56vw;
+    z-index: -1;
+    background: var(--band-art) 78% 62% / cover no-repeat;
+    -webkit-mask-image: linear-gradient(90deg, transparent, #000 40%);
+    mask-image: linear-gradient(90deg, transparent, #000 40%);
+  }
+  .band--art > * {
+    max-width: 34rem;
+  }
+}
+/* Gold arcade: the niche outline, repeated */
+.arcade {
+  height: 2.75rem;
+  background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='34' height='44' viewBox='0 0 34 44'%3E%3Cpath d='M5 45V22C5 12 12 12 17 3c5 9 12 9 12 19v23' fill='none' stroke='%23f0b44c' stroke-width='1.2'/%3E%3C/svg%3E") repeat-x bottom center;
+}
+
 /* Blueprint paper: a quiet measuring grid. Only for the night/blueprint scene. */
 .blueprint-grid {
   background-image:

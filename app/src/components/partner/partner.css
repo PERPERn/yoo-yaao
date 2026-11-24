@@ -4,7 +4,7 @@
 .pp {
   display: grid;
   gap: var(--space-6);
-  padding-block: clamp(var(--space-6), 4vw, var(--space-12)) var(--space-section);
+  padding-block: 0 var(--space-section);
   min-width: 0;
 }
 .pp > * {
@@ -61,7 +61,7 @@
   font-weight: var(--weight-semibold);
   letter-spacing: 0.08em;
   text-transform: uppercase;
-  color: var(--color-ink-3);
+  color: var(--color-ink-2);
   overflow-wrap: anywhere;
 }
 .pp-title {

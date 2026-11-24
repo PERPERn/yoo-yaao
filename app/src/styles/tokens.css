@@ -6,7 +6,8 @@
   Status colours (info/success/warning/danger) are functional only.
   All text pairs meet WCAG AA (ratios inline, against --color-bg unless stated). See docs/design.md.
 */
-:root {
+:root,
+.theme-light {
   color-scheme: light; /* light only by design; the dark block below is unused (docs/design.md) */
 
   /* ---------- Neutrals ---------- */
@@ -53,13 +54,14 @@
   --color-danger-tint: #fbe9e7;   /* 5.6:1 */
 
   /* ---------- Night scene + footer (one dark variant) ---------- */
-  --night-bg: #0b1f21;
-  --night-surface: #12302f;
+  --night-bg: #0a2a2c;
+  --night-surface: #113a3a;
   --night-ink: #e9efec;           /* 14.6:1 */
   --night-ink-2: #9db3b0;         /* 7.7:1, 6.4:1 on night-surface */
   --night-brand: #5cc8be;         /* 8.5:1; night-bg text on it 8.5:1 */
   --night-accent: #f0b44c;        /* 9.2:1 */
-  --lacquer: #0f4748;             /* the wall: stage sections and page headers */
+  --wall-bg: var(--lacquer) url('/media/stage/plaster.webp') center / cover;
+  --lacquer: #17463f;             /* the wall: stage sections and page headers */
   --night-line: #2e5553;          /* blueprint grid / outlines (non-text) */
   --night-line-strong: #5cc8be;   /* blueprint drawing stroke */
 
@@ -222,6 +224,7 @@
    elev-1 rest (surfaces, filled buttons) · elev-2 hover / open · elev-3 floating (menus, featured, header)
    elev-inset sunken (inputs, tab track). Every level carries the 1px top highlight. */
 :root,
+.theme-light,
 .section--night,
 .theme-night {
   --elev-1:

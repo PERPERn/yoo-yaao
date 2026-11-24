@@ -286,24 +286,11 @@ button[aria-disabled='true'] {
 .m-hero .lead {
   margin-top: var(--space-4);
 }
-/* The wall behind a page opener that lives in a .container (same look as core/PageHeader) */
-.m-hero.theme-night {
-  --color-ink-2: #c6d8d3;
-  --color-focus: var(--night-accent);
-  position: relative;
-  isolation: isolate;
-  background: none;
-  padding-bottom: var(--space-12);
+/* Page opener on the wall (global .band) with the hero's own rhythm */
+.m-hero.band {
+  padding-block: clamp(var(--space-10), 6vw, var(--space-16)) var(--space-12);
   margin-bottom: var(--space-8);
 }
-.m-hero.theme-night:has(+ :is(.section--tint, .seg-b2c)) {
+.m-hero.band:has(+ :is(.section--tint, .seg-b2c)) {
   margin-bottom: 0;
-}
-.m-hero.theme-night::before {
-  content: '';
-  position: absolute;
-  inset: 0 calc(50% - 50vw);
-  z-index: -1;
-  background: var(--lacquer) url('/media/stage/plaster.webp') center / cover;
-  border-bottom: 3px solid var(--night-accent);
 }

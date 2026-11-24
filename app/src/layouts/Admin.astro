@@ -41,14 +41,14 @@ const path = Astro.url.pathname.replace(/\/$/, '') || '/';
     <meta name="robots" content="noindex, nofollow" />
     <meta name="referrer" content="no-referrer" />
     <meta name="color-scheme" content="light" />
-    <meta name="theme-color" content="#eef4f0" />
+    <meta name="theme-color" content="#17463f" />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
   </head>
   <body>
     <a class="skip-link" href="#main">Skip to content</a>
 
     <div class="adm">
-      <header class="adm-bar">
+      <header class="adm-bar theme-night">
         <Logo href="/admin" size="sm" />
         <span class="adm-tag">Admin</span>
         <button type="button" class="adm-menu" aria-expanded="false" aria-controls="adm-side" data-adm-menu>
@@ -57,7 +57,7 @@ const path = Astro.url.pathname.replace(/\/$/, '') || '/';
         </button>
       </header>
 
-      <aside class="adm-side" id="adm-side" data-adm-side>
+      <aside class="adm-side theme-night" id="adm-side" data-adm-side>
         <div class="adm-side__brand">
           <Logo href="/admin" size="sm" />
           <span class="adm-tag">Admin</span>
@@ -179,6 +179,8 @@ const path = Astro.url.pathname.replace(/\/$/, '') || '/';
 
   /* Mobile top bar */
   .adm-bar {
+    --color-brand: var(--night-ink); /* logo tile */
+    --color-on-brand: var(--night-bg);
     position: sticky;
     top: 0;
     z-index: var(--z-header);
@@ -187,8 +189,8 @@ const path = Astro.url.pathname.replace(/\/$/, '') || '/';
     gap: var(--space-3);
     min-height: 3.5rem;
     padding: env(safe-area-inset-top) var(--space-4) 0;
-    background: var(--color-bg);
-    border-bottom: 1px solid var(--color-border);
+    background: var(--wall-bg);
+    border-bottom: 3px solid var(--night-accent);
   }
   .adm-menu {
     margin-left: auto;
@@ -221,14 +223,20 @@ const path = Astro.url.pathname.replace(/\/$/, '') || '/';
     }
   }
 
-  /* Sidebar: same paper as the canvas, a hairline separates it */
+  /* Sidebar: the wall, with a gold edge */
   .adm-side {
     display: flex;
     flex-direction: column;
     gap: var(--space-6);
     padding: var(--space-4);
-    background: var(--color-bg);
-    border-bottom: 1px solid var(--color-border);
+    --color-ink-2: #c6d8d3;
+    --color-brand: var(--night-ink); /* logo tile */
+    --color-on-brand: var(--night-bg);
+    --color-surface-2: rgb(255 255 255 / 0.1);
+    --color-surface: rgb(255 255 255 / 0.14);
+    --color-focus: var(--night-accent);
+    background: var(--wall-bg);
+    border-bottom: 3px solid var(--night-accent);
   }
   .adm-side:not([data-open]) {
     display: none;
@@ -246,7 +254,7 @@ const path = Astro.url.pathname.replace(/\/$/, '') || '/';
       overflow-y: auto;
       padding: var(--space-5) var(--space-4);
       border-bottom: 0;
-      border-right: 1px solid var(--color-border);
+      border-right: 3px solid var(--night-accent);
     }
     .adm-side__brand {
       display: flex;
@@ -292,7 +300,7 @@ const path = Astro.url.pathname.replace(/\/$/, '') || '/';
     box-shadow: var(--elev-1);
   }
   .adm-nav__link[aria-current='page'] :global(svg) {
-    color: var(--color-brand);
+    color: var(--night-accent);
   }
   :global(.adm-nav__out) {
     margin-left: auto;
@@ -324,7 +332,7 @@ const path = Astro.url.pathname.replace(/\/$/, '') || '/';
     overflow-wrap: anywhere;
   }
   .adm-back {
-    color: var(--color-brand);
+    color: var(--night-accent);
   }
 
   /* Main */

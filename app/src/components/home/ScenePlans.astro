@@ -97,9 +97,13 @@ const panels = [
     display: flex;
     flex-direction: column;
     gap: var(--space-2);
-    padding: var(--space-8);
-    border-radius: var(--radius-2xl);
-    min-height: 26rem;
+    padding: 8.5rem var(--space-8) var(--space-8);
+    min-height: 34rem;
+    border-radius: 0 0 var(--radius-xl) var(--radius-xl);
+    /* The niche silhouette: an ogee top, straight sides */
+    --ogee: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 200 100' preserveAspectRatio='none'%3E%3Cpath d='M0 101V92C0 46 42 44 100 0c58 44 100 46 100 92v9z'/%3E%3C/svg%3E");
+    -webkit-mask: var(--ogee) top / 100% 7.5rem no-repeat, linear-gradient(#000 0 0) 0 7.45rem / 100% calc(100% - 7.45rem) no-repeat;
+    mask: var(--ogee) top / 100% 7.5rem no-repeat, linear-gradient(#000 0 0) 0 7.45rem / 100% calc(100% - 7.45rem) no-repeat;
   }
   .panel__title {
     font-size: var(--text-3xl);

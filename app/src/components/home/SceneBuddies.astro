@@ -9,7 +9,7 @@ import { cities } from '../../data/cities';
 
 const cityName = (slug: string) => cities.find((c) => c.slug === slug)?.name ?? slug;
 const segs = ['b2c', 'b2b', 'c2c'];
-const featured = [...buddies].sort((a, b) => b.rating * b.sessions - a.rating * a.sessions).slice(0, 2);
+const featured = [...buddies].sort((a, b) => b.rating * b.sessions - a.rating * a.sessions).slice(0, 3);
 ---
 
 <section class="scene scene--buddies" data-scene="buddies" aria-labelledby="buddies-title">
