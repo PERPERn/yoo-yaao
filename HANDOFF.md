@@ -9,8 +9,8 @@
 
 ## ⏱ สถานะล่าสุด (24 พ.ย. 2026)
 
-- **production (yoo-yaao.vercel.app) = fd27c96** ดีไซน์ใหม่ชุดแรก (ผนังวีซ่า + แผนที่) ขึ้นแล้ว
-- **branch `theme-all`** = ธีมเดียวกันทั้งเว็บ (header/footer/business/admin/login/แชท/partner/จ่ายเงิน/404) + og.png + วิดีโอ demo ใหม่ (`demo.mp4`) push แล้ว **รอผู้ใช้สั่ง "ขึ้นจริง"** แล้ว merge → main → deploy `--prebuilt --prod` จาก worktree
+- **production (yoo-yaao.vercel.app) = dcdde78** ธีมใหม่ทั้งเว็บขึ้นแล้ว และ `main` ตรงกัน
+- ธีมเดียวกันทั้งเว็บ (header/footer/business/admin/login/แชท/partner/จ่ายเงิน/404) + og.png + วิดีโอ demo ใหม่ (`demo.mp4`)
 - ตรวจแล้ว: check 0 error, 38 หน้า × 2 ขนาด ไม่ล้น ไม่มี console error, คลิปครบใต้ CSP
 - ฉาก 3D: `blender/render.sh` → `encode.sh`; ตรวจ `blender/shots.mjs`; เฟรมดิบ `blender/out/` ไม่ขึ้น git
 - Supabase free tier พักเองราว 1 สัปดาห์ (เปิดคืน 24 พ.ย.) เช็กก่อนวันโชว์
