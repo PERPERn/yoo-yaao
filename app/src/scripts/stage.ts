@@ -59,6 +59,7 @@ export function initStage(root: HTMLElement) {
     open = key;
     root.dataset.phase = 'moving';
     root.dataset.at = key;
+    root.focus({ preventScroll: true }); // the spot is about to hide: keep Esc and arrows working
     const img = stills.find((s) => s.dataset.still === key);
     if (img?.dataset.src) {
       img.src = img.dataset.src;
@@ -120,6 +121,8 @@ export function initStage(root: HTMLElement) {
       enter(keys[(keys.indexOf(open) + d + keys.length) % keys.length]);
     }
   });
+  root.tabIndex = -1;
+  root.style.outline = 'none';
   root.dataset.phase = 'idle';
 
   /** Portrait: spots are a swipe row; the one in the middle drives the panel below. */
