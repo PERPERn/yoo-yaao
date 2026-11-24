@@ -1,0 +1,508 @@
+---
+/** Home hero: five lit niches, one object per visa. Renders: blender/gallery.py. */
+import Button from '../ui/Button.astro';
+import Icon from '../ui/Icon.astro';
+import SourceTag from '../ui/SourceTag.astro';
+import { visas } from '../../data/visas';
+import { costParts, fmtStay, fmtValidity, n } from '../core/format';
+import type { Visa, VisaSlug } from '../../types/contracts';
+
+// Left to right on the wall; `at` = the niche centre in % of the render's width.
+const wall: { slug: VisaSlug; at: number; object: string }[] = [
+  { slug: 'visa-exempt', at: 14.34, object: 'A passport and a rubber stamp' },
+  { slug: 'dtv', at: 32.17, object: 'A coral cabin suitcase' },
+  { slug: 'ltr', at: 50, object: 'A brass house key' },
+  { slug: 'privilege', at: 67.83, object: 'A plum membership card with a gold lotus' },
+  { slug: 'retirement', at: 85.66, object: 'A striped deck chair' },
+];
+const items = wall.map((w) => ({ ...w, visa: visas.find((v) => v.slug === w.slug)! }));
+const primary = (v: Visa) => v.sources.find((s) => s.tier === 'primary') ?? v.sources[0];
+const fee = (v: Visa) => {
+  const c = costParts(v);
+  return c.unit ? `${c.value} ${c.unit}` : c.value;
+};
+const need = (v: Visa) =>
+  v.eligibility.minIncomeUsdYear
+    ? `USD ${n(v.eligibility.minIncomeUsdYear)} income a year`
+    : v.eligibility.minSavingsThb
+      ? `${n(v.eligibility.minSavingsThb)} THB in savings`
+      : 'No income or savings test';
+---
+
+<section class="wall theme-night" data-scene="hero" data-stage="/media/stage/" data-visa-wall aria-labelledby="hero-title">
+  <div class="wall__box" aria-hidden="true">
+    <picture>
+      <source media="(min-width: 60rem) and (min-aspect-ratio: 5/4)" srcset="/media/stage/wall.webp" />
+      <img class="wall__img" src="data:image/gif;base64,R0lGODlhAQABAAAAACH5BAEKAAEALAAAAAABAAEAAAICTAEAOw==" width="2400" height="1350" alt="" fetchpriority="high" decoding="async" />
+    </picture>
+    {items.map((i) => <img class="wall__img wall__lit" data-lit={i.slug} style={`--at:${i.at}%`} src="/media/stage/lit.webp" width="2400" height="1350" alt="" loading="lazy" decoding="async" />)}
+    <video class="wall__img wall__clip" data-clip muted playsinline preload="none" tabindex="-1"></video>
+    {items.map((i) => <img class="wall__img wall__still" data-still={i.slug} data-src={`/media/stage/${i.slug}.webp`} width="2400" height="1350" alt="" decoding="async" />)}
+  </div>
+
+  <div class="wall__intro">
+    <h1 id="hero-title" class="wall__title">Stay longer in Thailand.</h1>
+    <p class="wall__lead">Five ways in. Pick one to see what it takes, or let six questions choose for you.</p>
+    <div class="cluster wall__cta">
+      <Button href="/finder" size="lg" variant="accent" iconRight="arrow-right">Find my visa</Button>
+    </div>
+  </div>
+
+  <ul class="wall__spots" role="list" data-wall-row aria-label="Thai visas">
+    {
+      items.map((i) => (
+        <li class="spot" style={`--at:${i.at}%`}>
+          <a class="spot__link" href={`/visas/${i.slug}`} data-spot={i.slug}>
+            <img class="spot__tall" src={`/media/stage/tall-${i.slug}.webp`} width="900" height="1500" alt={i.object} loading="lazy" decoding="async" />
+            <span class="spot__label">
+              <span class="spot__name">{i.visa.shortName}</span>
+              <span class="spot__stay tabular">{fmtStay(i.visa.stay.perEntryDays)} per entry</span>
+            </span>
+          </a>
+        </li>
+      ))
+    }
+  </ul>
+
+  <div class="wall__panels">
+    {
+      items.map((i) => (
+        <article class="vpanel" data-panel={i.slug} hidden aria-labelledby={`vp-${i.slug}`}>
+          <h2 class="vpanel__title" id={`vp-${i.slug}`} tabindex="-1" data-panel-title>{i.visa.shortName}</h2>
+          <p class="vpanel__sum">{i.visa.summary}</p>
+          <dl class="vpanel__facts tabular">
+            <div><dt>Each entry</dt><dd>{fmtStay(i.visa.stay.perEntryDays)}</dd></div>
+            <div><dt>Valid for</dt><dd>{fmtValidity(i.visa)}</dd></div>
+            <div><dt>Government fee</dt><dd>{fee(i.visa)}</dd></div>
+            <div><dt>Money rule</dt><dd>{need(i.visa)}</dd></div>
+            <div><dt>Remote work</dt><dd>{i.visa.eligibility.remoteWorkAllowed ? 'Allowed, foreign clients only' : 'Not allowed'}</dd></div>
+          </dl>
+          <SourceTag source={primary(i.visa)} verifiedAt={i.visa.verifiedAt} compact />
+          <div class="cluster vpanel__cta">
+            <Button href={`/visas/${i.slug}`} variant="accent">Read the {i.visa.shortName} guide</Button>
+          </div>
+        </article>
+      ))
+    }
+  </div>
+  <div class="wall__nav">
+    <button type="button" class="wall__back" data-stage-back><Icon name="x" size={18} /> All visas</button>
+    <button type="button" class="wall__step" data-stage-step="-1"><Icon name="arrow-right" size={20} /><span class="sr-only">Previous visa</span></button>
+    <button type="button" class="wall__step" data-stage-step="1"><Icon name="arrow-right" size={20} /><span class="sr-only">Next visa</span></button>
+  </div>
+</section>
+
+<script>
+  import { initStage } from '../../scripts/stage';
+  const root = document.querySelector<HTMLElement>('[data-visa-wall]')!;
+  const { show, wide, spots } = initStage(root);
+  const row = root.querySelector<HTMLElement>('[data-wall-row]')!;
+
+  // Portrait: the niche nearest the middle of the row drives the panel below it.
+  const centre = () => {
+    const mid = row.getBoundingClientRect().left + row.clientWidth / 2;
+    const d = (s: HTMLElement) => Math.abs(s.getBoundingClientRect().left + s.offsetWidth / 2 - mid);
+    return spots.reduce((a, b) => (d(b) < d(a) ? b : a));
+  };
+  let frame = 0;
+  const sync = () => {
+    cancelAnimationFrame(frame);
+    frame = requestAnimationFrame(() => !wide.matches && show(centre().dataset.spot!));
+  };
+  const jump = (s: HTMLElement, smooth = true) => {
+    const li = s.parentElement!;
+    row.scrollTo({ left: li.offsetLeft - (row.clientWidth - li.offsetWidth) / 2, behavior: smooth ? 'smooth' : 'instant' });
+  };
+  row.addEventListener('scroll', sync, { passive: true });
+  for (const s of spots)
+    s.addEventListener(
+      'click',
+      (e) => {
+        if (wide.matches) return;
+        // A first tap brings the niche to the middle; its panel sits right below.
+        e.preventDefault();
+        e.stopImmediatePropagation();
+        jump(s);
+      },
+      { capture: true },
+    );
+  const mode = () => {
+    root.dataset.phase = 'idle';
+    show(null);
+    if (!wide.matches) jump(spots[1], false), sync(); // start on the DTV
+  };
+  wide.addEventListener('change', mode);
+  mode();
+</script>
+
+<style>
+  .wall {
+    position: relative;
+    isolation: isolate;
+    overflow: hidden;
+    background: #0b2b2d;
+    color: var(--color-ink);
+    margin-top: calc(-1 * var(--header-h));
+  }
+  .wall__title {
+    font-size: var(--text-5xl);
+    font-weight: var(--weight-semibold);
+    line-height: 0.98;
+    letter-spacing: -0.03em;
+    text-wrap: balance;
+    color: #fff;
+  }
+  .wall__lead {
+    font-size: var(--text-lg);
+    line-height: 1.45;
+    color: #d4e2dd;
+    max-width: 40ch;
+  }
+  .spot__link {
+    color: inherit;
+    text-decoration: none;
+    -webkit-tap-highlight-color: transparent;
+  }
+  .spot__label {
+    display: grid;
+    justify-items: center;
+    text-align: center;
+  }
+  .spot__name {
+    font-family: var(--font-display);
+    font-size: var(--text-xl);
+    font-weight: var(--weight-semibold);
+    line-height: 1.2;
+    color: #fff;
+  }
+  .spot__stay {
+    font-size: var(--text-sm);
+    line-height: 1.3;
+    color: #c6d8d3;
+  }
+  .vpanel__title {
+    font-size: var(--text-4xl);
+    font-weight: var(--weight-semibold);
+    letter-spacing: -0.03em;
+    color: #fff;
+  }
+  .vpanel__title:focus-visible {
+    outline: none; /* focus lands here only so the reader starts at the panel */
+  }
+  .vpanel__sum {
+    margin-top: var(--space-3);
+    color: #d4e2dd;
+  }
+  .vpanel__facts {
+    display: grid;
+    margin: var(--space-6) 0 var(--space-4);
+  }
+  .vpanel__facts div {
+    display: grid;
+    grid-template-columns: 9rem 1fr;
+    gap: var(--space-3);
+    padding-block: var(--space-2);
+    border-top: 1px solid rgb(255 255 255 / 0.16);
+  }
+  .vpanel__facts dt {
+    color: #b5cbc5;
+    font-size: var(--text-sm);
+  }
+  .vpanel__facts dd {
+    margin: 0;
+    font-weight: var(--weight-semibold);
+    color: #fff;
+  }
+  .vpanel__cta {
+    margin-top: var(--space-5);
+  }
+
+  /* ---------- Wide: the wall fills the screen and the camera moves ---------- */
+  @media (min-width: 60rem) and (min-aspect-ratio: 5/4) {
+    .wall {
+      height: 100svh;
+      min-height: 36rem;
+    }
+    /* A 16:9 box that always covers the section, so % positions match the render. */
+    .wall__box,
+    .wall__spots {
+      position: absolute;
+      left: 50%;
+      top: 50%;
+      width: max(100%, 177.78svh, 64rem);
+      aspect-ratio: 16 / 9;
+      translate: -50% -50%;
+    }
+    .wall__img {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+    .wall__lit {
+      opacity: 0;
+      transition: opacity 420ms var(--ease-out);
+      mask-image: linear-gradient(90deg, transparent calc(var(--at) - 9.4%), #000 calc(var(--at) - 6.6%), #000 calc(var(--at) + 6.6%), transparent calc(var(--at) + 9.4%));
+    }
+    .wall__clip,
+    .wall__still {
+      opacity: 0;
+      transition: opacity 260ms linear;
+    }
+    .wall[data-rolling] .wall__clip {
+      opacity: 1;
+      transition-duration: 90ms;
+    }
+    .wall__still[data-on] {
+      opacity: 1;
+    }
+    .wall[data-phase='moving'][data-rolling] .wall__still[data-on] {
+      opacity: 0;
+    }
+    /* Text side: the neighbour niche falls into shade. */
+    .wall::after {
+      content: '';
+      position: absolute;
+      inset: 0;
+      z-index: 1;
+      pointer-events: none;
+      background:
+        linear-gradient(90deg, rgb(6 28 30 / 0.96) 0%, rgb(6 28 30 / 0.94) 34%, rgb(6 28 30 / 0.55) 47%, transparent 58%);
+      opacity: 0;
+      transition: opacity 500ms var(--ease-out);
+    }
+    .wall[data-phase='open']::after {
+      opacity: 1;
+    }
+    .wall::before {
+      content: '';
+      position: absolute;
+      inset: auto 0 0;
+      height: 42%;
+      z-index: 1;
+      pointer-events: none;
+      background: linear-gradient(0deg, rgb(5 24 26 / 0.94) 8%, rgb(5 24 26 / 0.62) 42%, transparent);
+      transition: opacity 400ms var(--ease-out);
+    }
+    .wall__intro {
+      position: absolute;
+      z-index: 3;
+      left: 0;
+      right: 0;
+      bottom: clamp(1.25rem, 3.4svh, 2.5rem);
+      padding-inline: max(var(--gutter), calc((100% - var(--container)) / 2));
+      display: grid;
+      grid-template-columns: 1fr auto;
+      align-items: end;
+      column-gap: var(--space-10);
+      transition: opacity 300ms var(--ease-out);
+    }
+    .wall__title {
+      font-size: clamp(2.25rem, 4.6svh + 1.1vw, 4.25rem);
+    }
+    .wall__lead {
+      grid-row: 2;
+      margin-top: var(--space-2);
+      max-width: none;
+      font-size: var(--text-base);
+    }
+    .wall__cta {
+      grid-area: 1 / 2 / span 2;
+    }
+    .wall__spots {
+      z-index: 2;
+      list-style: none;
+      margin: 0;
+      padding: 0;
+      transition: opacity 260ms var(--ease-out);
+      pointer-events: none;
+    }
+    .spot {
+      position: absolute;
+      left: var(--at);
+      top: 18%;
+      width: 14%;
+      height: 66%;
+      translate: -50% 0;
+    }
+    .spot__link {
+      display: grid;
+      align-content: end;
+      height: 100%;
+      pointer-events: auto;
+      border-radius: 8px;
+    }
+    .spot__tall {
+      display: none;
+    }
+    .spot__label {
+      transition: translate 300ms var(--ease-out);
+    }
+    .spot__name {
+      font-size: clamp(1.05rem, 1.35vw, 1.5rem);
+    }
+    .spot__stay {
+      font-size: clamp(0.8rem, 0.85vw, 0.9375rem);
+    }
+    .spot__link:hover .spot__label,
+    .spot__link:focus-visible .spot__label {
+      translate: 0 -3px;
+    }
+    .spot__link:hover .spot__name,
+    .spot__link:focus-visible .spot__name {
+      color: var(--night-accent);
+    }
+    .wall:not([data-phase='idle'], :not([data-phase])) :is(.wall__intro, .wall__spots) {
+      opacity: 0;
+      visibility: hidden;
+    }
+    .wall__panels {
+      position: absolute;
+      z-index: 3;
+      inset: var(--header-h) auto 0 max(var(--gutter), calc((100% - var(--container)) / 2));
+      width: min(27rem, 38vw);
+      display: grid;
+      align-content: center;
+      pointer-events: none;
+      padding-bottom: 5.5rem;
+    }
+    .vpanel {
+      pointer-events: auto;
+      animation: panel-in 520ms var(--ease-out) both;
+    }
+    .wall__nav {
+      position: absolute;
+      z-index: 3;
+      left: max(var(--gutter), calc((100% - var(--container)) / 2));
+      bottom: clamp(1.25rem, 3.4svh, 2.5rem);
+      display: flex;
+      gap: var(--space-2);
+      opacity: 0;
+      visibility: hidden;
+      transition: opacity 300ms var(--ease-out);
+    }
+    .wall[data-phase='open'] .wall__nav {
+      opacity: 1;
+      visibility: visible;
+    }
+  }
+  @keyframes panel-in {
+    from {
+      opacity: 0;
+      transform: translateX(-18px);
+    }
+  }
+  .wall__nav button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: var(--space-2);
+    min-height: var(--tap-min);
+    min-width: var(--tap-min);
+    padding-inline: var(--space-3);
+    border: 1.5px solid rgb(255 255 255 / 0.4);
+    border-radius: var(--radius-pill);
+    background: rgb(6 28 30 / 0.5);
+    color: #fff;
+    font-size: var(--text-sm);
+    font-weight: var(--weight-semibold);
+    transition: background-color var(--duration-base) var(--ease-out), transform var(--duration-fast) var(--ease-out);
+  }
+  .wall__nav button:hover {
+    background: rgb(255 255 255 / 0.16);
+  }
+  .wall__nav button:active {
+    transform: scale(0.96);
+  }
+  .wall__step[data-stage-step='-1'] :global(svg) {
+    rotate: 180deg;
+  }
+
+  /* ---------- Portrait: swipe the niches, read below ---------- */
+  @media not all and (min-width: 60rem) and (min-aspect-ratio: 5/4) {
+    .wall {
+      padding-block: calc(var(--header-h) + var(--space-6)) var(--space-12);
+      display: grid;
+      grid-template-columns: minmax(0, 1fr);
+      gap: var(--space-6);
+      background: #123f40;
+    }
+    .wall__box,
+    .wall__nav {
+      display: none;
+    }
+    .wall__intro,
+    .wall__panels {
+      padding-inline: var(--gutter);
+      width: 100%;
+      max-width: 40rem;
+      margin-inline: auto;
+    }
+    .wall__intro {
+      display: grid;
+      gap: var(--space-3);
+    }
+    .wall__cta {
+      margin-top: var(--space-2);
+    }
+    .wall__cta > :global(*) {
+      flex: 1 1 100%;
+    }
+    .wall__spots {
+      list-style: none;
+      margin: 0;
+      padding: 0 calc(50% - min(31vw, 11rem));
+      position: relative;
+      display: flex;
+      gap: var(--space-3);
+      overflow-x: auto;
+      scroll-snap-type: x mandatory;
+      scrollbar-width: none;
+      overscroll-behavior-x: contain;
+    }
+    .spot {
+      flex: 0 0 min(62vw, 22rem);
+      scroll-snap-align: center;
+    }
+    .spot__link {
+      display: grid;
+      gap: var(--space-3);
+    }
+    .spot__tall {
+      width: 100%;
+      aspect-ratio: 3 / 4.6;
+      object-fit: cover;
+      border-radius: var(--radius-xl);
+      opacity: 0.5;
+      transition: opacity 400ms var(--ease-out), transform 500ms var(--ease-out);
+      transform: scale(0.95);
+    }
+    .spot__link[data-active] .spot__tall {
+      opacity: 1;
+      transform: none;
+    }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .wall * {
+      transition-duration: 1ms !important;
+      animation: none !important;
+    }
+  }
+</style>
+
+<style is:global>
+  /* Hover or focus on a niche turns its own light up. */
+  .wall:has([data-spot='visa-exempt']:is(:hover, :focus-visible)) [data-lit='visa-exempt'],
+  .wall:has([data-spot='dtv']:is(:hover, :focus-visible)) [data-lit='dtv'],
+  .wall:has([data-spot='ltr']:is(:hover, :focus-visible)) [data-lit='ltr'],
+  .wall:has([data-spot='privilege']:is(:hover, :focus-visible)) [data-lit='privilege'],
+  .wall:has([data-spot='retirement']:is(:hover, :focus-visible)) [data-lit='retirement'],
+  .wall[data-at='visa-exempt'] [data-lit='visa-exempt'],
+  .wall[data-at='dtv'] [data-lit='dtv'],
+  .wall[data-at='ltr'] [data-lit='ltr'],
+  .wall[data-at='privilege'] [data-lit='privilege'],
+  .wall[data-at='retirement'] [data-lit='retirement'] {
+    opacity: 1;
+  }
+</style>

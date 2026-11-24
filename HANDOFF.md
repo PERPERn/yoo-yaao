@@ -7,6 +7,34 @@
 > เอกสารนี้ใช้ส่งต่องานไปทำต่อบนเครื่องอื่น ไม่ว่าจะเป็นคนหรือ Claude ก็อ่านไฟล์นี้ก่อนเป็นอันดับแรก
 > ตั้งแต่ commit `f9f247a` เป็นต้นไป โค้ดทั้งหมดอยู่บน GitHub และ deploy ขึ้น production แล้ว
 
+## ⏸ พักงาน redesign (24 พ.ย. 2026, branch `redesign`, อยู่ในเครื่องนี้เท่านั้น ยังไม่ push ไม่ deploy)
+
+**production ยังเป็น commit 655fb39 เหมือนเดิม** ส่วน `main` มี commit 7960c95 เพิ่ม (Q&A คู่แข่ง + gitignore คลิป) ยังไม่ push
+
+**โจทย์:** ผู้ใช้ชอบสไตล์คลิปอ้างอิง 4 คลิป (`*.MP4` ที่ root, gitignore แล้ว เป็นงานสตูดิโออื่น ยืมแค่แพตเทิร์น ห้ามเอาภาพ/ชื่อแบรนด์) โดยเฉพาะ 2 คลิปของ Ascenta: ของในช่องไฟ กดแล้วกล้องพุ่งเข้าไป และผังสนาม 3D ที่เลือกโซนแล้วบินเข้าไปดูวิว
+
+**แนวทาง:** "Lacquer, gold leaf, celadon" ผนังเขียวหัวเป็ด ซุ้มทรงหน้าต่างวัด 5 ซุ้ม ของ 1 ชิ้นต่อวีซ่า, แผนที่ไทย 3D เลือกเมืองแล้วลงที่รูปจริง ภาพทั้งหมดปั้นเองใน Blender แบบ procedural ไม่มี asset ภายนอก
+
+**เสร็จแล้ว**
+- `components/stage/VisaGallery.astro` = hero ใหม่ ตรวจแล้วที่ 1440 และ 390 (hover ไฟติด, กล้องพุ่งเข้า DTV, แผงข้อมูลจริง + SourceTag, มือถือปัดซ้ายขวา, ไม่ล้นจอ)
+- `components/stage/CityMap.astro` เขียนโค้ดแล้ว **ยังไม่เคยดูบนจอ เพราะภาพแผนที่ยังไม่เรนเดอร์ ฉากนี้จะว่าง**
+- `scripts/stage.ts` (กล้องกลาง), `SceneWhy.astro`, header ลอยบน stage (`<Base over>`), สี celadon ใน tokens, หัวหน้าในทุกหน้าเป็นผนังเขียว (`PageHeader`/`PageHead`), หน้า `/visas/[slug]` มีภาพซุ้ม
+- ลบ SceneHero, SceneSweep, SceneVisas, SceneCities; `home-scroll.ts` ปรับตาม (pin/snap ยังอยู่ครบ)
+- `astro build` และ `astro check` ผ่าน 0 error
+
+**ภาพ:** ภาพนิ่งผนังครบ 5 ซุ้ม คลิปกล้องเสร็จ 2/5 (dtv, ltr) อันที่ไม่มีคลิปจะ crossfade แทน ไม่พัง
+
+**ทำต่อ (ตามลำดับ)**
+1. `bash blender/render.sh` (ราว 1 ชม. ข้ามเฟรมที่มีแล้วใน `blender/out/` แล้ว encode ให้เอง) เหลือ privilege, visa-exempt, retirement และแผนที่ทั้งหมด
+2. เปิดดู CityMap: ตำแหน่งหมุดตรงภาพไหม, มือถือ, ตัวหนังสืออ่านออกบนรูปไหม
+3. ปรับ hero: พื้นล่างมืดไปหน่อย (scrim `.wall::before` กลบเงาสะท้อน) และ desktop ดูทึบ (ผู้ใช้เคยบ่นว่ามืด ให้เร่งแสง), มือถือชื่อวีซ่าซ้ำสองที่, ซุ้มริมโดนขอบจอที่ 16:10, ตรวจ 1920x900 กับ 1024
+4. ไล่ดูทุกหน้าที่ใช้ PageHeader (ช่องว่างใต้หัว, chipnav ใน /visas/[slug], aside, contrast), finder, /visas ใส่แถบซุ้ม
+5. 3D พาสปอร์ตในฉาก 90 วัน (HeroStage ย้ายมา index.astro) ต้องยังโผล่ และ z-index ไม่ทับฉากใหม่
+6. ตรวจ reduced-motion, คีย์บอร์ด (Esc, ลูกศร), sw.js cache, `docs/design.md` + `docs/home-scroll.md` ต้องเขียนใหม่ให้ตรง
+7. ขอผู้ใช้ยืนยันก่อน push/deploy (preview ก่อน ไม่ใช่ --prod)
+
+เครื่องมือ: `blender/shots.mjs <โฟลเดอร์>` ถ่ายหน้าจอจาก dev server พอร์ต 4321 (จบด้วย process.exit เพราะ browser.close ค้างกับ WebGL)
+
 ## ⏱ จุดที่ค้างล่าสุด (25 ต.ค. 00:00, production = commit 655fb39 ทุกอย่าง push และ deploy แล้ว)
 - ข้อความ "Too many tries" ตอน login มาจากเพดานส่งอีเมลรายชั่วโมงของ Supabase ซึ่งตั้งค่าใช้บริการส่งอีเมลฟรีเป็นค่าเริ่มต้น ถ้าจะแก้ถาวรให้ใส่ Custom SMTP (เช่น Resend) ใน Supabase → Authentication → Emails แล้วเพิ่ม rate limit
 - ไฟล์ที่ไม่ได้อยู่ใน git เพราะใหญ่เกินไป อยู่บนเครื่องนี้เท่านั้น ได้แก่ docs/pitch/yoo-yaao-demo-2min.mp4, docs/checkpoint3/yoo-yaao-demo-2min.mp4 และ video/out/ ถ้าจะย้ายเครื่องให้ copy ไฟล์เหล่านี้ไปเอง หรืออัปขึ้น Google Drive

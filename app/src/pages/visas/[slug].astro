@@ -91,6 +91,7 @@ const nextPath = `/visas/${slug}`;
     lead={visa.summary}
     crumbs={[{ label: 'Visas', href: '/visas' }, { label: visa.shortName }]}
   >
+    <img slot="art" src={`/media/stage/${slug}.webp`} width="2400" height="1350" alt="" decoding="async" />
     <ul class="bestfor" aria-label="Best for">
       {visa.bestFor.map((b) => <li><Badge variant="brand">{b}</Badge></li>)}
     </ul>

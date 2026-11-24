@@ -16,21 +16,19 @@ type Pose = Partial<HeroPose>;
 
 /**
  * Where the 3D object is while each scene is on screen. A pair = [scene enters, scene leaves].
- * It shows in hero, blueprint and finale; elsewhere it is hidden (opacity 0) and parked one
+ * It shows in blueprint and finale; elsewhere it is hidden (opacity 0) and parked one
  * screen above or below its next visible spot, so it scrolls in and out with the content as it fades.
  */
-const HERO: Pose = { x: 0.26, y: -0.02, scale: 0.85 }; // right half: the headline owns the left
 const FINALE: Pose = { x: 0, y: 0.3, scale: 0.34, spin: 0.35 }; // the band above the wordmark
 // right half, in the free space above the timeline card; wire = the blueprint outline look
 const BLUEPRINT: Pose = { x: 0.27, y: 0.2, scale: 0.5, wire: 1, opacity: 1 };
 const away = (p: Pose, dy: number): Pose => ({ ...p, y: (p.y ?? 0) + dy, opacity: 0 });
 const POSES: Record<string, Pose | [Pose, Pose]> = {
-  hero: HERO,
-  sweep: away(HERO, 1),
-  problem: away(BLUEPRINT, -1),
-  visas: away(BLUEPRINT, -1), // parked below: rises in with the blueprint scene
+  hero: away(BLUEPRINT, -1),
+  problem: away(BLUEPRINT, -1), // parked below: rises in with the blueprint scene
   blueprint: BLUEPRINT,
   cities: away(BLUEPRINT, 1), // parked above: scrolls out with it
+  why: away(FINALE, -1),
   buddies: away(FINALE, -1),
   demo: away(FINALE, -1),
   trust: away(FINALE, -1),
@@ -70,9 +68,7 @@ export function initHomeScroll(): void {
         root.classList.add("home-story");
         // Scenes that fit one screen pin while their scrubbed animation runs, so the scene stays put
         // until its content is complete. light scrub (0.5s); Cities is taller than a screen, so it never pins.
-        sweepScene();
         problemScene();
-        visasScene();
       }
       blueprintScene(story);
       finaleScene();
@@ -85,7 +81,7 @@ export function initHomeScroll(): void {
   initMotion();
 
   const stage = $("[data-hero-story]");
-  if (stage) {
+  if (stage && matchMedia("(min-width: 640px)").matches) {
     const hero = mountHero(stage);
     hero.ready.then((ok) => {
       if (ok && hero.story) drivePose(hero);
@@ -94,21 +90,6 @@ export function initHomeScroll(): void {
 }
 
 // ---------------------------------------------------------------- scenes
-
-function sweepScene() {
-  const scene = $('[data-scene="sweep"]');
-  if (!scene) return;
-  const left = $("[data-sweep='left']", scene);
-  const right = $("[data-sweep='right']", scene);
-  const tl = gsap.timeline({
-    defaults: { ease: "power2.out" },
-    scrollTrigger: { trigger: scene, start: "top top", end: "+=80%", pin: true, scrub: 0.5, invalidateOnRefresh: true },
-  });
-  // Lines slide in from opposite sides and land whole, then hold for the last third of the pin.
-  if (left) tl.from(left, { x: () => -window.innerWidth * 0.25 }, 0);
-  if (right) tl.from(right, { x: () => window.innerWidth * 0.25 }, 0);
-  tl.to({}, { duration: 0.5 });
-}
 
 function problemScene() {
   const scene = $('[data-scene="problem"]');
@@ -124,26 +105,6 @@ function problemScene() {
       ease: "power2.out",
     })
     .to({}, { duration: 0.4 }); // hold the finished scene before it scrolls away
-}
-
-function visasScene() {
-  const scene = $('[data-scene="visas"]');
-  const cards = $$(".vcard", scene ?? document);
-  if (!scene || !cards.length) return;
-  const mid = (cards.length - 1) / 2;
-  const spread = () => cards[0].offsetWidth + 16; // a gap between neighbours: no title is ever covered
-  gsap.set(cards, { x: 0, y: (i: number) => -i * 5, rotation: (i: number) => (i - mid) * 2 });
-  gsap
-    .timeline({
-      scrollTrigger: { trigger: scene, ...HOLD, invalidateOnRefresh: true },
-    })
-    .to(cards, {
-      x: (i: number) => (i - mid) * spread(),
-      y: (i: number) => Math.abs(i - mid) * -12, // gentle arc: outer cards rise a little
-      rotation: (i: number) => (i - mid) * -2.5,
-      stagger: 0.06,
-      ease: "power2.inOut",
-    });
 }
 
 function blueprintScene(story: boolean) {

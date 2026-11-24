@@ -1,7 +1,7 @@
 /*
   Design tokens. Every component references these, never raw values.
-  Palette: "Teal & Gold on paper" — restrained on purpose:
-    2 neutrals (warm paper, deep-teal ink) · 1 primary (teal) · 1 accent (gold)
+  Palette: "Lacquer, gold leaf, celadon" — restrained on purpose:
+    2 neutrals (pale celadon, deep-teal ink) · 1 primary (teal) · 1 accent (gold)
     + 3 segment tints (B2C lagoon, B2B sand, C2C lotus) + 1 dark "night" scene.
   Status colours (info/success/warning/danger) are functional only.
   All text pairs meet WCAG AA (ratios inline, against --color-bg unless stated). See docs/design.md.
@@ -10,14 +10,14 @@
   color-scheme: light; /* light only by design; the dark block below is unused (docs/design.md) */
 
   /* ---------- Neutrals ---------- */
-  --color-bg: #f6f3ec;            /* warm paper */
+  --color-bg: #eef4f0;            /* pale celadon */
   --color-surface: #ffffff;       /* cards, inputs */
-  --color-surface-2: #eeeae0;     /* alternate section, sunken */
-  --color-surface-3: #e3ded2;     /* hover on surface-2, skeleton */
+  --color-surface-2: #e0ebe4;     /* alternate section, sunken */
+  --color-surface-3: #d3e1d9;     /* hover on surface-2, skeleton */
   --color-ink: #10292b;           /* deep-teal ink 13.8:1 */
   --color-ink-2: #4b5b5a;         /* secondary text 6.4:1 */
   --color-ink-3: #5d6b6a;         /* placeholder / meta 5.6:1 on white */
-  --color-border: #ddd7ca;        /* subtle separators (non-text) */
+  --color-border: #cbdbd2;        /* subtle separators (non-text) */
   --color-border-strong: #8d9998; /* input borders, 3:1 non-text */
 
   /* ---------- Primary: teal ---------- */
@@ -59,6 +59,7 @@
   --night-ink-2: #9db3b0;         /* 7.7:1, 6.4:1 on night-surface */
   --night-brand: #5cc8be;         /* 8.5:1; night-bg text on it 8.5:1 */
   --night-accent: #f0b44c;        /* 9.2:1 */
+  --lacquer: #0f4748;             /* the wall: stage sections and page headers */
   --night-line: #2e5553;          /* blueprint grid / outlines (non-text) */
   --night-line-strong: #5cc8be;   /* blueprint drawing stroke */
 

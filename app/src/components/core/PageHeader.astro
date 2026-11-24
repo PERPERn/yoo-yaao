@@ -16,9 +16,10 @@ interface Props {
 }
 const { title, lead, crumbs, tone = 'default', class: className } = Astro.props;
 const hasAside = Astro.slots.has('aside');
+const hasArt = Astro.slots.has('art');
 ---
 
-<header class:list={['phead', tone === 'tint' && 'section--tint', className]}>
+<header class:list={['phead theme-night', hasArt && 'phead--art', tone === 'tint' && 'section--tint', className]}>
   <div class="container">
     {crumbs && <Breadcrumbs items={crumbs} class="phead__crumbs" />}
     <div class:list={['phead__grid', hasAside && 'phead__grid--aside']}>
@@ -30,10 +31,17 @@ const hasAside = Astro.slots.has('aside');
       {hasAside && <div class="phead__aside" data-intro><slot name="aside" /></div>}
     </div>
   </div>
+  {hasArt && <div class="phead__art"><slot name="art" /></div>}
 </header>
 
 <style>
   .phead {
+    position: relative;
+    isolation: isolate;
+    background: var(--lacquer) url('/media/stage/plaster.webp') center / cover;
+    color: var(--color-ink);
+    border-bottom: 3px solid var(--night-accent);
+    margin-bottom: var(--space-10);
     padding-block: var(--space-8) var(--space-12);
   }
   .phead__crumbs {
@@ -63,9 +71,37 @@ const hasAside = Astro.slots.has('aside');
   .phead__lead {
     margin-top: var(--space-5);
     font-size: var(--text-lg);
-    color: var(--color-ink-2);
+    color: #d4e2dd;
     max-width: 58ch;
     text-wrap: pretty;
+  }
+  /* Optional render on the right edge (a lit niche), bleeding into the band */
+  .phead__art {
+    display: none;
+  }
+  @media (min-width: 60rem) {
+    .phead--art {
+      min-height: 27rem;
+      display: grid;
+      align-content: center;
+    }
+    .phead--art .phead__text {
+      max-width: 38rem;
+    }
+    .phead__art {
+      display: block;
+      position: absolute;
+      inset: 0 0 0 auto;
+      width: 58%;
+      z-index: -1;
+      mask-image: linear-gradient(90deg, transparent, #000 38%);
+    }
+    .phead__art :global(img) {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      object-position: 78% 62%;
+    }
   }
   .phead__extra:empty {
     display: none;

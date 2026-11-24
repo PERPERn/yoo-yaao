@@ -6,7 +6,7 @@ import { SITE } from '../config/site';
 export const prerender = true;
 
 const THEME = '#0d6461'; // --color-brand
-const BACKGROUND = '#f6f3ec'; // --color-bg
+const BACKGROUND = '#eef4f0'; // --color-bg
 
 export const GET: APIRoute = () =>
   new Response(

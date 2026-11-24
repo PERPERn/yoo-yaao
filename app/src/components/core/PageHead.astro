@@ -31,7 +31,7 @@ const jsonLd = JSON.stringify({
 });
 ---
 
-<header class:list={['phead', className]}>
+<header class:list={['phead theme-night', className]}>
   <div class={narrow ? 'container-narrow' : 'container'}>
     {
       crumbs.length > 0 && (
@@ -55,6 +55,12 @@ const jsonLd = JSON.stringify({
 
 <style>
   .phead {
+    position: relative;
+    isolation: isolate;
+    background: var(--lacquer) url('/media/stage/plaster.webp') center / cover;
+    color: var(--color-ink);
+    border-bottom: 3px solid var(--night-accent);
+    margin-bottom: var(--space-10);
     padding-block: var(--space-12) var(--space-10);
   }
   .crumbs ol {

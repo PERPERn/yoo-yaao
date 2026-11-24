@@ -1,12 +1,12 @@
 ---
 import Base from '../layouts/Base.astro';
 import { SITE } from '../config/site';
-import SceneHero from '../components/home/SceneHero.astro';
-import SceneSweep from '../components/home/SceneSweep.astro';
+import VisaGallery from '../components/stage/VisaGallery.astro';
+import CityMap from '../components/stage/CityMap.astro';
+import HeroStage from '../components/ui/HeroStage.astro';
 import SceneProblem from '../components/home/SceneProblem.astro';
-import SceneVisas from '../components/home/SceneVisas.astro';
 import SceneBlueprint from '../components/home/SceneBlueprint.astro';
-import SceneCities from '../components/home/SceneCities.astro';
+import SceneWhy from '../components/home/SceneWhy.astro';
 import SceneBuddies from '../components/home/SceneBuddies.astro';
 import SceneDemo from '../components/home/SceneDemo.astro';
 import SceneTrust from '../components/home/SceneTrust.astro';
@@ -15,15 +15,15 @@ import SceneFaq from '../components/home/SceneFaq.astro';
 import SceneFinale from '../components/home/SceneFinale.astro';
 ---
 
-<Base title={SITE.name} description={SITE.description}>
-  <link slot="head" rel="preload" href="/models/hero-fallback.webp" as="image" type="image/webp" />
+<Base title={SITE.name} description={SITE.description} over>
+  <link slot="head" rel="preload" href="/media/stage/wall.webp" as="image" type="image/webp" media="(min-width: 60rem) and (min-aspect-ratio: 5/4)" />
   <div class="home">
-    <SceneHero />
-    <SceneSweep />
+    <HeroStage ratio="4 / 3" data-hero-story label="An open passport with a gold visa stamp" />
+    <VisaGallery />
     <SceneProblem />
-    <SceneVisas />
     <SceneBlueprint />
-    <SceneCities />
+    <CityMap />
+    <SceneWhy />
     <SceneBuddies />
     <SceneDemo />
     <SceneTrust />
@@ -46,6 +46,15 @@ import SceneFinale from '../components/home/SceneFinale.astro';
     background: transparent;
     pointer-events: none;
     z-index: var(--z-stage);
+  }
+  /* Until the 3D story is ready (and on phones, where it never runs) the stage stays out of sight. */
+  html .home > .hero-stage:not([data-story='on']) {
+    position: absolute;
+    width: 100%;
+    height: 100svh;
+    visibility: hidden;
+    pointer-events: none;
+    z-index: -1;
   }
   html .hero-stage[data-story='on'] :is(.hero3d-poster, .hero-stage__fallback) {
     display: none;

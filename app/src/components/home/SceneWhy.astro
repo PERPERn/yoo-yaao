@@ -1,0 +1,57 @@
+---
+// Tourism facts, from research/2026-10-23-market-money-making-tourism-site.md (sources cited inline).
+const why = [
+  { num: '32,974,321', what: 'foreign visitors came to Thailand in 2025', src: 'Ministry of Tourism and Sports, via Khaosod English, Dec 2025' },
+  { num: '฿1.53 trillion', what: 'spent by those visitors in 2025, about US$49 billion', src: 'Khaosod English; Skift, Jan 2026' },
+  { num: '202 million', what: 'trips Thai people took in their own country in 2025', src: 'Ministry figures, via The Nation' },
+  { num: '30–34 million', what: 'arrivals TAT now projects for 2026, recalibrated from an original 36.7 million target; TAT focuses on value over volume', src: 'TAT News, 8 Apr 2026' },
+];
+---
+
+<section class="section scene scene--why" data-scene="why" aria-labelledby="why-title">
+  <div class="container whyth">
+    <h2 id="why-title" class="whyth__title" data-reveal>Why Thailand</h2>
+    <dl class="whyth__list" data-reveal-stagger="0.08">
+      {
+        why.map((f) => (
+          <div class="whyth__item">
+            <dt class="whyth__num tabular">{f.num}</dt>
+            <dd>{f.what}</dd>
+            <dd class="whyth__src">{f.src}</dd>
+          </div>
+        ))
+      }
+    </dl>
+  </div>
+</section>
+
+<style>
+  .whyth {
+    display: grid;
+    gap: var(--space-8);
+  }
+  .whyth__title {
+    font-size: var(--text-4xl);
+  }
+  .whyth__list {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(min(15rem, 100%), 1fr));
+    gap: var(--space-8);
+    margin: 0;
+  }
+  .whyth__num {
+    font-family: var(--font-display);
+    font-weight: var(--weight-semibold);
+    font-size: var(--text-3xl);
+    line-height: 1.1;
+    letter-spacing: -0.02em;
+    color: var(--color-brand);
+  }
+  .whyth__item dd {
+    margin: var(--space-2) 0 0;
+  }
+  .whyth__item .whyth__src {
+    font-size: var(--text-xs);
+    color: var(--color-ink-2);
+  }
+</style>

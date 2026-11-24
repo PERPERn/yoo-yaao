@@ -1,0 +1,458 @@
+---
+/** Home: Thailand as a relief map. Pick a city, fly in, land on a real photo. Renders: blender/thaimap.py. */
+import Button from '../ui/Button.astro';
+import Icon from '../ui/Icon.astro';
+import SourceTag from '../ui/SourceTag.astro';
+import { cities, cityPhotos } from '../../data/cities';
+import { THAI_CITY_NAMES, n } from '../core/format';
+
+// Pin positions in % of each render (wide 16:9, tall 9:14), projected from the Blender cameras.
+const pins = [
+  { slug: 'chiang-mai', wide: [50.9, 19.8], tall: [38.3, 32.7] },
+  { slug: 'bangkok', wide: [58.1, 41.9], tall: [46.8, 45.6] },
+  { slug: 'phuket', wide: [46.9, 81.1], tall: [27.4, 67.4] },
+] as const;
+const items = pins.map((p) => ({ ...p, city: cities.find((c) => c.slug === p.slug)!, photo: cityPhotos[p.slug] }));
+const usd = (v: number) => `$${n(v)}`;
+---
+
+<section class="map theme-night" data-scene="cities" data-stage="/media/stage/map-" data-city-map aria-labelledby="cities-title">
+  <div class="map__box" aria-hidden="true">
+    <picture>
+      <source media="(min-width: 60rem) and (min-aspect-ratio: 5/4)" srcset="/media/stage/map.webp" />
+      <img class="map__img" src="/media/stage/map-tall.webp" width="2400" height="1350" alt="" loading="lazy" decoding="async" />
+    </picture>
+    {items.map((i) => <img class="map__img map__lit" data-lit={i.slug} style={`--x:${i.wide[0]}%;--y:${i.wide[1]}%`} src="/media/stage/map-lit.webp" width="2400" height="1350" alt="" loading="lazy" decoding="async" />)}
+  </div>
+  <video class="map__cover map__clip" data-clip muted playsinline preload="none" tabindex="-1" aria-hidden="true"></video>
+  {items.map((i) => <img class="map__cover map__photo" data-still={i.slug} data-src={i.photo.src} width={i.photo.width} height={i.photo.height} alt={i.photo.alt} decoding="async" />)}
+
+  <div class="map__intro">
+    <h2 id="cities-title" class="map__title">Live like a local.</h2>
+    <p class="map__lead">Three bases most long-stayers choose between. Pick one to land there.</p>
+    <div class="cluster map__cta"><Button href="/cities" variant="secondary">Compare the cities</Button></div>
+  </div>
+
+  <ul class="map__pins" role="list" aria-label="Cities">
+    {
+      items.map((i) => (
+        <li class:list={['pin', `pin--${i.slug}`]} style={`--wx:${i.wide[0]}%;--wy:${i.wide[1]}%;--tx:${i.tall[0]}%;--ty:${i.tall[1]}%`}>
+          <a class="pin__link" href={`/cities/${i.slug}`} data-spot={i.slug}>
+            <span class="pin__dot" aria-hidden="true"></span>
+            <span class="pin__label">
+              <span class="pin__name">{i.city.name} <span lang="th" class="pin__thai" aria-hidden="true">{THAI_CITY_NAMES[i.slug]}</span></span>
+              <span class="pin__cost tabular">{usd(i.city.costOfLivingUsdMonth.budget)} to {usd(i.city.costOfLivingUsdMonth.comfortable)} a month</span>
+            </span>
+          </a>
+        </li>
+      ))
+    }
+  </ul>
+
+  <div class="map__panels">
+    {
+      items.map((i) => (
+        <article class="cpanel" data-panel={i.slug} hidden aria-labelledby={`cp-${i.slug}`}>
+          <div class="cpanel__head">
+            <h3 class="cpanel__title" id={`cp-${i.slug}`} tabindex="-1" data-panel-title>{i.city.name}</h3>
+            <p class="cpanel__thai" lang="th" aria-hidden="true">{THAI_CITY_NAMES[i.slug]}</p>
+          </div>
+          <dl class="cpanel__facts tabular">
+            <div><dt>Month for one</dt><dd>{usd(i.city.costOfLivingUsdMonth.budget)}–{usd(i.city.costOfLivingUsdMonth.comfortable)}</dd></div>
+            <div><dt>1-bed rent</dt><dd>{usd(i.city.rentUsdMonth.oneBed)}</dd></div>
+            <div><dt>Home internet</dt><dd>{i.city.internetMbps} Mbps</dd></div>
+            <div><dt>Best months</dt><dd>{i.city.bestMonths[0].slice(0, 3)}–{i.city.bestMonths[i.city.bestMonths.length - 1].slice(0, 3)}</dd></div>
+          </dl>
+          <Button href={`/cities/${i.slug}`} variant="accent">Open the {i.city.name} guide</Button>
+          <div class="cpanel__meta">
+            <SourceTag source={i.city.sources[0]} verifiedAt={i.city.verifiedAt} compact />
+            <p>
+              Photo: <a href={i.photo.sourceUrl} target="_blank" rel="noopener noreferrer">{i.photo.author}<span class="sr-only"> on Wikimedia Commons (opens in a new tab)</span></a>, <a href={i.photo.licenceUrl} target="_blank" rel="noopener noreferrer license">{i.photo.licence}</a>
+            </p>
+          </div>
+        </article>
+      ))
+    }
+  </div>
+  <div class="map__nav">
+    <button type="button" data-stage-back><Icon name="x" size={18} /> Back to the map</button>
+    <button type="button" data-stage-step="-1" class="map__prev"><Icon name="arrow-right" size={20} /><span class="sr-only">Previous city</span></button>
+    <button type="button" data-stage-step="1"><Icon name="arrow-right" size={20} /><span class="sr-only">Next city</span></button>
+  </div>
+</section>
+
+<script>
+  import { initStage } from '../../scripts/stage';
+  initStage(document.querySelector<HTMLElement>('[data-city-map]')!);
+</script>
+
+<style>
+  .map {
+    position: relative;
+    isolation: isolate;
+    overflow: hidden;
+    height: 100svh;
+    min-height: 38rem;
+    background: #0a4f4d;
+    color: #fff;
+  }
+  .map__box,
+  .map__pins {
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    translate: -50% -50%;
+    width: max(100%, 177.78svh, 67.6rem);
+    aspect-ratio: 16 / 9;
+  }
+  .map__img,
+  .map__cover {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+  .map__lit {
+    opacity: 0;
+    transition: opacity 400ms var(--ease-out);
+    mask-image: radial-gradient(circle at var(--x) var(--y), #000 5%, transparent 13%);
+  }
+  .map__cover {
+    opacity: 0;
+    transition: opacity 260ms linear;
+  }
+  .map__photo {
+    transition: opacity 800ms var(--ease-out), scale 2400ms var(--ease-out);
+    scale: 1.06;
+    z-index: 1;
+  }
+  .map__photo[data-on] {
+    opacity: 1;
+    scale: 1;
+  }
+  .map[data-rolling] .map__clip {
+    opacity: 1;
+    transition-duration: 90ms;
+  }
+  .map[data-phase='moving'][data-rolling] .map__photo {
+    opacity: 0;
+  }
+  /* Readable text over any photo */
+  .map::after {
+    content: '';
+    position: absolute;
+    inset: auto 0 0;
+    height: 62%;
+    z-index: 2;
+    pointer-events: none;
+    background: linear-gradient(0deg, rgb(4 22 24 / 0.94), rgb(4 22 24 / 0.72) 45%, transparent);
+    opacity: 0;
+    transition: opacity 500ms var(--ease-out);
+  }
+  .map[data-phase='open']::after {
+    opacity: 1;
+  }
+  .map__intro {
+    position: absolute;
+    z-index: 3;
+    left: max(var(--gutter), calc((100% - var(--container)) / 2));
+    top: 50%;
+    translate: 0 -50%;
+    width: min(26rem, 32vw);
+    display: grid;
+    gap: var(--space-4);
+    transition: opacity 300ms var(--ease-out);
+  }
+  .map__title {
+    font-size: var(--text-5xl);
+    line-height: 0.98;
+    letter-spacing: -0.03em;
+    color: #fff;
+  }
+  .map__lead {
+    font-size: var(--text-lg);
+    line-height: 1.45;
+    color: #e0f0ea;
+  }
+  .map__pins {
+    z-index: 2;
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    pointer-events: none;
+    transition: opacity 260ms var(--ease-out);
+  }
+  .pin {
+    position: absolute;
+    left: var(--wx);
+    top: var(--wy);
+  }
+  .pin__link {
+    position: absolute;
+    left: -22px;
+    top: -22px;
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+    min-height: 44px;
+    padding-right: var(--space-3);
+    border-radius: var(--radius-pill);
+    color: #fff;
+    text-decoration: none;
+    pointer-events: auto;
+    white-space: nowrap;
+  }
+  .pin--phuket .pin__link {
+    flex-direction: row-reverse;
+    left: auto;
+    right: -22px;
+    padding: 0 0 0 var(--space-3);
+    text-align: right;
+  }
+  .pin__dot {
+    flex: none;
+    position: relative;
+    width: 44px;
+    height: 44px;
+  }
+  .pin__dot::before,
+  .pin__dot::after {
+    content: '';
+    position: absolute;
+    inset: 15px;
+    border-radius: 50%;
+    background: var(--night-accent);
+    border: 2.5px solid #fff;
+    transition: scale 250ms var(--ease-out);
+  }
+  .pin__dot::after {
+    background: none;
+    border: 1.5px solid #fff;
+    animation: ping 2.6s var(--ease-out) infinite;
+  }
+  .pin__link:is(:hover, :focus-visible) .pin__dot::before {
+    scale: 1.45;
+  }
+  @keyframes ping {
+    from {
+      scale: 1;
+      opacity: 0.9;
+    }
+    70%,
+    to {
+      scale: 2.7;
+      opacity: 0;
+    }
+  }
+  .pin__label {
+    display: grid;
+    padding: var(--space-2) var(--space-4);
+    border-radius: var(--radius-lg);
+    background: rgb(5 30 32 / 0.82);
+    transition: background-color 250ms var(--ease-out);
+  }
+  .pin__link:is(:hover, :focus-visible) .pin__label {
+    background: #061c1e;
+  }
+  .pin__name {
+    font-family: var(--font-display);
+    font-size: var(--text-lg);
+    font-weight: var(--weight-semibold);
+    line-height: 1.3;
+  }
+  .pin__thai {
+    font-weight: var(--weight-regular);
+    opacity: 0.85;
+  }
+  .pin__cost {
+    font-size: var(--text-sm);
+    line-height: 1.35;
+    color: #cfe3dc;
+  }
+  .map:not([data-phase='idle'], :not([data-phase])) :is(.map__intro, .map__pins) {
+    opacity: 0;
+    visibility: hidden;
+  }
+  .map__panels {
+    position: absolute;
+    z-index: 3;
+    inset: auto 0 0;
+    padding: 0 max(var(--gutter), calc((100% - var(--container)) / 2)) clamp(1.25rem, 4svh, 2.75rem);
+  }
+  .cpanel {
+    display: grid;
+    gap: var(--space-5);
+    justify-items: start;
+    animation: rise 620ms var(--ease-out) both;
+  }
+  .cpanel__title {
+    font-size: var(--text-6xl);
+    line-height: 0.9;
+    letter-spacing: -0.035em;
+    color: #fff;
+  }
+  .cpanel__title:focus-visible {
+    outline: none;
+  }
+  .cpanel__thai {
+    margin-top: var(--space-2);
+    font-size: var(--text-2xl);
+    font-family: var(--font-display);
+    line-height: 1.3;
+  }
+  .cpanel__facts {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-3) var(--space-10);
+    margin: 0;
+  }
+  .cpanel__facts dt {
+    font-size: var(--text-sm);
+    color: #d4e2dd;
+  }
+  .cpanel__facts dd {
+    margin: 0;
+    font-family: var(--font-display);
+    font-size: var(--text-xl);
+    font-weight: var(--weight-semibold);
+    color: #fff;
+  }
+  .cpanel__meta {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--space-1) var(--space-6);
+    font-size: var(--text-xs);
+    color: #c6d8d3;
+  }
+  .cpanel__meta a {
+    color: inherit;
+  }
+  @media (min-width: 60rem) {
+    .cpanel {
+      grid-template-columns: 1fr auto;
+      align-items: end;
+    }
+    .cpanel__head {
+      grid-column: 1 / -1;
+    }
+    .cpanel__meta {
+      grid-column: 1 / -1;
+    }
+  }
+  .map__nav {
+    position: absolute;
+    z-index: 3;
+    left: max(var(--gutter), calc((100% - var(--container)) / 2));
+    top: calc(var(--header-h) + var(--space-5));
+    display: flex;
+    gap: var(--space-2);
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity 300ms var(--ease-out);
+  }
+  .map[data-phase='open'] .map__nav {
+    opacity: 1;
+    visibility: visible;
+  }
+  .map__nav button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: var(--space-2);
+    min-height: var(--tap-min);
+    min-width: var(--tap-min);
+    padding-inline: var(--space-3);
+    border: 1.5px solid rgb(255 255 255 / 0.5);
+    border-radius: var(--radius-pill);
+    background: rgb(6 28 30 / 0.66);
+    color: #fff;
+    font-size: var(--text-sm);
+    font-weight: var(--weight-semibold);
+    transition: background-color var(--duration-base) var(--ease-out), transform var(--duration-fast) var(--ease-out);
+  }
+  .map__nav button:hover {
+    background: rgb(6 28 30 / 0.92);
+  }
+  .map__nav button:active {
+    transform: scale(0.96);
+  }
+  .map__prev :global(svg) {
+    rotate: 180deg;
+  }
+  @keyframes rise {
+    from {
+      opacity: 0;
+      transform: translateY(20px);
+    }
+  }
+
+  /* Portrait: the tall render, headline on top, same pins and photos */
+  @media not all and (min-width: 60rem) and (min-aspect-ratio: 5/4) {
+    .map__box,
+    .map__pins {
+      width: max(100%, 64.29svh);
+      aspect-ratio: 9 / 14;
+      translate: -50% -50%;
+      top: 54%;
+    }
+    .map__box .map__lit {
+      display: none;
+    }
+    .map__intro {
+      top: calc(var(--header-h) + var(--space-4));
+      translate: none;
+      left: 0;
+      width: 100%;
+      padding-inline: var(--gutter);
+      gap: var(--space-2);
+    }
+    .map__title {
+      font-size: var(--text-4xl);
+    }
+    .map__cta {
+      display: none;
+    }
+    .pin {
+      left: var(--tx);
+      top: var(--ty);
+    }
+    .pin__cost,
+    .pin__thai {
+      display: none;
+    }
+    .pin--phuket .pin__link {
+      flex-direction: row;
+      left: -22px;
+      right: auto;
+      padding: 0 var(--space-3) 0 0;
+    }
+    .cpanel__title {
+      font-size: var(--text-5xl);
+    }
+    .cpanel__facts {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: var(--space-3) var(--space-6);
+    }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .map *,
+    .pin__dot::after {
+      transition-duration: 1ms !important;
+      animation: none !important;
+    }
+    .pin__dot::after {
+      display: none;
+    }
+  }
+</style>
+
+<style is:global>
+  .map:has([data-spot='bangkok']:is(:hover, :focus-visible)) [data-lit='bangkok'],
+  .map:has([data-spot='chiang-mai']:is(:hover, :focus-visible)) [data-lit='chiang-mai'],
+  .map:has([data-spot='phuket']:is(:hover, :focus-visible)) [data-lit='phuket'] {
+    opacity: 1;
+  }
+</style>
