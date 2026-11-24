@@ -477,7 +477,7 @@ input[type='radio'] {
   --color-surface-3: #1b4746;
   --color-ink: var(--night-ink);
   --color-ink-2: var(--night-ink-2);
-  --color-ink-3: #86a09c;
+  --color-ink-3: #94aeaa;
   --color-border: var(--night-line);
   --color-border-strong: #5a7976;
   --color-brand: var(--night-brand);
@@ -524,6 +524,7 @@ input[type='radio'] {
    Full-bleed lacquer behind a .container that opens a page. Pair with .theme-night. */
 .band.theme-night {
   --color-ink-2: #c6d8d3;
+  --color-brand: #83dbd2;
   --color-focus: var(--night-accent);
   position: relative;
   isolation: isolate;

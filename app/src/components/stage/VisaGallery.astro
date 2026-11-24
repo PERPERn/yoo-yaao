@@ -145,7 +145,7 @@ const need: Record<VisaSlug, string> = {
     overflow: hidden;
     background: #0b2b2d;
     color: var(--color-ink);
-    margin-top: calc(-1 * var(--header-h));
+    margin-top: calc(-1 * var(--header-h) - env(safe-area-inset-top));
   }
   .wall__title {
     font-size: var(--text-5xl);

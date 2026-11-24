@@ -7,13 +7,14 @@
 > เอกสารนี้ใช้ส่งต่องานไปทำต่อบนเครื่องอื่น ไม่ว่าจะเป็นคนหรือ Claude ก็อ่านไฟล์นี้ก่อนเป็นอันดับแรก
 > ตั้งแต่ commit `f9f247a` เป็นต้นไป โค้ดทั้งหมดอยู่บน GitHub และ deploy ขึ้น production แล้ว
 
-## ⏱ redesign เสร็จแล้ว รอผู้ใช้อนุมัติขึ้น production (24 พ.ย. 2026, branch `redesign` = 166a3ce, push แล้ว)
+## ⏱ สถานะล่าสุด (24 พ.ย. 2026)
 
-- **production ยังเป็น 655fb39** ดีไซน์ใหม่อยู่ที่ preview https://yoo-yaao-am6eo6qmw-perpers-projects-f27adadb.vercel.app (ต้อง login Vercel เพราะเปิด Deployment Protection)
-- ดีไซน์: `docs/design.md`, `docs/home-scroll.md` ตรงกับของจริงแล้ว ฉาก 3D: `blender/render.sh` → `encode.sh` ตรวจด้วย `blender/shots.mjs`
-- เรนเดอร์ครบ (ผนัง 5 คลิป แผนที่ 3 คลิป) เฟรมดิบอยู่ใน `blender/out/` (ไม่ขึ้น git เรนเดอร์ใหม่ได้)
-- Supabase เคยถูกพัก (free tier) เปิดคืน 24 พ.ย. ข้อมูลครบ ก่อนวันโชว์ให้เช็กก่อน
-- **เหลือ:** ขึ้น production เมื่อผู้ใช้สั่ง (merge `redesign` → `main`, deploy `--prebuilt --prod` ตามแพตเทิร์น worktree), ทดสอบ partner/admin/แชทด้วยบัญชีจริง, `og.png` กับวิดีโอ demo ยังเป็นดีไซน์เก่า
+- **production (yoo-yaao.vercel.app) = fd27c96** ดีไซน์ใหม่ชุดแรก (ผนังวีซ่า + แผนที่) ขึ้นแล้ว
+- **branch `theme-all`** = ธีมเดียวกันทั้งเว็บ (header/footer/business/admin/login/แชท/partner/จ่ายเงิน/404) + og.png + วิดีโอ demo ใหม่ (`demo.mp4`) push แล้ว **รอผู้ใช้สั่ง "ขึ้นจริง"** แล้ว merge → main → deploy `--prebuilt --prod` จาก worktree
+- ตรวจแล้ว: check 0 error, 38 หน้า × 2 ขนาด ไม่ล้น ไม่มี console error, คลิปครบใต้ CSP
+- ฉาก 3D: `blender/render.sh` → `encode.sh`; ตรวจ `blender/shots.mjs`; เฟรมดิบ `blender/out/` ไม่ขึ้น git
+- Supabase free tier พักเองราว 1 สัปดาห์ (เปิดคืน 24 พ.ย.) เช็กก่อนวันโชว์
+- **เหลือ:** ทดสอบ partner/admin/แชทด้วยบัญชีจริง, leaked-password protection, วิดีโอ 2 นาทีสำหรับ pitch (`docs/pitch/*.mp4`) ยังเป็นดีไซน์เก่า
 
 ## ⏱ จุดที่ค้างล่าสุด (25 ต.ค. 00:00, production = commit 655fb39 ทุกอย่าง push และ deploy แล้ว)
 - ข้อความ "Too many tries" ตอน login มาจากเพดานส่งอีเมลรายชั่วโมงของ Supabase ซึ่งตั้งค่าใช้บริการส่งอีเมลฟรีเป็นค่าเริ่มต้น ถ้าจะแก้ถาวรให้ใส่ Custom SMTP (เช่น Resend) ใน Supabase → Authentication → Emails แล้วเพิ่ม rate limit

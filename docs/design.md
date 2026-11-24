@@ -8,6 +8,7 @@ The site opens on a lit stage and then gets out of the way. Two showpieces carry
 Both are pre-rendered in Blender from procedural scripts (`blender/*.py`, no third-party assets) and driven by one script, `src/scripts/stage.ts`. Spots are plain links, so without JavaScript they open the guide. Reduced motion, Save-Data, a missing clip and portrait screens get a crossfade. Re-render with `blender/render.sh`, re-encode with `blender/encode.sh`, check with `blender/shots.mjs`.
 
 The rest of the site sits on **pale celadon** (`--color-bg`), and every page header wears the wall (`--lacquer` + `media/stage/plaster.webp`, a gold rule below). Rules that changed from the first version: gradients are allowed only as scrims that keep text readable over a render or photo; dark areas are the wall, the map, the blueprint scene, page headers and the footer.
+**One theme, every page:** the site header, footer, Business strip and Admin sidebar are the wall (`--wall-bg`) with a gold edge; a `.arcade` strip of gold niches tops each footer. Page openers use `PageHeader`, `PageHead` or a `.band.theme-night` container; `.band--art` adds a lit niche (login, profile setup). Put `.theme-light` on a form or card that sits on the wall. The primary button is gold on dark surfaces and teal on light ones, automatically.
 Gold buttons (`accent`) are the main action on a stage, and still mean paid upgrade elsewhere. We do not use elephants, flag stripes or tuk-tuks.
 
 Live reference: **`/styleguide`**.
@@ -31,7 +32,7 @@ Contrast ratios were computed with the WCAG 2.x formula.
 | `--seg-b2b-bg` / `-strong` | `#F5E6C8` / `#845A0C` | Businesses (sand) | 4.9:1 |
 | `--seg-c2c-bg` / `-strong` | `#F7DCCF` / `#9A3D22` | Locals (lotus) | 5.3:1 |
 | `--seg-ink` | `#10292B` | Body text on any segment tint | ≥11.7:1 |
-| `--night-bg` / `--night-surface` | `#0B1F21` / `#12302F` | The one dark scene, and the footer | — |
+| `--night-bg` / `--night-surface` | `#0A2A2C` / `#113A3A` | The one dark scene, and the footer | — |
 | `--night-ink` / `--night-ink-2` | `#E9EFEC` / `#9DB3B0` | Text on night | 14.6:1 / 7.7:1 |
 | `--night-brand` / `--night-accent` | `#5CC8BE` / `#F0B44C` | Teal and gold on night | 8.5:1 / 9.2:1 |
 | `--night-line` / `--night-line-strong` | `#2E5553` / `#5CC8BE` | Blueprint grid / drawing strokes | non-text |
