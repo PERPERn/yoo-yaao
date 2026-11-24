@@ -17,7 +17,7 @@ Our pinned object is the Blender hero `app/public/models/hero.glb`: a passport w
 
 ## Rules
 
-- **Palette stays simple:** use the UI agent's tokens (`app/src/styles/tokens.css`). Light warm paper background, deep teal ink, one gold accent. Use at most one darker "night" scene for contrast (scene 5).
+- **Palette stays simple:** use the UI agent's tokens (`app/src/styles/tokens.css`). Pale celadon background, deep teal ink, one gold accent. Dark areas: the wall, the map and the blueprint scene.
 - **One idea per screen.** Every scene has a headline of 6 words or fewer, plus one line of support copy.
 - **Every scene has a real CTA or link into the product**, so the story never becomes a dead end. The sticky header keeps "Find my visa" visible throughout.
 - **Motion:** GSAP ScrollTrigger with scrub, animating transforms and opacity only.
@@ -27,21 +27,19 @@ Our pinned object is the Blender hero `app/public/models/hero.glb`: a passport w
 - **Performance:** one WebGL canvas for the whole story (no second renderer). The canvas pauses when off-screen.
 - **Data:** prices come from `app/src/data/products.ts`, visas from `app/src/data/visas.ts`, cities from `app/src/data/cities.ts`, and buddies from `app/src/data/buddies.ts`.
 
-## Scenes (top to bottom)
+## Scenes (top to bottom, since the Nov 2026 redesign)
 
-| # | Scene | Pinned object does | DOM layer | CTA |
+| # | Scene (`data-scene`) | Component | What happens | CTA |
 | --- | --- | --- | --- | --- |
-| 1 | **Hero** — "Stay longer in Thailand." | Island floats above the open passport; idle float | Headline, subline, primary CTA, scroll hint | Find my visa → `/finder` |
-| 2 | **"It's not just a visa."** | Passport rotates toward the camera; the island lifts | Huge type sweeps horizontally behind the object (ORYZO style) | — |
-| 3 | **The problem** | Object shrinks to one side | Three pain cards fan out one by one: "Rules changed: 30-day visa-free since 15 Sep 2026", "Blogs disagree", "90-day reports are easy to forget". Count-up on "30" | Read what changed → `/visas/visa-exempt` |
-| 4 | **Find your visa in 60 seconds** | Stamp glows and pulses | Five visa cards (DTV, LTR, Privilege, Exempt, Retirement) stack, then fan out around the passport; each shows its stay length from data | Start the finder → `/finder` |
-| 5 | **Blueprint: stay legal** (the one darker scene) | Object switches to wireframe or outline look (an emissive outline material, or swap to a line render) | A 90-day timeline draws itself (SVG stroke-dashoffset); checklist ticks animate; stat "0 missed reports" | Try the 90-day tool → `/tools/90-day` |
-| 6 | **Live like a local** | Island rises off the passport and the boat moves | Horizontal scroll of 3 city posters (Bangkok, Chiang Mai, Phuket) with cost-of-living numbers | Explore cities → `/cities` |
-| 7 | **Local Buddies** | Object idles small in a corner | brain.fm-style infinite marquee of buddy chips (name, city, service, $price), then two highlighted buddy cards | Meet a buddy → `/buddies` |
-| 8 | **Trust** | — (unpinned) | "Every fact has a source": strip of official-source names (Thai embassies, Immigration Bureau, BOI, Thailand Privilege) with "Verified 23 Oct 2026" stamps; count-ups for number of visas, sources and cities | How we verify → `/about` |
-| 9 | **Plans for everyone** | — | Three colour-coded panels, as in brain.fm: Travellers (B2C, Free vs Pro $8/mo), Businesses (B2B, featured listing $49/mo, expert leads), Locals (C2C, earn as a buddy, 20% fee) | See pricing → `/pricing` |
-| 10 | **FAQ** | — | Accordion of 6 items from `app/src/data/faq.ts` | — |
-| 11 | **Finale** | Object returns to centre, slow spin | Giant outlined wordmark `SITE.name` drawn stroke-by-stroke (ORYZO ending), final CTA, footer | Find my visa → `/finder` |
+| 1 | `hero` visa wall | `stage/VisaGallery` | Five lit niches. Hover lights one, click flies in to the facts; Esc, arrows and Back work. Portrait: swipe the niches, facts below | Find my visa → `/finder` |
+| 2 | `problem` | `home/SceneProblem` | Pinned: three cards rise in | Read what changed → `/visas/visa-exempt` |
+| 3 | `blueprint` | `home/SceneBlueprint` | Pinned: the 90-day timeline draws; the 3D passport shows as wireframe | 90-day tool → `/tools/90-day` |
+| 4 | `cities` map | `stage/CityMap` | Thailand relief map. A pin flies down and lands on the city photo | City guide |
+| 5 | `why` | `home/SceneWhy` | Four sourced tourism figures | – |
+| 6 | `buddies`, `demo`, `trust`, `plans`, `faq` | `home/*` | Reveals only | Each scene has one |
+| 7 | `finale` | `home/SceneFinale` | 3D passport returns, outlined wordmark draws | Find my visa → `/finder` |
+
+The 3D object (`hero3d.ts`) mounts once in `index.astro` and shows only in scenes 3 and 7 (`POSES` in `home-scroll.ts`). Pins and the scene snap are unchanged.
 
 ## Ownership
 

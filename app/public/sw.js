@@ -1,7 +1,7 @@
 /* Service worker: cache-first for static assets, network-first for pages with an offline fallback.
    Never touches /api/* (payments, forms and revenue must always be live) or /account (signed-in page).
    Bump VERSION to drop old caches. */
-const VERSION = 'v2';
+const VERSION = 'v3';
 const STATIC = `static-${VERSION}`;
 const PAGES = `pages-${VERSION}`;
 const OFFLINE_URL = '/offline';

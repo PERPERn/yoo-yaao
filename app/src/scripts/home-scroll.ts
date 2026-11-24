@@ -83,6 +83,7 @@ export function initHomeScroll(): void {
   const stage = $("[data-hero-story]");
   if (stage && matchMedia("(min-width: 640px)").matches) {
     const hero = mountHero(stage);
+    hero.pose.opacity = 0; // the page opens on the visa wall: nothing 3D over it
     hero.ready.then((ok) => {
       if (ok && hero.story) drivePose(hero);
     });

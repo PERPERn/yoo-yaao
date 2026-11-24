@@ -13,7 +13,7 @@ export function initStage(root: HTMLElement) {
   const stills = [...root.querySelectorAll<HTMLImageElement>('[data-still]')];
   const video = root.querySelector<HTMLVideoElement>('[data-clip]')!;
   const keys = spots.map((s) => s.dataset.spot!);
-  const wide = matchMedia('(min-width: 60rem) and (min-aspect-ratio: 5/4)');
+  const wide = matchMedia('(min-width: 60rem) and (min-aspect-ratio: 3/2)');
   const still = matchMedia('(prefers-reduced-motion: reduce)');
   const saveData = (navigator as Navigator & { connection?: { saveData?: boolean } }).connection?.saveData;
   let open: string | null = null;

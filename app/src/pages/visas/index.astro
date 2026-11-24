@@ -61,7 +61,7 @@ const jsonLd = JSON.stringify({
               {
                 visas.map((v) => (
                   <th scope="col">
-                    <a href={`/visas/${v.slug}`} class="vtable__name">{v.shortName}</a>
+                    <a href={`/visas/${v.slug}`} class="vtable__name"><img class="vtable__art" src={`/media/stage/tall-${v.slug}.webp`} width="900" height="1500" alt="" loading="lazy" decoding="async" />{v.shortName}</a>
                   </th>
                 ))
               }
@@ -154,6 +154,14 @@ const jsonLd = JSON.stringify({
 <Motion />
 
 <style>
+  .vtable__art {
+    width: 100%;
+    aspect-ratio: 4 / 5;
+    object-fit: cover;
+    object-position: 50% 62%;
+    border-radius: var(--radius-lg);
+    margin-bottom: var(--space-3);
+  }
   .verified {
     margin: 0;
   }

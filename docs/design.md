@@ -1,12 +1,16 @@
-# Design direction: "Teal & Gold on paper"
+# Design direction: "Lacquer, gold leaf, celadon"
 
-The app gives legal-ish advice to people who are about to spend money and risk fines. It should feel like a calm,
-well-kept office that is also friendly, and the home page tells that as a long scroll story (see `docs/home-scroll.md`).
-The palette is deliberately restrained: **2 neutrals, 1 primary, 1 accent, 3 segment tints and one night scene.**
-The Thai touch comes from the colours (teal temple-roof tiles, gold leaf and garlands, lotus) and from two typefaces drawn in Bangkok.
-We do not use clip-art temples, elephants, flag stripes or tuk-tuks.
+The site opens on a lit stage and then gets out of the way. Two showpieces carry the boldness; everything else stays quiet and readable.
 
-Live reference: **`/styleguide`** shows every token and component, including the night, sweep, marquee and accordion demos.
+- **Visa wall** (home hero, `components/stage/VisaGallery.astro`): a teal lacquer wall with five gilded niches in the shape of a temple window. One object per visa. Hover turns a light up, a click flies the camera in and opens the facts, with sources.
+- **City map** (home, `components/stage/CityMap.astro`): Thailand as a carved relief in a lagoon. Pick a city, fly down, land on a real photo.
+
+Both are pre-rendered in Blender from procedural scripts (`blender/*.py`, no third-party assets) and driven by one script, `src/scripts/stage.ts`. Spots are plain links, so without JavaScript they open the guide. Reduced motion, Save-Data, a missing clip and portrait screens get a crossfade. Re-render with `blender/render.sh`, re-encode with `blender/encode.sh`, check with `blender/shots.mjs`.
+
+The rest of the site sits on **pale celadon** (`--color-bg`), and every page header wears the wall (`--lacquer` + `media/stage/plaster.webp`, a gold rule below). Rules that changed from the first version: gradients are allowed only as scrims that keep text readable over a render or photo; dark areas are the wall, the map, the blueprint scene, page headers and the footer.
+Gold buttons (`accent`) are the main action on a stage, and still mean paid upgrade elsewhere. We do not use elephants, flag stripes or tuk-tuks.
+
+Live reference: **`/styleguide`**.
 
 ## 1. Palette
 
@@ -15,10 +19,10 @@ Contrast ratios were computed with the WCAG 2.x formula.
 
 | Token | Light | Use | Contrast |
 | --- | --- | --- | --- |
-| `--color-bg` | `#F6F3EC` | Warm paper ground | — |
+| `--color-bg` | `#EEF4F0` | Pale celadon ground | — |
 | `--color-ink` | `#10292B` | Deep-teal ink for body text and headings | 13.8:1 |
 | `--color-ink-2` | `#4B5B5A` | Secondary text | 6.4:1 |
-| `--color-surface` / `-2` / `-3` | `#FFF` / `#EEEAE0` / `#E3DED2` | Cards; alternate sections; hover | — |
+| `--color-surface` / `-2` / `-3` | `#FFF` / `#E0EBE4` / `#D3E1D9` | Cards; alternate sections; hover | — |
 | `--color-brand` (teal) | `#0D6461` | Primary buttons, links, active nav | 6.3:1; white on it 7.0:1 |
 | `--color-brand-tint` | `#D6EBE7` | Teal surface | teal text on it 5.6:1 |
 | `--color-accent` (gold) | `#E3A33A` | **Fills only**: Pro/upgrade, ribbons, stars, selection | ink on it 7.0:1 |
@@ -36,10 +40,10 @@ Contrast ratios were computed with the WCAG 2.x formula.
 
 - **Gold** marks money and premium only. **Never set small text in `--color-accent`.** It fails contrast; use `--color-accent-text`.
 - **Segment tints** are reserved for the three audiences (pricing panels, marquee chips, segment badges). They are not decoration.
-- **Night:** use `<Section tone="night">` (or `.section--night` / `.theme-night` on any wrapper). This remaps the semantic tokens locally, so every ui/ component inside renders correctly on dark. Add `.blueprint-grid` for the measuring-grid paper. **Use it at most once per page** (home scene 5); the footer is the other dark area.
-- **Light only, on purpose.** Every layout sets `data-theme="light"` on `<html>` and `color-scheme: light`, so OS dark mode does not change the site. The paper palette is the brand, and the night scene and footer already give the pages their dark contrast. The `prefers-color-scheme: dark` block in `tokens.css` is kept but unused; turning it on would need a contrast check of every page first. Don't build dark mode before launch.
+- **Night:** use `<Section tone="night">` (or `.section--night` / `.theme-night` on any wrapper). This remaps the semantic tokens locally, so every ui/ component inside renders correctly on dark. Add `.blueprint-grid` for the measuring-grid paper. Use it for stages, page headers and the blueprint scene.
+- **Light only, on purpose.** Every layout sets `data-theme="light"` on `<html>` and `color-scheme: light`, so OS dark mode does not change the site. The celadon palette is the brand, and the night scene and footer already give the pages their dark contrast. The `prefers-color-scheme: dark` block in `tokens.css` is kept but unused; turning it on would need a contrast check of every page first. Don't build dark mode before launch.
 
-Proportions: about 80% paper and surfaces, 15% ink, 5% teal, and a few gold moments per view. Use one teal primary button per view.
+Proportions off-stage: about 80% celadon and surfaces, 15% ink, 5% teal, and a few gold moments per view. Use one teal primary button per view.
 
 ## 2. Type
 
@@ -134,7 +138,7 @@ Global classes (`global.css`): `.container`, `.container-narrow`, `.section`, `.
 - Check every page at 390px.
 
 **Don't**
-- Don't use gradients, glows, glassmorphism or backdrop blur, purple or indigo, emoji as icons, or decorative blobs.
+- Don't use decorative gradients (scrims over renders are fine), glows, glassmorphism or backdrop blur, purple or indigo, emoji as icons, or decorative blobs.
 - Don't use tiny uppercase letter-spaced labels or "01 / 02 / 03" numbering (use `Steps`).
 - Don't put shadows on cards at rest, and don't add hairline borders around every box. Separate surfaces by tone.
 - Don't build rows of identical icon-topped feature cards. Vary the section layouts (split, steps, stats, a list with sources).

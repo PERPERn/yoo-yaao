@@ -73,7 +73,7 @@ nt.links.new(mr.outputs[0], ramp.inputs[0])
 cr = ramp.color_ramp
 cr.elements[0].color, cr.elements[1].color = rgb("#E6D9AE"), rgb("#E9B850")
 cr.elements[1].position = 1.0
-for pos, col in ((0.07, "#A9D3B0"), (0.28, "#5FAE8C"), (0.62, "#2B7A66")):
+for pos, col in ((0.07, "#98CFA2"), (0.28, "#5FAE8C"), (0.62, "#2B7A66")):
     e = cr.elements.new(pos)
     e.color = rgb(col)
 nt.links.new(ramp.outputs[0], p.inputs["Base Color"])
@@ -141,7 +141,7 @@ sn = np.arange(SX.size).reshape(SX.shape)
 sme.from_pydata(np.stack([SX.ravel(), SY.ravel(), 0 * SX.ravel()], 1).tolist(), [], np.stack([sn[:-1, :-1].ravel(), sn[:-1, 1:].ravel(), sn[1:, 1:].ravel(), sn[1:, :-1].ravel()], 1).tolist())
 ca = sme.color_attributes.new("shore", "FLOAT_COLOR", "POINT")
 u = np.where(inside, 0, dist)[::3, ::3].ravel()[:, None]
-c0, c1, c2 = (np.array(rgb(h)) for h in ("#8FE3CE", "#2FA6A0", "#0F6A70"))
+c0, c1, c2 = (np.array(rgb(h)) for h in ("#8FE3CE", "#35B5AC", "#0E7F84"))
 k1, k2 = np.clip(u / 0.3, 0, 1) ** 0.8, np.clip((u - 0.2) / 0.9, 0, 1) ** 0.6
 rim = np.zeros(SX.shape, bool)
 rim[0, :] = rim[-1, :] = rim[:, 0] = rim[:, -1] = True
@@ -302,7 +302,7 @@ cam = bpy.data.objects.new("cam", cam_d)
 scene.collection.objects.link(cam)
 scene.camera = cam
 cam_d.sensor_width = 36
-MAP = (Vector((-2.2, -17.0, 14.2)), Vector((-2.2, -0.75, 0)), 38)
+MAP = (Vector((-2.4, -18.6, 15.4)), Vector((-2.4, -1.0, 0)), 38)
 NEAR = {"bangkok": ((0.9, -2.0, 0.72), (0, 0.1, 0.24)), "chiang-mai": ((0.8, -1.75, 0.7), (0, 0.05, 0.34)), "phuket": ((-1.0, -1.7, 0.6), (0, 0, 0.12))}
 
 

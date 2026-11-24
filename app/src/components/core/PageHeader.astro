@@ -35,11 +35,16 @@ const hasArt = Astro.slots.has('art');
 </header>
 
 <style>
+  .phead:has(+ :global(.section--tint)) {
+    margin-bottom: 0 !important;
+  }
   .phead {
     position: relative;
     isolation: isolate;
     background: var(--lacquer) url('/media/stage/plaster.webp') center / cover;
     color: var(--color-ink);
+    --color-ink-2: #c6d8d3;
+    --color-focus: var(--night-accent);
     border-bottom: 3px solid var(--night-accent);
     margin-bottom: var(--space-10);
     padding-block: var(--space-8) var(--space-12);

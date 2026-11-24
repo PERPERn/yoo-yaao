@@ -18,7 +18,7 @@
   --color-ink-2: #4b5b5a;         /* secondary text 6.4:1 */
   --color-ink-3: #5d6b6a;         /* placeholder / meta 5.6:1 on white */
   --color-border: #cbdbd2;        /* subtle separators (non-text) */
-  --color-border-strong: #8d9998; /* input borders, 3:1 non-text */
+  --color-border-strong: #869392; /* input borders, 3:1 non-text */
 
   /* ---------- Primary: teal ---------- */
   --color-brand: #0d6461;         /* buttons, links 6.3:1; white on it 7.0:1 */
@@ -136,7 +136,7 @@
   --shadow-rgb: 16 41 43;                   /* ink-tinted shadow */
   --shadow-k: 1;                            /* alpha multiplier; dark scopes raise it */
   --highlight: rgb(255 255 255 / 0.45);     /* 1px top inner highlight */
-  --header-glass: color-mix(in srgb, var(--color-bg) 78%, transparent);
+  --header-glass: color-mix(in srgb, var(--color-bg) 92%, transparent);
   --shadow-card-stack: 0 18px 40px -20px rgb(16 41 43 / 0.35); /* fanned scroll cards (they float) */
 
   /* ---------- Motion ---------- */

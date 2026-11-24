@@ -91,7 +91,7 @@ const year = new Date().getFullYear();
   <body>
     <a class="skip-link" href="#main">Skip to content</a>
 
-    <header class="site-header" data-site-header data-over={over}>
+    <header class="site-header" data-site-header data-over={over || undefined}>
       <div class="container site-header__bar">
         <Logo />
 
@@ -226,7 +226,7 @@ const year = new Date().getFullYear();
         if ((e.target as HTMLElement).closest('a')) setOpen(false);
       });
       // Close if the viewport grows past the mobile breakpoint
-      window.matchMedia('(min-width: 64rem)').addEventListener('change', (e) => {
+      window.matchMedia('(min-width: 70rem)').addEventListener('change', (e) => {
         if (e.matches) setOpen(false);
       });
 
@@ -373,6 +373,7 @@ const year = new Date().getFullYear();
     color: var(--color-ink-2);
     font-size: var(--text-sm);
     font-weight: var(--weight-medium);
+    white-space: nowrap;
     text-decoration: none;
     transition:
       color var(--duration-fast) var(--ease-out),
@@ -496,7 +497,7 @@ const year = new Date().getFullYear();
     overflow: hidden;
   }
 
-  @media (min-width: 64rem) {
+  @media (min-width: 70rem) {
     .site-nav {
       display: block;
     }

@@ -32,7 +32,7 @@ const need = (v: Visa) =>
 <section class="wall theme-night" data-scene="hero" data-stage="/media/stage/" data-visa-wall aria-labelledby="hero-title">
   <div class="wall__box" aria-hidden="true">
     <picture>
-      <source media="(min-width: 60rem) and (min-aspect-ratio: 5/4)" srcset="/media/stage/wall.webp" />
+      <source media="(min-width: 60rem) and (min-aspect-ratio: 3/2)" srcset="/media/stage/wall.webp" />
       <img class="wall__img" src="data:image/gif;base64,R0lGODlhAQABAAAAACH5BAEKAAEALAAAAAABAAEAAAICTAEAOw==" width="2400" height="1350" alt="" fetchpriority="high" decoding="async" />
     </picture>
     {items.map((i) => <img class="wall__img wall__lit" data-lit={i.slug} style={`--at:${i.at}%`} src="/media/stage/lit.webp" width="2400" height="1350" alt="" loading="lazy" decoding="async" />)}
@@ -218,20 +218,26 @@ const need = (v: Visa) =>
   }
 
   /* ---------- Wide: the wall fills the screen and the camera moves ---------- */
-  @media (min-width: 60rem) and (min-aspect-ratio: 5/4) {
+  @media (min-width: 60rem) and (min-aspect-ratio: 3/2) {
     .wall {
       height: 100svh;
       min-height: 36rem;
     }
-    /* A 16:9 box that always covers the section, so % positions match the render. */
+    /* A full-height 16:9 box, so % positions match the render; very wide screens fade into the plaster. */
     .wall__box,
     .wall__spots {
       position: absolute;
       left: 50%;
       top: 50%;
-      width: max(100%, 177.78svh, 64rem);
+      width: max(177.78svh, 64rem);
       aspect-ratio: 16 / 9;
       translate: -50% -50%;
+    }
+    .wall__box {
+      mask-image: linear-gradient(90deg, transparent, #000 5%, #000 95%, transparent);
+    }
+    .wall {
+      background: linear-gradient(180deg, #1b4c44, #0f4848 55%, #062021 80%, #0a2f31);
     }
     .wall__img {
       position: absolute;
@@ -279,10 +285,10 @@ const need = (v: Visa) =>
       content: '';
       position: absolute;
       inset: auto 0 0;
-      height: 42%;
+      height: 30%;
       z-index: 1;
       pointer-events: none;
-      background: linear-gradient(0deg, rgb(5 24 26 / 0.94) 8%, rgb(5 24 26 / 0.62) 42%, transparent);
+      background: linear-gradient(0deg, rgb(5 30 32 / 0.8), rgb(5 30 32 / 0.5) 55%, transparent);
       transition: opacity 400ms var(--ease-out);
     }
     .wall__intro {
@@ -420,7 +426,7 @@ const need = (v: Visa) =>
   }
 
   /* ---------- Portrait: swipe the niches, read below ---------- */
-  @media not all and (min-width: 60rem) and (min-aspect-ratio: 5/4) {
+  @media not all and (min-width: 60rem) and (min-aspect-ratio: 3/2) {
     .wall {
       padding-block: calc(var(--header-h) + var(--space-6)) var(--space-12);
       display: grid;
@@ -460,6 +466,13 @@ const need = (v: Visa) =>
       scroll-snap-type: x mandatory;
       scrollbar-width: none;
       overscroll-behavior-x: contain;
+    }
+    .vpanel__title {
+      position: absolute;
+      width: 1px;
+      height: 1px;
+      overflow: hidden;
+      clip-path: inset(50%);
     }
     .spot {
       flex: 0 0 min(62vw, 22rem);

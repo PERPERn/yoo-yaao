@@ -1,21 +1,33 @@
+// Screens of the home stage, from the dev server on :4321. Run: node blender/shots.mjs <out_dir> [width height]
 import { chromium } from '../app/node_modules/playwright/index.mjs';
-const b = await chromium.launch({ channel: 'chrome' }).catch(() => chromium.launch());
-const out = process.argv[2];
-const p = await b.newPage({ viewport: { width: 1440, height: 900 } });
-p.on('pageerror', e => console.log('ERR', e.message));
-p.on('console', m => m.type() === 'error' && console.log('console', m.text().slice(0,200)));
+const [out, w = 1440, h = 900] = process.argv.slice(2);
+const b = await chromium.launch({ channel: 'chrome' });
+const p = await b.newPage({ viewport: { width: +w, height: +h }, hasTouch: +w < 700, isMobile: +w < 700 });
+p.on('pageerror', (e) => console.log('ERR', e.message));
+p.on('console', (m) => m.type() === 'error' && console.log('console', m.text().slice(0, 200)));
 await p.goto('http://localhost:4321/', { waitUntil: 'load' });
 await p.waitForTimeout(2500);
-await p.screenshot({ path: out + '/h1.png' });
-await p.hover('[data-spot=dtv]'); await p.waitForTimeout(700);
-await p.screenshot({ path: out + '/h2.png' });
-await p.click('[data-spot=dtv]'); await p.waitForTimeout(700);
-await p.screenshot({ path: out + '/h3.png' });
-await p.waitForTimeout(2000);
-await p.screenshot({ path: out + '/h4.png' });
-const m = await b.newPage({ viewport: { width: 390, height: 844 }, deviceScaleFactor: 2, hasTouch: true, isMobile: true });
-await m.goto('http://localhost:4321/', { waitUntil: 'load' }); await m.waitForTimeout(2500);
-await m.screenshot({ path: out + '/m1.png', fullPage: false });
-await m.evaluate(() => scrollTo(0, 600)); await m.waitForTimeout(1200); await m.screenshot({ path: out + '/m2.png' });
-console.log('overflow', await m.evaluate(() => document.documentElement.scrollWidth));
+const snap = (n) => p.screenshot({ path: `${out}/${w}-${n}.png` });
+await snap('wall');
+if (+w >= 960) {
+  for (const s of ['dtv', 'privilege']) {
+    await p.click(`[data-spot=${s}]`);
+    await p.waitForTimeout(2600);
+    await snap(s);
+    await p.keyboard.press('Escape');
+    await p.waitForTimeout(2600);
+    console.log(s, 'closed', await p.evaluate(() => [document.querySelector('.wall').dataset.phase, document.activeElement?.dataset.spot].join()));
+  }
+}
+await p.evaluate(() => document.querySelector('.map').scrollIntoView({ behavior: 'instant' }));
+await p.waitForTimeout(2500);
+await snap('map');
+for (const c of ['bangkok', 'chiang-mai', 'phuket']) {
+  await p.click(`[data-spot=${c}]`);
+  await p.waitForTimeout(3600);
+  await snap('map-' + c);
+  await p.click('.map [data-stage-back]');
+  await p.waitForTimeout(3000);
+}
+console.log('scrollW', await p.evaluate(() => document.documentElement.scrollWidth));
 process.exit(0);

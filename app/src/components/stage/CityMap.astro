@@ -8,9 +8,9 @@ import { THAI_CITY_NAMES, n } from '../core/format';
 
 // Pin positions in % of each render (wide 16:9, tall 9:14), projected from the Blender cameras.
 const pins = [
-  { slug: 'chiang-mai', wide: [50.9, 19.8], tall: [38.3, 32.7] },
-  { slug: 'bangkok', wide: [58.1, 41.9], tall: [46.8, 45.6] },
-  { slug: 'phuket', wide: [46.9, 81.1], tall: [27.4, 67.4] },
+  { slug: 'chiang-mai', wide: [51.6, 20.8], tall: [38.3, 32.7] },
+  { slug: 'bangkok', wide: [58.3, 41.3], tall: [46.8, 45.6] },
+  { slug: 'phuket', wide: [48.3, 76.5], tall: [27.4, 67.4] },
 ] as const;
 const items = pins.map((p) => ({ ...p, city: cities.find((c) => c.slug === p.slug)!, photo: cityPhotos[p.slug] }));
 const usd = (v: number) => `$${n(v)}`;
@@ -19,7 +19,7 @@ const usd = (v: number) => `$${n(v)}`;
 <section class="map theme-night" data-scene="cities" data-stage="/media/stage/map-" data-city-map aria-labelledby="cities-title">
   <div class="map__box" aria-hidden="true">
     <picture>
-      <source media="(min-width: 60rem) and (min-aspect-ratio: 5/4)" srcset="/media/stage/map.webp" />
+      <source media="(min-width: 60rem) and (min-aspect-ratio: 3/2)" srcset="/media/stage/map.webp" />
       <img class="map__img" src="/media/stage/map-tall.webp" width="2400" height="1350" alt="" loading="lazy" decoding="async" />
     </picture>
     {items.map((i) => <img class="map__img map__lit" data-lit={i.slug} style={`--x:${i.wide[0]}%;--y:${i.wide[1]}%`} src="/media/stage/map-lit.webp" width="2400" height="1350" alt="" loading="lazy" decoding="async" />)}
@@ -389,10 +389,10 @@ const usd = (v: number) => `$${n(v)}`;
   }
 
   /* Portrait: the tall render, headline on top, same pins and photos */
-  @media not all and (min-width: 60rem) and (min-aspect-ratio: 5/4) {
+  @media not all and (min-width: 60rem) and (min-aspect-ratio: 3/2) {
     .map__box,
     .map__pins {
-      width: max(100%, 64.29svh);
+      width: max(100%, 72svh);
       aspect-ratio: 9 / 14;
       translate: -50% -50%;
       top: 54%;

@@ -54,11 +54,16 @@ const jsonLd = JSON.stringify({
 </header>
 
 <style>
+  .phead:has(+ :global(.section--tint)) {
+    margin-bottom: 0 !important;
+  }
   .phead {
     position: relative;
     isolation: isolate;
     background: var(--lacquer) url('/media/stage/plaster.webp') center / cover;
     color: var(--color-ink);
+    --color-ink-2: #c6d8d3;
+    --color-focus: var(--night-accent);
     border-bottom: 3px solid var(--night-accent);
     margin-bottom: var(--space-10);
     padding-block: var(--space-12) var(--space-10);
@@ -102,7 +107,7 @@ const jsonLd = JSON.stringify({
   .phead__lead {
     margin-top: var(--space-4);
     font-size: var(--text-lg);
-    color: var(--color-ink-2);
+    color: #d4e2dd;
     max-width: 60ch;
     text-wrap: pretty;
   }
